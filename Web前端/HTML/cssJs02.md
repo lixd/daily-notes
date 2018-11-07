@@ -210,3 +210,10 @@ CSS的优先级
 
 就近原则: 哪个离得近,就选用哪个的样式
 
+##### JS的组成:
+
+ECMAScript : 核心部分 ,定义js的语法规范
+
+DOM: document Object Model 文档对象模型 , 主要是用来管理页面的
+
+BOM : Browser Object Model  浏览器对象模型, 前进,后退,页面刷新, 地址栏, 历史记录, 屏幕宽高
