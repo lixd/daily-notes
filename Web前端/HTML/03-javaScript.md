@@ -1,5 +1,3 @@
-### 
-
 ### 教学导航
 
 1. 掌握JS中的BOM对象
@@ -80,69 +78,12 @@ JS开发的步骤:
   - setTimeout: 多少毫秒之后执行一次函数
   - clearInterval
   - clearTimeout
+
 - 显示广告 img.style.display  = "block"
+
 - 隐藏广告 img.style.display  = "none"
 
-
-#### 1.3 步骤分析
-
-1. 确定事件: 页面加载完成的事件 onload
-2. 事件要触发函数:  init()
-3. init函数里面做一件事: 
-   1. 启动一个定时器 : setTimeout() 
-   2. 显示一个广告
-      1. 再去开启一个定时5秒钟之后,关闭广告
-
-
-#### 1.4 代码实现
-
-```html
-<script>
-		
-			function init(){
-				setTimeout("showAD()",3000);
-			}
-			
-			function showAD(){
-				//首先要获取要操作的img
-				var img = document.getElementById("img1");
-				//显示广告
-				img.style.display = "block";
-				
-				//再开启定时器,关闭广告
-				setTimeout("hideAD()",3000);
-			}
-			
-			function hideAD(){
-				//首先要获取要操作的img
-				var img = document.getElementById("img1");
-				//隐藏广告
-				img.style.display = "none";
-			}
-		</script>
-```
-
-
-
-
-#### 1.5扩展
-
-- JS的引入方式
-
-
-
-
-### 2. 完成完成表单的校验
-
-#### 2.1 需求分析
-
-​	昨天我们做了一个简单的表单校验，每当用户输入出错的时候，我们是弹出了一个对话框，提示用户去修改。这样的用户体验效果非常不好好。我们今天就是需要来对他进行一个修改，当用户输入信息有问题的时候，我们就再输入框的后面给他一个友好提示。
-
-
-
-#### 2.2 技术分析
-
-【HTML中innerHTML属性】
+  
 
 【JS中的常用事件】
 
@@ -151,133 +92,6 @@ onfocus 事件: 获得焦点事件
 onblur : 失去焦点
 
 onkeyup : 按键抬起事件
-
-
-#### 2.3 步骤分析
-
-
-
-#### 2.4 代码实现
-
-```css
-<!DOCTYPE html>
-<html>
-	<head>
-		<meta charset="UTF-8">
-		<title></title>
-		<!--
-			引入外部的js文件
-		-->
-		<script type="text/javascript" src="../js/regutils.js" ></script>
-		<script>
-			/*
-				1. 确定事件 : onfocus
-				2. 事件要驱动函数
-				3. 函数要干一些事情: 修改span的内容
-			*/
-			function showTips(spanID,msg){
-				//首先要获得要操作元素 span
-				var span = document.getElementById(spanID);
-				span.innerHTML = msg;
-			}
-			/*
-				校验用户名:
-				1.事件: onblur  失去焦点
-				2.函数: checkUsername()
-				3.函数去显示校验结果
-			*/
-			function checkUsername(){
-				//获取用户输入的内容
-				var uValue = document.getElementById("username").value;
-				//对输入的内容进行校验
-				//获得要显示结果的span
-				var span = document.getElementById("span_username");
-				if(uValue.length < 6){
-					//显示校验结果
-					span.innerHTML = "<font color='red' size='2'>对不起,太短</font>";
-					return false;
-				}else{
-					span.innerHTML = "<font color='red' size='2'>恭喜您,可用</font>";
-					return true;
-				}
-			}
-			
-			/*
-			 密码校验
-			 */
-			function checkPassword(){
-				//获取密码输入
-				var uPass = document.getElementById("password").value;
-				var span = document.getElementById("span_password");
-				//对密码输入进行校验
-				if(uPass.length < 6){
-					span.innerHTML = "<font color='red' size='2'>对不起,太短</font>";
-					return false;
-				}else{
-					span.innerHTML = "<font color='red' size='2'>恭喜您,够用</font>";
-					return true;
-				}
-			}
-			
-			/*
-			 确认密码校验
-			 * */
-			function checkRePassword(){
-				//获取密码输入
-				var uPass = document.getElementById("password").value;
-				
-				//获取确认密码输入
-				var uRePass = document.getElementById("repassword").value;
-				var span = document.getElementById("span_repassword");
-				
-				//对密码输入进行校验
-				if(uPass != uRePass){
-					span.innerHTML = "<font color='red' size='2'>对不起,两次密码不一致</font>";
-					return false;
-				}else{
-					span.innerHTML = "";
-					return true;
-				}
-			}
-			
-			/*
-			 校验邮箱
-			 * */
-			function checkMail(){
-				var umail = document.getElementById("email").value;
-				var flag = checkEmail(umail);
-				
-				var span = document.getElementById("span_email");
-				//对邮箱输入进行校验
-				if(flag){
-					span.innerHTML = "<font color='red' size='2'>恭喜您,可用</font>";
-					return true;
-				}else{
-					span.innerHTML = "<font color='red' size='2'>对不起,邮箱格式貌似有问题</font>";
-					return false;
-				}
-			}
-			
-			function checkForm(){
-				var flag = checkUsername() && checkPassword() && checkRePassword() && checkMail();
-				return flag;
-			}
-			
-		</script>
-	</head>
-	<body>
-		<form action="../01-自动轮播图片/图片自动轮播.html" onsubmit="return checkForm()" >
-			用户名:<input type="text" id="username" onfocus="showTips('span_username','用户名长度不能小于6')" onblur="checkUsername()" onkeyup="checkUsername()" /><span id="span_username"></span><br />
-			密码:<input type="password" id="password" onfocus="showTips('span_password','密码长度不能小于6')" onblur="checkPassword()" onkeyup="checkPassword()"/><span id="span_password"></span><br />
-			确认密码:<input type="password" id="repassword" onfocus="showTips('span_repassword','两次密码必须一致')" onblur="checkRePassword()" onkeyup="checkRePassword()" /><span id="span_repassword"></span><br />
-			邮箱:<input type="text" id="email" onfocus="showTips('span_email','邮箱格式必须正确')" onblur="checkMail()" /><span id="span_email"></span><br />
-			手机号:<input type="text" id="text" /><br />
-			
-			<input type="submit" value="提交" />
-		</form>
-	</body>
-</html>
-```
 
 
 
@@ -331,11 +145,7 @@ JS开发步骤
 	2. 事件要触发函数: 定义函数
 	3. 函数通常都要去做一些交互:  点击, 修改图片,  动态修改innerHTML属性...  innerTEXT
 
-​	
-
-
-
-
+​
 
 ### 3.表格隔行换色
 
