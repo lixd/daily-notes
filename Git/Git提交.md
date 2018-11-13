@@ -1,33 +1,59 @@
+```
 克隆远程项目
+
 git clone git@github.com:lillusory/ssm-crm.git
+
 //进入仓库文件夹
+
 cd D:\lillusory\MyProject\lillusory.github.io
 
 关联本地库和GitHub远程库
+
 先移除原有的关联
+
 git remote rm origin 
+
 再添加新的
+
 git remote add origin git@github.com:lillusory/lillusory.github.io.git
 
 git remote add origin git@github.com:lillusory/ssm-crm.git
+
 将本地文件添加到本地缓存库和提交到本地分支
+
 git add .
+
 git commit -m "edit post"
+
 //提交
+
 git push -u origin master
 
 //将远程仓库的拉到本地
+
 git pull origin master
+```
+
+
+
+```
 
 修改图片位置
+
 仓库中的位置：https://github.com/lillusory/lillusory.github.io/blob/master/images/posts/java/java-base-learning-one.jpg
+
 将blob改为raw即可在markdown中显示
+
 https://github.com/lillusory/lillusory.github.io/raw/master/images/posts/java/java-base-learning-one.jpg
 
 配置用户名和邮箱
+
 git config --global user.name "lillusory"
+
 git config --global user.email "xueduanli@163.com"
+
 查看配置的信息
+
 git config -l
 
 最后分享一些Github常用的命令：
@@ -49,6 +75,7 @@ git config -l
 提交数据：git push origin name
 
 分支操作
+
 查看分支：git branch
 
 创建分支：git branch name
@@ -62,3 +89,6 @@ git config -l
 删除分支：git branch -d name
 
 删除远程分支：git push origin :name
+
+```
+
