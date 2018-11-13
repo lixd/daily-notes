@@ -1,4 +1,4 @@
-### 教学导航
+### 导航
 
 1. 掌握JS中的BOM对象
 2. 掌握JS中的常用事件
@@ -145,110 +145,13 @@ JS开发步骤
 	2. 事件要触发函数: 定义函数
 	3. 函数通常都要去做一些交互:  点击, 修改图片,  动态修改innerHTML属性...  innerTEXT
 
-​
-
-### 3.表格隔行换色
-
-#### 3.1 需求分析
-
-​	我们商品分类的信息太多，如果每一行都显示同一个颜色的话会让人看的眼花，为了提高用户体验，减少用户看错的情况，需要对表格进行隔行换色
-
-#### 3.2 技术分析
-
-改变行的颜色
-
-
-
-#### 3.3 步骤分析
-
-1.   确定事件: 文档加载完成 onload
-     2.  事件要触发函数: init()
-         3. 函数:操作页面的元素
-            	要操作表格中每一行
-            	动态的修改行的背景颜色
-
-#### 3.4 代码实现
-
-```html
-<script >
-			function init(){
-				//得到表格
-				var tab = document.getElementById("tab");
-				//得到表格中每一行
-				var rows = tab.rows;
-				//便利所有的行,然后根据奇数 偶数
-				for(var i=1; i < rows.length; i++){
-					var row = rows[i];  //得到其中的某一行
-					if(i%2==0){
-						row.bgColor = "yellow";
-					}else{
-						row.bgColor = "red"
-					}
-				}
-			}
-</script>
-```
-
-
-
-
-
-### 4. 复选框的全选和全不选
-
-#### 4.1 需求分析
-
-​	商品分类界面中，当我们点击全选框的时候，我们希望选中所有的商品，当我们取消掉的时候，我们希望不选中所有的商品
-
-#### 4.2 技术分析
-
-​	事件 : onclick点击事件
-
-#### 4.3 步骤分析
-
-全选和全不选步骤分析:
-
-1.确定事件: onclick 单机事件
-2.事件触发函数: checkAll()
-3.函数要去做一些事情:
-  	获得当前第一个checkbox的状态
-  	 获得所有分类项的checkbox
-  	修改每一个checkbox的状态
-#### 代码实现
-
-```html
-function checkAll(){
-//				获得当前第一个checkbox的状态
-				var check1 = document.getElementById("check1");
-				//得到当前checked状态
-				var checked = check1.checked;
-//				 	获得所有分类项的checkbox
-//				var checks = document.getElementsByTagName("input");
-				var checks = document.getElementsByName("checkone");
-//				alert(checks.length);
-				for(var i = 0; i < checks.length; i++){
-//				 	修改每一个checkbox的状态
-					var checkone = checks[i];
-					checkone.checked = checked;
-				}
-			}
-```
-
-
-
-### 5. 省市联动效果
-
-#### 5.1 需求分析
-
-#### 5.2 技术分析
-
 
 
 什么是DOM: Document Object Model : 管理我们的文档   增删改查规则 
 
 
 
-
-【HTML中的DOM操作】
+### 【HTML中的DOM操作】
 
 ```html
 一些常用的 HTML DOM 方法：
@@ -284,144 +187,7 @@ setAttribute()  修改属性
 setAttributeNode()  修改属性节点
 ```
 
-
-
-#### 5.3 步骤分析
-
-
-
-#### 5.4 代码实现
-
-```html
-
-```
-
-
-
-
-
-### 6. 使用JS控制下拉列表左右选择
-
-#### 6.1 需求分析:
-
-在我们的分类管理中,我们要能够去修改我们的分类信息,当我们一点修改的时候,跳转到一个可以编辑的页面,这里面能够修改分类的名称,分类的描述,以及分类的商品
-
-#### 6.2 步骤分析:
-
-
-
-#### 6.3 代码实现
-
-```html
-<!DOCTYPE html>
-<html>
-	<head>
-		<meta charset="UTF-8">
-		<title></title>
-		<!--
-			步骤分析
-				1. 确定事件: 点击事件 :onclick事件
-				2. 事件要触发函数 selectOne
-				3. selectOne要做一些操作
-					(将左边选中的元素移动到右边的select中)
-					1. 获取左边Select中被选中的元素
-					2. 将选中的元素添加到右边的Select中就可以
-		-->
-		<script>
-			
-			function selectOne(){
-//				1. 获取左边Select中被选中的元素
-				var leftSelect = document.getElementById("leftSelect");
-				var options = leftSelect.options;
-				
-				//找到右侧的Select
-				var rightSelect = document.getElementById("rightSelect");
-				//遍历找出被选中的option
-				for(var i=0; i < options.length; i++){
-					var option1 = options[i];
-					if(option1.selected){
-		//				2. 将选中的元素添加到右边的Select中就可以
-						rightSelect.appendChild(option1);
-					}
-				}
-			}
-			
-			//将左边所有的商品移动到右边
-			function selectAll(){
-//				1. 获取左边Select中被选中的元素
-				var leftSelect = document.getElementById("leftSelect");
-				var options = leftSelect.options;
-				
-				//找到右侧的Select
-				var rightSelect = document.getElementById("rightSelect");
-				//遍历找出被选中的option
-				for(var i=options.length - 1; i >=0; i--){
-					var option1 = options[i];
-					rightSelect.appendChild(option1);
-				}
-			}
-			
-			
-			
-		</script>
-	</head>
-	<body>
-		
-		<table border="1px" width="400px">
-			<tr>
-				<td>分类名称</td>
-				<td><input type="text" value="手机数码"/></td>
-			</tr>
-			<tr>
-				<td>分类描述</td>
-				<td><input type="text" value="这里面都是手机数码"/></td>
-			</tr>
-			<tr>
-				<td>分类商品</td>
-				<td>
-					<!--左边-->
-					<div style="float: left;">
-						已有商品<br />
-						<select multiple="multiple" id="leftSelect" ondblclick="selectOne()">
-							<option>华为</option>
-							<option>小米</option>
-							<option>锤子</option>
-							<option>oppo</option>
-						</select>
-						<br />
-						<a href="#" onclick="selectOne()"> &gt;&gt; </a> <br />
-						<a href="#" onclick="selectAll()"> &gt;&gt;&gt; </a>
-					</div>
-					<!--右边-->
-					<div style="float: right;"> 
-						未有商品<br />
-						<select multiple="multiple" id="rightSelect">
-							<option>苹果6</option>
-							<option>肾7</option>
-							<option>诺基亚</option>
-							<option>波导</option>
-						</select>
-						<br />
-						<a href="#"> &lt;&lt; </a> <br />
-						<a href="#"> &lt;&lt;&lt; </a>
-					</div>
-				</td>
-			</tr>
-			<tr>
-				<td colspan="2">
-					<input type="submit" value="提交"/>
-				</td>
-			</tr>
-		</table>
-	</body>
-</html>
-```
-
-
-
-
-
-今天内容简单回顾:
+### 今天内容简单回顾:
 
 定时器: 
 
