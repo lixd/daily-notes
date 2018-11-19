@@ -177,9 +177,7 @@ insert into product values(null,'充气的',1,null,12);
 
     alter table product add foreign key(cno)  references  category(cid);
 
-  - 自己挖坑
-
-  - 从分类表中,删除分类为5信息,
+  - 
 
     - delete from category where cid =5;  //删除失败
     - 首先得去product表, 删除所有分类ID5  商品
@@ -254,28 +252,29 @@ insert into product values(null,'充气的',1,null,12);
 
 
 
--   商品表 (商品ID, 商品名称,商品价格,外键cno)
+- 商品表 (商品ID, 商品名称,商品价格,外键cno)
 
-    ```sql
-    create table product(
-    	pid int primary key auto_increment,
-      	pname varchar(10),
-      	price double,
-      	cno int,
-      	foreign key(cno) references category(cid)
-    );
+  ```sql
+  create table product(
+  	pid int primary key auto_increment,
+    	pname varchar(10),
+    	price double,
+    	cno int,
+    	foreign key(cno) references category(cid)
+  );
+  
+  
+  insert into product values(null,'小米mix4',998,1);
+  insert into product values(null,'锤子',2888,1);
+  insert into product values(null,'阿迪王',99,2);
+  insert into product values(null,'老村长',88,3);
+  insert into product values(null,'劲酒',35,3);
+  insert into product values(null,'小熊饼干',1,4);
+  insert into product values(null,'卫龙辣条',1,5);
+  insert into product values(null,'旺旺大饼',1,5);
+  ```
 
-    insert into product values(null,'小米mix4',998,1);
-    insert into product values(null,'锤子',2888,1);
-    insert into product values(null,'阿迪王',99,2);
-    insert into product values(null,'老村长',88,3);
-    insert into product values(null,'劲酒',35,3);
-    insert into product values(null,'小熊饼干',1,4);
-    insert into product values(null,'卫龙辣条',1,5);
-    insert into product values(null,'旺旺大饼',1,5);
-    ```
-
-    ​
+  ​
 
 
 
@@ -290,10 +289,11 @@ insert into product values(null,'充气的',1,null,12);
     	ocount int,
     	subsum double
   );
+  
   --给1号订单添加商品 200块钱的商品
   insert into orderitem values(1,7,100,100);
   insert into orderitem values(1,8,101,100);
-
+  
   --给2号订单添加商品 250块钱的商品 ()
   insert into orderitem values(2,5,1,35);
   insert into orderitem values(2,3,3,99);
@@ -321,9 +321,7 @@ insert into product values(null,'充气的',1,null,12);
     insert into category values(null,'馋嘴零食','瓜子花生,八宝粥,辣条');
     ```
 
-
-
-
+## 小结
 
 
 - 多表之间的关系如何维护: 外键约束 :   foreign key
