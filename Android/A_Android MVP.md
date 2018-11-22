@@ -1,0 +1,3 @@
+## Android MVP
+
+棒棒的！看过经典的mvp，也看过实际项目里经过变形的mvp，加上你这个todo-mvp，我觉得其实核心是一样的。1，Activity（Fragment）继承V接口，同时创建P对象，把继承了V接口的Activity（Fragment）设置给P对象，自此V、P互相持有彼此引用；2，在Activity（Fragment）中开始调用P，P中可以借助M或者不借助M，进行逻辑处理，所得结果通过V的调用表现出来。望指教！ 
