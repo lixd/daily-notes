@@ -1,4 +1,4 @@
-## MySQL回顾:
+# MySQL回顾:
 
 ​	数据库的创建 : create database 数据库的名 character set 字符集  collate 校对规则
 
@@ -98,16 +98,6 @@
 
 ​					排序: order by  (asc 升序, desc 降序)
 
-​							
-
-​					
-
-​					
-
-
-
-​	
-
 ​		
 
 ## SQL多表操作
@@ -167,7 +157,7 @@ insert into product values(null,'充气的',1,null,12);
 
 
 
-#### 技术分析:
+#### 外键
 
 - 多表之间的关系如何来维护
 
@@ -321,7 +311,7 @@ insert into product values(null,'充气的',1,null,12);
     insert into category values(null,'馋嘴零食','瓜子花生,八宝粥,辣条');
     ```
 
-## 小结
+# 小结
 
 
 - 多表之间的关系如何维护: 外键约束 :   foreign key
@@ -363,47 +353,47 @@ insert into product values(null,'充气的',1,null,12);
 
 一对一: 建表原则: 合并一张表, 将主键建立关系 , 将它当作一对多的情况来处理
 
-
-
-
-
 - 数据库客户端软件
 
-  ​
-
-
-
-### 使用商城表完成对商品信息的多表查询
-
-#### 需求分析:
-
-在我们的商城案例中,我的订单中包含很多信息.打开我的订单需要去查询表
-
-#### 技术分析:
 
 #### 多表查询
 
 - 交叉连接查询  笛卡尔积
 
+```sql
+SELECT * FROM category,product;
+```
+
 
 
 - 内连接查询
+
+```sql
+//隐式内连接 在查询出结果的基础上where条件过滤
+SELECT * FROM product p,category c WHERE p.cno=c.cid;
+//显示内连接 带着条件去执行查询 效率高
+ SELECT * FROM product p INNER JOIN category c ON p.cno=c.cid;
+```
 
 
 
 - 左外连接
 
-
-
-- 右外连接  
-
-
-
-
+```sql
+//会将左表的数据全都查询出来,如果右表没有对应数据 用NULL代替
+SELECT * FROM product p LEFT OUTER JOIN category c ON p.cno=c.cid; 
+```
 
 
 
+- 右外连接
 
+  ```sql
+  //会将右表的数据全都查询出来,如果左表没有对应数据 用NULL代替
+  SELECT * FROM product p RIGHT OUTER JOIN category c ON p.cno=c.cid; 
+  ```
+
+    
 
 
 #### 分页查询
@@ -445,7 +435,14 @@ select * from product limit 3,3;
   查询分类名称为手机数码的所有商品
 
 ```sql
-select * from product where cname ='手机数码';
+// 1.查出分类名称为手机数码的这个类的id
+SELECT cid FROM category WHERE cname='手机数码'; //结果显示 cid=1
+//2. 查询出id为上边结果的内容 即为结果
+SELECT * FROM product WHERE pid=1;
+
+//将两条sql语句组装起来
+SELECT * FROM product WHERE cno=(SELECT cid FROM category WHERE cname='手机数码');
+
 
 ```
 
