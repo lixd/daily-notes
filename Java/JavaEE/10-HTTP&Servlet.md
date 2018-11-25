@@ -99,8 +99,6 @@ Http协议&Servlet
 
 ### Get 和  Post请求区别
 
-![icon](img/img04.png)
-
 * post
 
 		1. 数据是以流的方式写过去，不会在地址栏上面显示。  现在一般提交数据到服务器使用的都是POST
@@ -164,16 +162,29 @@ Web资源
 	
 		3. 在地址栏上输入 http://localhost:8080/项目名称/a
 
-
 ###Servlet执行过程
 
-![icon](img/img05.png)
+```xml
+1.首先在地址栏输入http://localhost:8080/helloServlet/a
+2.localhost:8080 为Tomcat 地址 helloServlet为工程名 最后的/a就是要访问的资源名字
+3.拿/a去web.xml中匹配 寻找相同的<servlet-mapping>中的<url-pattern>/a</url-pattern>
+4.然后获取到<servlet-name>helloServlet</servlet-name>
+5.最后通过name 在<servlet>中找到class 然后就找到了Servlet 根据get/post走相应的方法
+  
+  <servlet>
+  <servlet-name>helloServlet</servlet-name>
+  <servlet-class>myservlet.HelloServlet</servlet-class>
+  </servlet>
+  <servlet-mapping>
+  <servlet-name>helloServlet</servlet-name>
+  <url-pattern>/a</url-pattern>
+  </servlet-mapping>
+```
 
-###Servlet的通用写法
-
-#### 找不到Servlet包的解决办法
+### Servlet的通用写法
 
 ```
+找不到Servlet包的解决办法
 今天在弄Servlet的时候死活找不到包.看了下JDK路径什么的也没有错.
 最后在网上找到了答案.
 右键工程-->Build Path-->Configure Build Path -->Libraries-->Add Library->Server Runtime-->选择Apache Tomcat 然后就可以了
@@ -189,10 +200,6 @@ Web资源
 
 
 1. 定义一个类，继承HttpServlet 复写doGet 和 doPost
-
-![icon](img/img06.png)
-
-
 
 ### Servlet的生命周期
 
