@@ -1,4 +1,4 @@
-元数据
+ 元数据
 
 Meata data 
 
@@ -8,71 +8,66 @@ Meata data
 参数元数据  ParameterMetaData
 结果集元数据  ResultSetMetaData
 
-
-###MVC设计模式
-
-
-###JSP的开发模式
-
-![icon](img/img01.png)
-
-###三层架构&MVC练习
-![icon](img/img02.png)
-
-
-##学生信息管理系统
+## 学生信息管理系统
 
 ## 数据库准备
 
-	CREATE DATABASE stus;
-	USE stus;
-	CREATE TABLE stu (
-		sid INT PRIMARY KEY  AUTO_INCREMENT,
-		sname VARCHAR (20),
-		gender VARCHAR (5),
-		phone VARCHAR (20),
-		birthday DATE,
-		hobby VARCHAR(50),
-		info VARCHAR(200)
-	);
+```sql
+CREATE DATABASE stus;
+USE stus;
+CREATE TABLE stu (
+	sid INT PRIMARY KEY  AUTO_INCREMENT,
+	sname VARCHAR (20),
+	gender VARCHAR (5),
+	phone VARCHAR (20),
+	birthday DATE,
+	hobby VARCHAR(50),
+	info VARCHAR(200)
+);
+```
 
-##查询
+## 查询
 
-1.    先写一个JSP 页面， 里面放一个超链接 。 
+1. 先写一个JSP 页面， 里面放一个超链接 。 
 
-      <a href="StudentListServlet"> 学生列表显示</a>
+   <a href="StudentListServlet"> 学生列表显示</a>
 
-2.    写Servlet， 接收请求， 去调用 Service  , 由service去调用dao
+2. 写Servlet， 接收请求， 去调用 Service  , 由service去调用dao
 
-3.    先写Dao , 做Dao实现。
+3. 先写Dao , 做Dao实现。
 
-      	public interface StudentDao {
+   	public interface StudentDao {
+   	
+   			/**
+   	
+   	- 查询所有学生
+   	  - @return  List<Student>
+   	    */
+   	      List<Student> findAll()  throws SQLException ;
+   	      }
+   	public class StudentDaoImpl implements StudentDao {
+   	
+   	
+   				/**
+   	
+   				 * 查询所有学生
+   	
+   				 * @throws SQLException 
+   	
+   				 */
+   	
+   				@Override
+   	
+   				public List<Student> findAll() throws SQLException {
+   	
+   					QueryRunner runner = new QueryRunner(JDBCUtil02.getDataSource());
+   	
+   					return runner.query("select * from stu", new BeanListHandler<Student>(Student.class));
+   	
+   					}
+   	
+   			}	
 
-      ​		
-      		/**
-      *   查询所有学生
-          * @return  List<Student>
-             */
-            List<Student> findAll()  throws SQLException ;
-            }
-
-          ---------------------------------------------
-
-
-		public class StudentDaoImpl implements StudentDao {
-
-​		
-			/**
-			 * 查询所有学生
-			 * @throws SQLException 
-			 */
-			@Override
-			public List<Student> findAll() throws SQLException {
-				QueryRunner runner = new QueryRunner(JDBCUtil02.getDataSource());
-				return runner.query("select * from stu", new BeanListHandler<Student>(Student.class));
-				}
-	
-		}	
 
 4. 再Service , 做Service的实现。
 
@@ -110,31 +105,26 @@ Meata data
 
 5. 在servlet 存储数据，并且做出页面响应。
 
-   		protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-
-   ​		
-   		try {
-   			//1. 查询出来所有的学生
-   			StudentService service = new StudentServiceImpl();
-   			List<Student> list = service.findAll();
-   			
-   			//2. 先把数据存储到作用域中
-   			request.setAttribute("list", list);
-   			//3. 跳转页面
-   			request.getRequestDispatcher("list.jsp").forward(request, response);
-   			
-   		} catch (SQLException e) {
-   			e.printStackTrace();
-   		}
-   		
-   	}
+     			protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException 
+     			try {
+     				//1. 查询出来所有的学生
+     				StudentService service = new StudentServiceImpl();
+     				List<Student> list = service.findAll();
+     			//2. 先把数据存储到作用域中
+     			request.setAttribute("list", list);
+     			//3. 跳转页面
+     			request.getRequestDispatcher("list.jsp").forward(request, response);
+     			
+     		} catch (SQLException e) {
+     			e.printStackTrace();
+     		}
+     	}
 
 6. 在list.jsp上显示数据
 
    EL + JSTL  + 表格
 
-
-##增加 
+## 增加 
 
 1. 先跳转到增加的页面 ， 编写增加的页面
 
@@ -153,7 +143,7 @@ Meata data
    String value = Arrays.toString(hobby): // [爱好， 篮球， 足球]
 
 
-###删除
+### 删除
 
 1. 点击超链接，弹出一个询问是否删除的对话框，如果点击了确定，那么就真的删除。
 
