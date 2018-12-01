@@ -34,91 +34,13 @@ CREATE TABLE stu (
 
 2. 写Servlet， 接收请求， 去调用 Service  , 由service去调用dao
 
-3. 先写Dao , 做Dao实现。
+3. 先写Dao , 做Dao实现
 
-   	public interface StudentDao {
-   	
-   			/**
-   	
-   	- 查询所有学生
-   	  - @return  List<Student>
-   	    */
-   	      List<Student> findAll()  throws SQLException ;
-   	      }
-   	public class StudentDaoImpl implements StudentDao {
-   	
-   	
-   				/**
-   	
-   				 * 查询所有学生
-   	
-   				 * @throws SQLException 
-   	
-   				 */
-   	
-   				@Override
-   	
-   				public List<Student> findAll() throws SQLException {
-   	
-   					QueryRunner runner = new QueryRunner(JDBCUtil02.getDataSource());
-   	
-   					return runner.query("select * from stu", new BeanListHandler<Student>(Student.class));
-   	
-   					}
-   	
-   			}	
 
 
 4. 再Service , 做Service的实现。
 
-
-		/**
-		 * 这是学生的业务处理规范
-		 * @author xiaomi
-		 *
-		 */
-		public interface StudentService {
-		
-			/**
-			 * 查询所有学生
-			 * @return  List<Student>
-			 */
-			List<Student> findAll()  throws SQLException ;
-		
-		}
-	
-		------------------------------------------
-	
-		/**
-		 * 这是学生业务实现
-		 * @author xiaomi
-		 *
-		 */
-		public class StudentServiceImpl implements StudentService{
-		
-			@Override
-			public List<Student> findAll() throws SQLException {
-				StudentDao dao = new StudentDaoImpl();
-				return dao.findAll();
-			}
-		}
-
 5. 在servlet 存储数据，并且做出页面响应。
-
-     			protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException 
-     			try {
-     				//1. 查询出来所有的学生
-     				StudentService service = new StudentServiceImpl();
-     				List<Student> list = service.findAll();
-     			//2. 先把数据存储到作用域中
-     			request.setAttribute("list", list);
-     			//3. 跳转页面
-     			request.getRequestDispatcher("list.jsp").forward(request, response);
-     			
-     		} catch (SQLException e) {
-     			e.printStackTrace();
-     		}
-     	}
 
 6. 在list.jsp上显示数据
 
