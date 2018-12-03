@@ -272,26 +272,17 @@ $("#aaa").load("/day16/DemoServlet02" , function(responseText , statusTXT  , xhr
 	});
 ```
 
-### Get
-
-
-```java
-$.get("/day16/DemoServlet02", function(data ,status) {
-		$("#div01").text(data);
-	});
-```
-
-# 赋值显示
+### 赋值显示
 
 * val("aa"); 
 
 > 只能放那些标签带有value属性
 * html("aa"); ---写html代码
-* text("aa");
+* text("aa"); 
 
 > 其实没有什么区别，如果想针对这分数据做html样式处理，那么只能用html()
 
-### load & get
+### load & get&post
 
 
 * load
@@ -327,227 +318,77 @@ $.get("/day16/DemoServlet02", function(data ,status) {
 
 ### 使用JQuery去实现校验用户名
 
-		function checkUserName() {
-			//1. 获取输入框的内容
-			var name = $("#name").val();
-			
-			//2. 发送请求
-			$.post("/day16/CheckUserNameServlet" , {name:name} , function(data , status){
-				//alert(data);
-				if(data == 1){//用户名存在
-					//alert("用户名存在");
-					$("#span01").html("<font color='red'>用户名已被注册</font>");
-				}else{
-					//alert("用户名可用");
-					$("#span01").html("<font color='green'>用户名可以使用</font>");
-				}
-			} );
-			//3. 输出响应的数据到页面上。
-		}
+```java
+	function checkUserName() {
+		//1. 获取输入框的内容
+		var name = $("#name").val();
+		
+		//2. 发送请求
+		$.post("/day16/CheckUserNameServlet" , {name:name} , function(data , status){
+			//alert(data);
+			if(data == 1){//用户名存在
+				//alert("用户名存在");
+				$("#span01").html("<font color='red'>用户名已被注册</font>");
+			}else{
+				//alert("用户名可用");
+				$("#span01").html("<font color='green'>用户名可以使用</font>");
+			}
+		} );
+		//3. 输出响应的数据到页面上。
+	}
+```
+
+### JS请求
 
 
-## 实现百度搜索提示
-
-###搭建环境
-
-1. 定义首页
-
-   	<body>
-   	<center>
-   	<h2>黑马</h2>
-   		<input type="text" name="word" id="word" style="width: 600px ; height: 50px  ;font-size: 20px;">
-   		<input type="button" value="黑马一下"  style="height: 55px ; width: 100px ; ">
-   		
-   		<div id="div01" style="position:relative; left : -54px; width: 600px; height: 200px ; border:  1px solid blue; display: none"></div>
-   	</center>
-   	</body>
-
-2. 定义数据库
-
-
-###捕获键盘弹起
-
+```javascript
 $(function(){
 	$("#word").keyup(function() {
 		alert("键盘弹起了..");
 	})
 });
+$(function(){
+	$("#word").keyup(function() {
+		//2。 获取输入框的值 
+		//var word = $("#word").val();
+		//this  对应就是执行这个方法的那个对象， $("#word")
+		var word = $(this).val();
 
-
-###JS请求
-
-
-	$(function(){
-		$("#word").keyup(function() {
-			//2。 获取输入框的值 
-			//var word = $("#word").val();
-			//this  对应就是执行这个方法的那个对象， $("#word")
-			var word = $(this).val();
-	
-			if(word == ""){
-				$("#div01").hide();
-			}else{
-				//3. 请求数据。
-				$.post("find",{word:word} ,function(data , status){
-					//alert(data);
-					$("#div01").show();
-					$("#div01").html(data);
-				});
-			}
-			
-		})
-	});
-
-
-###Servlet代码
-
-			protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-	
-			request.setCharacterEncoding("utf-8");
-			try {
-				//1. 先获取参数
-				String word = request.getParameter("word");
-				System.out.println("word="+word);
-				
-				//2. 让dao执行查询
-				WordsDao dao = new WordsDaoImpl();
-				List<WordBean> list = dao.findWords(word);
-				
-				for (WordBean wordBean : list) {
-					System.out.println("==="+wordBean.toString());
-				}
-				
-				request.setAttribute("list", list);
-				
-				//3. 返回数据
-				response.setContentType("text/html;charset=utf-8");
-				//response.getWriter().write("数据是：");
-				request.getRequestDispatcher("list.jsp").forward(request, response);
-			} catch (SQLException e) {
-				e.printStackTrace();
-			}
-		
+		if(word == ""){
+			$("#div01").hide();
+		}else{
+			//3. 请求数据。
+			$.post("find",{word:word} ,function(data , status){
+				//alert(data);
+				$("#div01").show();
+				$("#div01").html(data);
+			});
 		}
+	})
+});
+```
 
-###list.jsp
-
-		<%@ page language="java" contentType="text/html; charset=UTF-8"
-		    pageEncoding="UTF-8"%>
-		 <%@ taglib uri="http://java.sun.com/jsp/jstl/core"  prefix="c"%>
-
-
-​		
-		<table style="width: 100%">
-			<c:forEach items="${list }" var="wordBean">
-				<tr>
-					<td>${wordBean.words}</td>
-				</tr>
-			</c:forEach>
-		</table>
-
-
-##使用JQuery实现 省市联动
-
-###环境准备
-
-1. 准备数据库
-
-2 。 准备页面
-
-
-		<script type="text/javascript" src="js/jquery-1.11.3.min.js"></script>
-			<script type="text/javascript" src="js/city.js"></script>
-			</head>
-			<body>
-			省份: <select name="province" id ="province">
-					<option value="" >-请选择 -
-					<option value="1" >广东
-					<option value="2" >湖南
-					<option value="3" >湖北
-					<option value="4" >四川
-				</select>
-			城市: 
-				<select name="city" id="city">
-					<option value="" >-请选择 -
-				</select>
-			</body>
-
-
-###XStream的使用
-
-		//3. 返回数据。手动拼  ---> XStream  转化 bean对象成 xml
-			XStream xStream = new XStream();
-			
-			//想把id做成属性
-			xStream.useAttributeFor(CityBean.class, "id");
-			
-			//设置别名
-			xStream.alias("city", CityBean.class);
-			
-			//转化一个对象成xml字符串
-			String xml = xStream.toXML(list);
-
-
-###JS代码
-
-
-		$(function() {
-		//1。找到省份的元素
-		$("#province").change(function() {
-			//2. 一旦里面的值发生了改变，那么就去请求该省份的城市数据
-			//$("#province").varl();
-			var pid = $(this).val();
-			
-			/*<list>
-				<city>
-					<id>1<id>
-					<pid>1</pid>
-					<cname>深圳</cname>
-				</city>
-				<city >
-					<id>2<id>
-					<pid>1</pid>
-					<cname>东莞</cname>
-				</city>
-			</list>*/
-			
-			$.post( "CityServlet",{pid:pid} ,function(data,status){
-				//alert("回来数据了:"+data);
-				
-				//先清空以前的值：
-				$("#city").html("<option value='' >-请选择-")
-				//遍历： 
-				//从data数据里面找出所有的city  ， 然后遍历所有的city。
-				//遍历一个city，就执行一次function方法
-				$(data).find("city").each(function() {
-					
-					//遍历出来的每一个city，取它的孩子。 id , cname
-					var id = $(this).children("id").text();
-					var cname = $(this).children("cname").text();
-					
-					$("#city").append("<option value='"+id+"' >"+cname)
-				});
-			} );
-			
-		});
-	});
-
-##服务器和客户端数据传输的方式
+## 服务器和客户端数据传输的方式
 
 * xml
 
-  	<list>
-  			<city>
-  				<id>1<id>
-  				<pid>1</pid>
-  				<cname>深圳</cname>
-  			</city>
-  			<city >
-  				<id>2<id>
-  				<pid>1</pid>
-  				<cname>东莞</cname>
-  			</city>
-  		</list>
+   ```xml
+   		<list>
+   			<city>
+   				<id>1<id>
+   				<pid>1</pid>
+   				<cname>深圳</cname>
+   			</city>
+   			<city >
+   				<id>2<id>
+   				<pid>1</pid>
+   				<cname>东莞</cname>
+   			</city>
+   		</list>
+   
+   ```
+
+   
 
 * json
 
@@ -565,101 +406,94 @@ $(function(){
 			JSONArray jsonArray = JSONArray.fromObject(list);
 			String json = jsonArray.toString();
 
+## 使用json格式数据显示省市联动效果
 
-##使用json格式数据显示省市联动效果
-	serlvet代码：
+​	serlvet代码：
 
-		protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-	
-		try {
-			//1. 获取参数
-			int pid = Integer.parseInt(request.getParameter("pid"));
+```java
+	protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+
+	try {
+		//1. 获取参数
+		int pid = Integer.parseInt(request.getParameter("pid"));
+		
+		//2 找出所有的城市
+		CityDao dao = new CityDaoImpl();
+		List<CityBean> list = dao.findCity(pid);
+		
+		//3. 把list ---> json数据
+		//JSONArray ---> 变成数组 ， 集合  []
+		//JSONObject ---> 变成简单的数据  { name : zhangsan , age:18}
+		
+		JSONArray jsonArray = JSONArray.fromObject(list);
+		String json = jsonArray.toString();
+		response.setContentType("text/html;charset=utf-8");
+		response.getWriter().write(json);
+			} catch (SQLException e) {
+		// TODO Auto-generated catch block
+		e.printStackTrace();
+	};
+}
+```
+
+
+
+
+```javascript
+	//js代码
+	$(function() {
+		//1。找到省份的元素
+		$("#province").change(function() {
+			//2. 一旦里面的值发生了改变，那么就去请求该省份的城市数据
+			//$("#province").varl();
+			var pid = $(this).val();
 			
-			//2 找出所有的城市
-			CityDao dao = new CityDaoImpl();
-			List<CityBean> list = dao.findCity(pid);
-			
-			//3. 把list ---> json数据
-			//JSONArray ---> 变成数组 ， 集合  []
-			//JSONObject ---> 变成简单的数据  { name : zhangsan , age:18}
-			
-			JSONArray jsonArray = JSONArray.fromObject(list);
-			String json = jsonArray.toString();
-
-
-			response.setContentType("text/html;charset=utf-8");
-			response.getWriter().write(json);
-
-
-		} catch (SQLException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		};
-	}
-
-
-
-	js代码
-
-
-		$(function() {
-			//1。找到省份的元素
-			$("#province").change(function() {
-				//2. 一旦里面的值发生了改变，那么就去请求该省份的城市数据
-				//$("#province").varl();
-				var pid = $(this).val();
+			/*[
+			    {
+			        "cname": "深圳",
+			        "id": 1,
+			        "pid": 1
+			    },
+			    {
+			        "cname": "东莞",
+			        "id": 2,
+			        "pid": 1
+			    }
+			    ...
+			]*/
+			$.post( "CityServlet02",{pid:pid} ,function(data,status){
 				
-				/*[
-				    {
-				        "cname": "深圳",
-				        "id": 1,
-				        "pid": 1
-				    },
-				    {
-				        "cname": "东莞",
-				        "id": 2,
-				        "pid": 1
-				    }
-				    ...
-				]*/
-				$.post( "CityServlet02",{pid:pid} ,function(data,status){
-					
-					//先清空
-					$("#city").html("<option value='' >-请选择-");
-					//再遍历，追加
-					$(data).each(function(index , c) {
-						$("#city").append("<option value='"+c.id+"' >"+c.cname)
-					});
-				},"json" );
-				
-			});
+				//先清空
+				$("#city").html("<option value='' >-请选择-");
+				//再遍历，追加
+				$(data).each(function(index , c) {
+					$("#city").append("<option value='"+c.id+"' >"+c.cname)
+				});
+			},"json" );
+			
 		});
+	});
+```
 
+# 总结
 
-##总结
-
-###Ajax  
-
-	发送get请求
-	
-	发送post请求
-	
-	都要求带数据 + 获取数据＋　放置到元素上。
-
-###JQuery
-
+### Ajax  
 
 	发送get请求
 	
 	发送post请求
 	
 	都要求带数据 + 获取数据＋　放置到元素上。
+
+### JQuery
+
+
+	发送get请求
 	
-	---------------------------------------
+	发送post请求
+	
 	
 	1. 服务器返回xml数据
-
-
 	2. 服务器返回json数据
 
 
