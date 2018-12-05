@@ -245,7 +245,7 @@ public void destroy() {
     	INCLUDE ： 包含页面的时候就拦截。
     	
 
-### 自动登录		
+	## 自动登录		
 
 #### . 搭建环境
 
@@ -293,88 +293,73 @@ public void destroy() {
 
 2. 如果session失效了，那么就取 cookie。
 
-	1. 没有cookie  放行 
+  1. 没有cookie  放行 
 
-	2. 有cookie 
+  2. 有cookie 
 
-			1. 取出来cookie的值，然后完成登录
-			2. 把这个用户的值存储到session中
+      1. 取出来cookie的值，然后完成登录
+        2. 把这个用户的值存储到session中
 
-			3. 放行。
+        3. 放行。
 
-			/**
-			 * @see Filter#doFilter(ServletRequest, ServletResponse, FilterChain)
-			 */
-			public void doFilter(ServletRequest req, ServletResponse response, FilterChain chain) throws IOException, ServletException {
-	
-			try {
-				HttpServletRequest request = (HttpServletRequest) req;
-				
-				//先判断，现在session中还有没有那个userBean.
-				UserBean userBean = (UserBean) request.getSession().getAttribute("userBean");
-				//还有，有效。
-				if(userBean != null){
-					chain.doFilter(request, response);
-				}else{
-					//代表session失效了。
-					
-					//2. 看cookie。
-					
-					//1. 来请求的时候，先从请求里面取出cookie , 但是cookie有很多的key-value
-					Cookie[] cookies = request.getCookies();
-					//2. 从一堆的cookie里面找出我们以前给浏览器发的那个cookie
-					Cookie cookie = CookieUtil.findCookie(cookies, "auto_login");
-					
-					//第一次来
-					if(cookie  == null){
-						chain.doFilter(request, response);
-					}else{
-						
-						//不是第一次。
-						
-						String value = cookie.getValue();
-						String username = value.split("#itheima#")[0];
-						String password = value.split("#itheima#")[1];
-		
-						//完成登录
-						UserBean user = new UserBean();
-						user.setUsername(username);
-						user.setPassword(password);
-		
-						UserDao dao = new UserDaoImpl();
-						userBean = dao.login(user);
-						
-						//使用session存这个值到域中，方便下一次未过期前还可以用。
-						request.getSession().setAttribute("userBean", userBean);
-						
-						chain.doFilter(request, response);
-					}
-					
-				}
-				
-				} catch (Exception e) {
-					e.printStackTrace();
-					chain.doFilter(req, response);
-				}
-				}
+        ```java
+        /**
+        - @see Filter#doFilter(ServletRequest, ServletResponse, FilterChain)
+          */
+          public void doFilter(ServletRequest req, ServletResponse response, FilterChain chain) throws IOException, ServletException {
+        try {
+        	HttpServletRequest request = (HttpServletRequest) req;
+        //先判断，现在session中还有没有那个userBean.
+        UserBean userBean = (UserBean) request.getSession().getAttribute("userBean");
+        //还有，有效。
+        if(userBean != null){
+        	chain.doFilter(request, response);
+        }else{
+        	//代表session失效了。
+        	//2. 看cookie。
+        	//1. 来请求的时候，先从请求里面取出cookie , 但是cookie有很多的key-value
+        	Cookie[] cookies = request.getCookies();
+        	//2. 从一堆的cookie里面找出我们以前给浏览器发的那个cookie
+        	Cookie cookie = CookieUtil.findCookie(cookies, "auto_login");
+        	//第一次来
+        	if(cookie  == null){
+        		chain.doFilter(request, response);
+        	}else{
+        		//不是第一次。
+        		String value = cookie.getValue();
+        		String username = value.split("#itheima#")[0];
+        		String password = value.split("#itheima#")[1];
+        		//完成登录
+        		UserBean user = new UserBean();
+        		user.setUsername(username);
+        		user.setPassword(password);
+        		UserDao dao = new UserDaoImpl();
+        		userBean = dao.login(user);
+        		//使用session存这个值到域中，方便下一次未过期前还可以用。
+        		request.getSession().setAttribute("userBean", userBean);
+        		chain.doFilter(request, response);
+        	}
+        }
+        } catch (Exception e) {
+        	e.printStackTrace();
+        	chain.doFilter(req, response);
+        }
+        }
+        ```
 
 ### BeanUtils的使用
 
 > BeanUtils.populate(bean, map);	
 
-			//注册自己的日期转换器
-			ConvertUtils.register(new MyDateConverter(), Date.class);
-
-
-​			
-			//转化数据
-			Map map = request.getParameterMap();
-			UserBean bean = new UserBean();
-	
-			转化map中的数据，放置到bean对象身上
-			BeanUtils.populate(bean, map);	
-
-
+```java
+		//注册自己的日期转换器
+		ConvertUtils.register(new MyDateConverter(), Date.class);
+		//转化数据
+		Map map = request.getParameterMap();
+		UserBean bean = new UserBean();
+		转化map中的数据，放置到bean对象身上
+		BeanUtils.populate(bean, map);	
+```
 
 # 总结
 
@@ -383,32 +368,24 @@ public void destroy() {
 	8个 
 	
 	三种类型  
+	HttpServletRequest
+	HttpSession
+	ServletContext
 		针对三个作用域的创建和销毁
 		针对三个作用域的值改变 【添加 | 替换 | 移除】
 		针对session中的值 【钝化 活化】 ， 【绑定  解绑】
 	
 	钝化 ( 序列化 ) 
 		内存中的对象存储到硬盘 
-	
 		超时失效。 session销毁了。 
-	
-	非正常关闭服务器， 钝化  。 正常关闭服务器 销毁
-	
-	设置了session，多久时间。 context.xml
-
-
+		非正常关闭服务器，钝化  。 正常关闭服务器 销毁
+		设置了session，多久时间。 context.xml
 	活化 (反序列化)
 		从硬盘里面读取到内存
-
-
-ServletContextListner  ： 应用被部署的时候， 服务器加载这个项目的时候，做一些初始化工作， 任务调度。
-HttpSessionListener	： 统计在线人数
-HttpSessionActivationListener  ： 钝化活化处理
-
-
-​	
-
-​	
+	ServletContextListner  ： 应用被部署的时候， 服务器加载这个项目的时候，做一些初始化工作， 任务调度。
+	HttpSessionListener	： 统计在线人数
+	HttpSessionActivationListener  ： 钝化活化处理
+	
 
 ## Filter 
 
