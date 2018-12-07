@@ -93,7 +93,7 @@ InputStreamReader 、OutputStreamWriter 要InputStream或OutputStream作为参�
         String decPath = "";
         try {
             FileInputStream fis = new FileInputStream(strPath);//通过打开一个到实际文件的连接来创建一个 FileInputStream
-            FileOutputStream fos = new FileOutputStream(decPath);//通过打开一个到实际文件的连接来创建一个 FileOutputStream
+            FileOutputStream fos = new FileOutputStream(decPath);//通过打开一个到实际文件的连接来创建一个 FileOutputStream 
             int len;
             byte[] buffer = new byte[1024];
             while ((len = fis.read(buffer)) != -1) {   // fis.read(buffer) 将流中的最多buffer.length的数据写入buffer数组
@@ -146,13 +146,25 @@ Java NIO 是 java 1.4, 之后新出的一套IO接口NIO中的N可以理解为**N
 
 ####  Channel（通道）介绍
 
+```java
+--传统的数据流：
+CPU处理IO，性能损耗太大
+--改为：
+内存和IO接口之间加了 DMA(Direct Memory Access)，DMA向CPU申请权限，IO的操作全部由DMA管理。CPU不要干预。
+若有大量的IO请求，会造成DMA的走线过多，则也会影响性能。
+--最后：
+则改DMA为Channel，Channel为完全独立的单元，不需要向CPU申请权限，专门用于IO。
+```
+
+
+
 **通常来说NIO中的所有IO都是从 Channel（通道） 开始的。**
 
 **从通道进行数据读取** ：创建一个缓冲区，然后请求通道读取数据。
 
 **从通道进行数据写入** ：创建一个缓冲区，填充数据，并要求通道写入数据。
 
-**Channel通道和流**
+**Channel通道和流比较相似**
 
 1.通道可以读也可以写，流一般来说是单向的（只能读或者写，所以之前我们用流进行IO操作的时候需要分别创建一个输入流和一个输出流）。
 
@@ -236,14 +248,29 @@ Selector selector = Selector.open();
 
 - 注册Channel到Selector(Channel必须是非阻塞的)
 
-```
-channel.configureBlocking(false);
-SelectionKey key = channel.register(selector, Selectionkey.OP_READ);
+与Selector一起使用时，Channel必须处于非阻塞模式下。这意味着不能将FileChannel与Selector一起使用，因为FileChannel不能切换到非阻塞模式,而套接字通道都可以。 
+
+```java
+ServerSocketChannel ssChannel=ServerSocketChannel.open();
+ssChannel.configureBlocking(false);//设置为非阻塞
+SelectionKey selectionKey = ssChannel.register(selector, SelectionKey.OP_ACCEPT);
 ```
 
-- SelectionKey介绍
+#### SelectionKey介绍
 
-  一个SelectionKey键表示了一个特定的通道对象和一个特定的选择器对象之间的注册关系。
+一个SelectionKey键表示了一个特定的通道对象和一个特定的选择器对象之间的注册关系。
+
+```java
+这个对象包含了一些你感兴趣的属性： 
+
+interest集合
+ready集合 //通道已经准备就绪的操作的集合。
+Channel
+Selector
+附加的对象（可选）
+```
+
+
 
 - 从Selector中选择channel(Selecting Channels via a Selector)
 
@@ -252,6 +279,35 @@ SelectionKey key = channel.register(selector, Selectionkey.OP_READ);
 - 停止选择的方法
 
   wakeup()方法 和close()方法。
+
+### 3.4分散（Scatter）/聚集（Gather）
+
+Java NIO开始支持scatter/gather，scatter/gather用于描述从Channel中读取或者写入到Channel的操作。 
+
+**分散（scatter）**从Channel中读取是指在读操作时将读取的数据写入多个buffer中。因此，Channel将从Channel中读取的数据“分散（scatter）”到多个Buffer中。 
+**聚集（gather）**写入Channel是指在写操作时将多个buffer的数据写入同一个Channel，因此，Channel 将多个Buffer中的数据“聚集（gather）”后发送到Channel。 
+scatter / gather经常用于需要**将传输的数据分开处理**的场合，例如传输一个由消息头和消息体组成的消息，你可能会将消息体和消息头分散到不同的buffer中，这样你可以方便的处理消息头和消息体。 
+
+```java
+ByteBuffer header = ByteBuffer.allocate(128);  
+ByteBuffer body   = ByteBuffer.allocate(1024);   
+ByteBuffer[] bufferArray = { header, body };    
+channel.read(bufferArray);  
+```
+
+注意buffer首先被插入到数组，然后再将数组作为channel.read() 的输入参数。read()方法按照buffer在数组中的顺序将从channel中读取的数据写入到buffer，当一个buffer被写满后，channel紧接着向另一个buffer中写。
+
+Scattering Reads在移动下一个buffer前，必须填满当前的buffer，这也意味着它**不适用于动态消息**。换句话说，如果存在消息头和消息体，消息头必须完成填充（例如 128byte），Scattering Reads才能正常工作。   
+
+```java
+ByteBuffer header = ByteBuffer.allocate(128);  
+ByteBuffer body   = ByteBuffer.allocate(1024);   
+//write data into buffers  
+ByteBuffer[] bufferArray = { header, body };   
+channel.write(bufferArray);  
+```
+
+buffers数组是write()方法的入参，write()方法会按照buffer在数组中的顺序，将数据写入到channel，注意只有position和limit之间的数据才会被写入。因此，如果一个buffer的容量为128byte，但是仅仅包含58byte的数据，那么这58byte的数据将被写入到channel中。因此与Scattering Reads相反，**Gathering Writes能较好的处理动态消息。  **
 
 ## 4.NIO 内存映射文件
 
@@ -390,7 +446,117 @@ AIO的特点：
 
 而AIO的读写过程完成后才被通知，所以AIO能够胜任那些重量级，读写过程长的任务。
 
+# 4.测试
 
+## 4.1代码
+
+```java
+  /**
+     * 普通IO
+     */
+    @Test
+    public void normal() {
+        // 文件大小 32M 220ms  1G 4912ms 100k 2ms
+        long begin = System.currentTimeMillis();
+        FileInputStream fis = null;
+        FileOutputStream fos = null;
+        try {
+            fis = new FileInputStream("src/1.txt");//文件输入流 文件大小 -32M 117ms  -1G 4475ms
+            fos = new FileOutputStream("src/two.txt");
+           // BufferedInputStream bis = new BufferedInputStream(fis);
+           // BufferedOutputStream bos = new BufferedOutputStream(fos);
+            byte[] bytes = new byte[1024];
+            int len;
+            while ((len = fis.read(bytes)) != -1) {
+                fos.write(bytes, 0, len);
+            }
+            fos.flush();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            closeUtils.close(fis, fos);
+            System.out.println("normal IO total time-->" + String.valueOf(System.currentTimeMillis() - begin));
+        }
+    }
+
+    /**
+     * NIO  1.利用通道完成文件的复制（非直接缓冲区）
+     */
+    @Test
+    public static void nio() {
+        //文件大小32M 139ms 1G 3922ms  100k 7ms
+        long begin = System.currentTimeMillis();
+        FileInputStream fis = null;
+        FileOutputStream fos = null;
+        FileChannel fisChannel = null;
+        FileChannel fosChannel = null;
+        try {
+            fis = new FileInputStream("src/1.txt");
+            fos = new FileOutputStream("src/one.txt");
+            fisChannel = fis.getChannel();
+            fosChannel = fos.getChannel();
+            ByteBuffer buffer = ByteBuffer.allocate(1024);
+
+            while (fisChannel.read(buffer) != -1) {
+                buffer.flip();//将Buffer从写模式切换到读模式
+                fosChannel.write(buffer);
+                buffer.clear();
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            closeUtils.close(fis, fos, fisChannel, fosChannel);
+            System.out.println("nio normal total time-->" + String.valueOf(System.currentTimeMillis() - begin));
+        }
+    }
+
+    /**
+     *  NIO 2.内存映射方法(直接缓冲区)
+     */
+    @Test
+    public void nio2() {
+        long begin = System.currentTimeMillis();
+        FileChannel inChannel = null;
+        FileChannel outChinnel = null;
+        try {
+            //文件大小 32M 30ms 1G 820ms 100K 8ms
+            inChannel = (FileChannel) FileChannel.open(Paths.get("src/1.txt"), StandardOpenOption.READ);
+            outChinnel = FileChannel.open(Paths.get("src/three.txt"), StandardOpenOption.WRITE, StandardOpenOption.READ, StandardOpenOption.CREATE);
+            //内存映射文件 第三个参数为大小 都设定为读取时的大小
+            MappedByteBuffer in = inChannel.map(FileChannel.MapMode.READ_ONLY, 0, inChannel.size());
+            MappedByteBuffer out = outChinnel.map(FileChannel.MapMode.READ_WRITE, 0, inChannel.size());
+            byte[] dst = new byte[in.limit()];
+            in.get(dst);
+            out.put(dst);
+        } catch (IOException e) {
+            e.printStackTrace();
+        } finally {
+            try {
+                inChannel.close();
+                outChinnel.close();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            System.out.println("memory mapper total time-->" + String.valueOf(System.currentTimeMillis() - begin));
+        }
+    }
+```
+
+##  4.2结论
+
+| 方式\时间(ms)\文件大小 | 100K | 32M  | 1G   |
+| :--------------------: | ---- | ---- | ---- |
+|         普通IO         | 2    | 220  | 4912 |
+|     带缓冲的普通IO     | 2    | 40   | 1150 |
+|      FileChannel       | 7    | 139  | 3922 |
+|      内存映射文件      | 8    | 30   | 820  |
+
+　这个小实验也验证了**内存映射文件**这个方法的可行性，由于具有**随机访问**的功能(映射在内存数组)，所以常用来替代RandomAccessFile。
+
+　　当然，对于**中小文件**的**顺序读入**则没有必要使用内存映射以**避免占用本就有限的I/O资源**，这时应当使用**带缓冲的输入流。**
+
+**小结:** `小文件`-->`带缓冲的IO`,`中等大小文件`-->`都可以` `大文件`-->`内存映射文件`
 
 # 参考
 
@@ -398,7 +564,7 @@ AIO的特点：
 
 [NIO文件内存映射](https://www.cnblogs.com/ixenos/p/5863921.html)
 
-
+[Java NIO](https://www.iteye.com/magazines/132-Java-NIO)
 
 
 
