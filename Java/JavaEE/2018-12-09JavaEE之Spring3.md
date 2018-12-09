@@ -1,42 +1,73 @@
-# Spring
+# SpringAOP基于AspectJ的注解开发
 
-## 1.Spring IOC
-
-### 导包
+### 1.导包
 
 ```java
 //日志记录 
---logging
---log4j
+--logging  				//com.springsource.org.apache.commons.logging-1.1.1.jar
+--log4j					 //com.springsource.org.apache.log4j-1.2.15.jar
 //Spring 4个核心包
---beans 
---context 
---core 
---expression
+--beans  				 //spring-beans-4.2.4.RELEASE.jar
+--context				 //spring-context-4.2.4.RELEASE.jar
+--core  				//spring-core-4.2.4.RELEASE.jar
+--expression 				//spring-expression-4.2.4.RELEASE.jar
 //aop包
---aop
+--aop  					//spring-aop-4.2.4.RELEASE.jar
+--aopalliance aop联盟 	//com.springsource.org.aopalliance-1.0.0.jar
+//aspectJ
+aspectj.weaver   			//com.springsource.org.aspectj.weaver-1.6.8.RELEASE.jar
+//Spring AspectJ整合包
+spring-aspects 				//spring-aspects-4.2.4.RELEASE.jar
 ```
 
-### 配置文件
+### 2.配置文件
 
 src下创建 applicationContext.xml
 
-### 引入约束
+### 3.编写目标类
+
+```java
+public class orderDao {
+public void sava() {
+	System.out.println("保存订单");
+}
+public void query() {
+	System.out.println("查询订单");
+}
+public void update() {
+	System.out.println("更新订单");
+}
+public void delete() {
+	System.out.println("删除订单");
+}
+}
+//配置bean
+<bean id="OrderDao" class="com.lillusory.demo2.orderDao"></bean>
+```
+
+### 4.编写切面类
+
+```java
+public class MyAspectAnno {
+	public void before() {
+		System.out.println("前置通知");
+	}
+}
+//配置切面类
+<bean id="myAspectAnno" class="com.lillusory.demo2.MyAspectAnno"></bean>
+```
+
+### 5.使用注解对目标对象增强
+
+#### 1.打开注解
 
 ```xml
-官方文档-->spring-framework-4.2.4.RELEASE\docs\spring-framework-reference\html\xsd-configuration.html
-<!---------------------1.引入约束---------------- -->
-<?xml version="1.0" encoding="UTF-8"?>
-<beans xmlns="http://www.springframework.org/schema/beans"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-    xmlns:context="http://www.springframework.org/schema/context" xsi:schemaLocation="
-        http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
-        http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd"> <!-- bean definitions here -->
-    <!---------------------2.配置组件扫描---------------- -->
-    <!-- IOC 配置组件扫描(哪些包下的类要使用IOC注解) -->
-<context:component-scan base-package="Demo"></context:component-scan>
-</beans>
+<!-- 打开AOP注解-->
+<aop:aspectj-autoproxy/>
 ```
+#### 2.切面类添加注解
+
+
 
 ### 在类中添加注解
 
