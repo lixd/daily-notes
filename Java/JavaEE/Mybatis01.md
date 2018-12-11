@@ -1,6 +1,6 @@
 # Mybatis
 
-## 1.工程搭建
+## 工程搭建
 
 ### 1.日志记录
 
@@ -129,6 +129,7 @@ User [id=1, username=王五, sex=2, birthday=null, address=null]
 
 ```java
 <mapper namespace="User">
+//--1.#{} 点位符 相当于占位符? 括号内写什么都可以-----
 <select id="getUserById" parameterType="int" resultType="pojo.User">
 SELECT 
   `id`,
@@ -140,7 +141,7 @@ FROM
   `user` 
   WHERE id=#{id};
 </select>
-//--1.#{} 点位符 相当于占位符? 括号内写什么都可以-----
+//--2.${} 字符串拼接指令 如果入参为普通类型括号内必须写value -----
 <select id="getUserByName" parameterType="string" resultType="pojo.User">
 SELECT 
   `id`,
@@ -151,8 +152,6 @@ SELECT
 FROM
   `user` 
   WHERE username LIKE '%${value}%';
-//--2.${} 字符串拼接指令 如果入参为普通类型括号内必须写value -----
-
 
 //--3.主键自增的两种写法   
 //	第一种:useGeneratedKeys="true" keyProperty="id"
@@ -189,6 +188,72 @@ VALUES
 
 </mapper>
 ```
+
+### 8.动态代理dao包装
+
+只有接口没有实现类
+
+规则:
+
+**1.映射文件的namespace必须是接口的全限定 namespace="dao.UserMapper"**
+
+**2.接口方法名必须与SQL id一致 id="getUserByName" 方法名也必须是getUserByName**
+
+**3.接口入参必须与SQL入参类型一致  parameterType**
+
+**4.接口返回值必须需SQL返回值一致  resultType**
+
+```java
+	@Test
+	public void testDemo() throws IOException {
+		SqlSession sqlSession = SqlSessionFactoryUtils.getSqlSessionFactory().openSession();
+		// 获取接口的代理人实现
+		UserMapper mapper = sqlSession.getMapper(UserMapper.class);
+		User user = mapper.getUserById(28);
+		System.out.println(user);
+         sqlSession.close();
+	}
+```
+
+### 9.typeAliases
+
+```xml
+<typeAliases>
+		<!-- 单个别名定义 -->
+		<!-- <typeAlias type="com.itheima.mybatis.pojo.User" alias="user"/> -->
+		<!-- 别名包扫描器(推荐使用此方式)，整个包下的类都被定义别名，别名为类名，不区分大小写-->
+		<package name="com.itheima.mybatis.pojo"/>
+	</typeAliases>
+```
+
+### 10.映射文件
+
+```xml
+<mappers>
+		<!-- 第一种方式，加载 resource-->
+		<mapper resource="mapper/user.xml"/>
+		<!-- <mapper resource="mapper/UserMapper.xml"/> -->
+		
+		<!-- 第二种方式，class扫描器要求：
+			 1、映射文件与接口同一目录下
+			 2、映射文件名必需与接口文件名称一致
+		 -->
+		<!-- <mapper class="com.itheima.mybatis.mapper.UserMapper"/> -->
+		
+		<!-- 第三种方式，包扫描器要求(推荐使用此方式)：
+			 1、映射文件与接口同一目录下
+			 2、映射文件名必需与接口文件名称一致
+		-->
+		<package name="com.lillusory.demo.mapper"/>
+</mappers>
+
+```
+
+
+
+
+
+
 
 
 
