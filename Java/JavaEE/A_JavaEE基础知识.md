@@ -225,9 +225,18 @@ getAttribute 返回的是Object，需进行转换,可用setAttribute 设置成�
 
 ## include指令include的行为的区别
 
-**include指令：** JSP可以通过include指令来包含其他文件。被包含的文件可以是JSP文件、HTML文件或文本文件。包含的文件就好像是该JSP文件的一部分，会被同时编译执行。 语法格式如下： <%@ include file="文件相对 url 地址" %>
+**include指令：** JSP可以通过include指令来包含其他文件。被包含的文件可以是JSP文件、HTML文件或文本文件。包含的文件就好像是该JSP文件的一部分，会被同时编译执行。  
 
-i**nclude动作：** jsp:include动作元素用来包含静态和动态的文件。该动作把指定文件插入正在生成的页面。语法格式如下： <jsp:include page="相对 URL 地址" flush="true" />
+**语法格式如下： <%@ include file="文件相对 url 地址" %>  不会检测被包含文件的变化 ,动态包含只有在执行到它的时候才加载，所以它才叫动态包含。静态的包含是将两个jsp文件二合一，生成一个以包含页面命名的servlet和class文件**
+
+i**nclude动作：** jsp:include动作元素用来包含静态和动态的文件。该动作把指定文件插入正在生成的页面。
+
+**语法格式如下： <jsp:include page="相对 URL 地址" flush="true" /> 会检测被包含文件的变化动态包含的两个jsp文件各自生成自己的servlet和class文件。** 
+
+**区别：**
+
+1. 动态包含用的元素是page，而且有两种形式。静态包含用的是file,只有一种形式。
+2. 生成的文件不同，静态的包含是将两个jsp文件二合一，生成一个以包含页面命名的servlet和class文件，动态包含的两个jsp文件各自生成自己的servlet和class文件。
 
 ## JSP九大内置对象，七大动作，三大指令
 

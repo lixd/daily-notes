@@ -1,5 +1,9 @@
-```
-克隆远程项目
+
+
+## 1.克隆远程项目
+
+```java
+
 
 git clone git@github.com:lillusory/ssm-crm.git
 
@@ -34,9 +38,9 @@ git push -u origin master
 git pull origin master
 ```
 
+## 2.配置信息
 
-
-```
+```java
 
 修改图片位置
 
@@ -91,4 +95,17 @@ git config -l
 删除远程分支：git push origin :name
 
 ```
+
+## 3.切换分支操作
+
+```java
+1. 创建项目后默认在master分支 即主分支 应保证该分支代码永远是正确的，可运行的
+2.开发时一般会根据功能创建多个分支 
+//git branch XXX 创建分支XXX git checkout XXX 切换到分支XXX
+//或者git checkout -b XXX 创建并切换到分支XXX
+3.开发完后进行合并 merge 切换到master分支 git merge XXX 把XXX分支合并到当前分支（即master分支）
+4.合并完成后即可删除开发时创建的分支 git branch -d XXX 删除分支XXX
+```
+
+
 
