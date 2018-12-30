@@ -280,7 +280,7 @@ count() 统计数量
 max() 最大值
 min() 最小值
 	 查询所有商品价格总和
-	 select sum(price) from product;
+	select sum(price) from product;
 	获得商品平均价格
 	select avg(price) from product;
 	获得商品总数
@@ -309,8 +309,8 @@ alter table product add pnumber int not null;
 //SQL编写顺序
 select .. from .. where .. group by .. having ..order by 
 //SQL执行顺序
-  from ..     where .. group by .. having .. select ..         order by 
-选择查那张表	添加条件	分组		在添加添加	控制显示那些内容 对显示的内容进行排序
+  from ....      where   .....  group by   ....    having   ...  select ..      order by 
+先选择查哪张表	 然后添加条件	  对查询结果分组		再添加条件	控制显示那些内容 对显示的内容进行排序
 //select 控制查询结果显示内容
 ```
 
