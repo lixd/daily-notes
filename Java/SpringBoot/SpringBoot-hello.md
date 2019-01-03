@@ -70,3 +70,51 @@ headers： 指定request中必须包含某些指定的header值，才能让该�
 
 
 
+## 2. SpringBoot
+
+@SpringBootApplication 
+
+SpringBoot启动类注解
+
+### 2.1 hello
+
+```java
+@Controller
+public class HelloController {
+    @RequestMapping("/gethello")
+    @ResponseBody
+    public Map<String, Object> getHello() {
+        Map<String, Object> map = new HashMap<>();
+        map.put("msg", "hello");
+        return map;
+    }
+}
+```
+
+
+
+## 3. 整合Servlet
+
+```
+@WebServlet(name = "FirstServlet",urlPatterns = "/first")
+public class FirstServlet extends HttpServlet {
+    @Override
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+        super.doGet(req, resp);
+    }
+}
+```
+
+@WebServlet(name = "FirstServlet",urlPatterns = "/first") 相当于web.xml中的配置
+
+```xml
+<servlet>
+      <servlet-name>FirstServlet</servlet-name>
+      <servlet-class>com.demo.FirstServlet</servlet-class>
+  </servlet>
+  <servlet-mapping>
+      <servlet-name>FirstServlet</servlet-name>
+      <url-pattern>/firse</url-pattern>
+  </servlet-mapping>
+```
+
