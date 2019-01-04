@@ -266,3 +266,42 @@ application.properties
 spring.servlet.multipart.max-request-size=200MB
 spring.servlet.multipart.max-file-size=200MB
 ```
+
+
+
+## 8.总结
+
+### 8.1注解方式
+
+* **Servlet**   @WebServlet(name = "FirstServlet",urlPatterns = "/first")
+* **Filter**       @WebFilter(filterName = "firstFilter",urlPatterns ="/first")
+* **Listener** @WebListener
+* 启动器     @ServletComponentScan
+
+### 8.2 方法注册
+
+不用加注解
+
+```java
+//---------Servlet------------------   
+@Bean
+    public ServletRegistrationBean Register(){
+        ServletRegistrationBean bean=new ServletRegistrationBean(new FirstServlet());
+        bean.addUrlMappings("/first");
+        return bean;
+    }
+//---------Filter------------------   
+@Bean
+public FilterRegistrationBean RegisterFilter() {
+    FilterRegistrationBean bean = new FilterRegistrationBean<>(new FirstFilter());
+    bean.addUrlPatterns("/first");
+    return bean;
+}
+//---------Linster------------------  
+@Bean
+public ServletListenerRegistrationBean<FirstListener> registerListener() {
+    ServletListenerRegistrationBean<FirstListener> bean = new 		             ServletListenerRegistrationBean<>(new FirstListener());
+    return bean;
+}
+```
+
