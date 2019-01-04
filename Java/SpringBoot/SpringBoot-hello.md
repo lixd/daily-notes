@@ -216,13 +216,53 @@ public ServletListenerRegistrationBean<FirstListener> registerListener() {
 }
 ```
 
-### 6. 访问静态资源
+## 6. 访问静态资源
 
-**从classpath/static目录下（名称必须是static）**
+**1.从classpath/static目录下（名称必须是static）**
 
-
-
-ServletContext根目录下
+2.ServletContext根目录下
 
 **src/main/webapp(名称必须是webapp)**
 
+访问路径：localhost:8080/filename
+
+## 7.文件上传
+
+页面
+
+```html
+<body>
+<form action="fileuploadController" method="post" enctype="multipart/form-data">
+    上传文件<input type="file" name="filename"><br>
+    <input type="submit" value="上传">
+
+</form>
+</body>
+```
+
+controller
+
+```java
+//@Controller
+@RestController //对方法返回值会自动做json格式转换 不用@responseBody了
+public class fileuploadController {
+    @RequestMapping("/fileuploadController")
+    public Map<String,Object> fileUpload(MultipartFile filename) throws IOException {
+        System.out.println(filename.getOriginalFilename());
+        filename.transferTo(new File("e:/"+filename.getOriginalFilename()));
+        Map<String,Object> map=new HashMap<>();
+        map.put("msg","ok");
+        return map;
+    }
+}
+
+```
+
+3.大小限制
+
+application.properties
+
+```properties
+spring.servlet.multipart.max-request-size=200MB
+spring.servlet.multipart.max-file-size=200MB
+```
