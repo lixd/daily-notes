@@ -95,7 +95,9 @@ public class HelloController {
 
 ## 3. 整合Servlet
 
-```
+### 3.1 方式一 扫描注解注册Servlet
+
+```java
 @WebServlet(name = "FirstServlet",urlPatterns = "/first")
 public class FirstServlet extends HttpServlet {
     @Override
@@ -105,7 +107,7 @@ public class FirstServlet extends HttpServlet {
 }
 ```
 
-@WebServlet(name = "FirstServlet",urlPatterns = "/first") 相当于web.xml中的配置
+**@WebServlet(name = "FirstServlet",urlPatterns = "/first") 相当于web.xml中的以下配置**
 
 ```xml
 <servlet>
@@ -117,4 +119,110 @@ public class FirstServlet extends HttpServlet {
       <url-pattern>/firse</url-pattern>
   </servlet-mapping>
 ```
+
+**@ServletComponentScan  让SpringBoot在启动时扫描@WebServlet注解**
+
+```Java
+@SpringBootApplication
+@ServletComponentScan
+public class HelloApplication {
+
+    public static void main(String[] args) {
+        SpringApplication.run(HelloApplication.class, args);
+    }
+
+}
+```
+
+### 3.2 方式二 通过方法注册Servlet
+
+该方式 创建servlet后不用任何注解，直接在启动器中注册servlet
+
+```java
+@SpringBootApplication
+public class app {
+    public static void main(String[] args) {
+        SpringApplication.run(app.class, args);
+    }
+    
+    @Bean
+    public ServletRegistrationBean Register(){
+        ServletRegistrationBean bean=new ServletRegistrationBean(new FirstServlet());
+        bean.addUrlMappings("/first");
+        return bean;
+    }
+}
+```
+
+## 4. 整合Filter
+
+### 4.1 方式一 扫描注解注册Filter
+
+```
+@WebFilter(filterName = "firstFilter",urlPatterns ="/first")
+public class FirstFilter implements Filter {
+    @Override
+    public void doFilter(ServletRequest servletRequest, ServletResponse servletResponse, FilterChain filterChain) throws IOException, ServletException {
+        System.out.println("进入Filter");
+        filterChain.doFilter(servletRequest,servletResponse);
+        System.out.println("放行Filter");
+    }
+}
+```
+
+**@WebFilter(filterName = "firstFilter",urlPatterns ="/first")**
+
+### 4.2 方式二 通过方法注册Servlet
+
+```
+@Bean
+public FilterRegistrationBean RegisterFilter() {
+    FilterRegistrationBean bean = new FilterRegistrationBean<>(new FirstFilter());
+    bean.addUrlPatterns("/first");
+    return bean;
+}
+```
+
+
+
+## 5. 整合Listener
+
+### 5.1 方式一 扫描注解注册Listener
+
+```java
+@WebListener
+public class FirstListener implements ServletContextListener {
+    @Override
+    public void contextInitialized(ServletContextEvent sce) {
+        
+    }
+
+    @Override
+    public void contextDestroyed(ServletContextEvent sce) {
+        
+    }
+}
+```
+
+**@WebListener**
+
+### 5.2 方式二 通过方法注册Listener
+
+```java
+@Bean
+public ServletListenerRegistrationBean<FirstListener> registerListener() {
+    ServletListenerRegistrationBean<FirstListener> bean = new 		             ServletListenerRegistrationBean<>(new FirstListener());
+    return bean;
+}
+```
+
+### 6. 访问静态资源
+
+**从classpath/static目录下（名称必须是static）**
+
+
+
+ServletContext根目录下
+
+**src/main/webapp(名称必须是webapp)**
 
