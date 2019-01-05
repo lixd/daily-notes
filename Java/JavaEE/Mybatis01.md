@@ -189,6 +189,22 @@ VALUES
 </mapper>
 ```
 
+#### 插入ID自增
+
+```java
+<insert id="insertUser" parameterClass="ibatis.User"> 
+          insert into user 
+          (name,password) 
+          values 
+          (#name#,#password#) 
+          <selectKey resultClass="long" keyProperty="id">  
+             SELECT LAST_INSERT_ID() AS ID  
+        </selectKey>  
+</insert>
+```
+
+
+
 ### 8.动态代理dao包装
 
 只有接口没有实现类
