@@ -143,6 +143,16 @@ userList.ftl
 </html>
 ```
 
+### 2.3 全局配置文件
+
+将上边配置的注释掉，同时添加新的加载路径配置
+
+```properties
+#spring.mvc.view.prefix=/WEB-INF/jsp/
+#spring.mvc.view.suffix=.jsp
+spring.freemarker.template-loader-path=classpath:/templates/
+```
+
 ### 2.3 创建Controller
 
 ```java
