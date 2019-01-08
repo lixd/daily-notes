@@ -70,3 +70,33 @@ N+1次查询
 List<User> queryAll();
 ```
 
+
+
+## 原理
+
+* Resources 加载配置文件
+  * XMLConfigBuilder Mybatis全局配置文件内容构建类
+  * Configration 封装了配置信息
+
+* SQLSessionFactoryBuilder 创建SQLSessionFactory
+
+* DefaultSQLSessionFactory 是SQLSessionFactory的实现类
+
+* SQLSessionFactory.openSession();  返回SQLsession对象 包括Transaction 和Executor 
+
+* Transaction 事务类
+  * Transaction Factory 事务工厂
+
+* Executor Mybatis执行器 （相当于JDBC中的statement）
+  * SimpleExecutor 默认执行器
+
+* DefaultSQLSession  SQLSession 实现类
+
+* ExceptionFactory Mybatis异常工厂
+
+
+
+
+
+
+
