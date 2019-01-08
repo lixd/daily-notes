@@ -78,25 +78,35 @@ List<User> queryAll();
   * XMLConfigBuilder Mybatis全局配置文件内容构建类
   * Configration 封装了配置信息
 
-* SQLSessionFactoryBuilder 创建SQLSessionFactory
+* SqlSessionFactoryBuilder 创建SqlSessionFactory
 
-* DefaultSQLSessionFactory 是SQLSessionFactory的实现类
+* DefaultSQLSessionFactory 是SqlSessionFactory的实现类
 
-* SQLSessionFactory.openSession();  返回SQLsession对象 包括Transaction 和Executor 
+* SqlSessionFactory.openSession();  返回Sqlsession对象 包括Transaction 和Executor 
 
 * Transaction 事务类
-  * Transaction Factory 事务工厂
+  * TransactionFactory 事务工厂
 
 * Executor Mybatis执行器 （相当于JDBC中的statement）
   * SimpleExecutor 默认执行器
 
-* DefaultSQLSession  SQLSession 实现类
+* DefaultSqlSession  SqlSession 实现类
 
 * ExceptionFactory Mybatis异常工厂
 
 
 
+1.Mybatis运行时需要先通过Resources加载全局配置文件。接着实例化SQLSessionFactoryBuilder 用于创建SQLSessionFactory接口实现类DefaultSQLSessionFactory 。
 
+2.实例化SQLSessionFactoryBuilder 之前需要先创建XMLConfigBuilder 解析全局配置文件流，并把结果存放在Configration 中。接着传递给DefaultSQLSessionFactory 。到此SQLSessionFactory工厂创建成功。
+
+3.由SQLSessionFactory创建SQLsession。
+
+每次创建SQLsession时，都需要由TransactionFactory 创建Transaction对象，同时还需要SqlSession的执行器Executor，最后实例化DefaultSQLSession传递给SqlSession接口。
+
+4.然后根据项目需求使用SqlSession接口中的API完成具体的事务操作，如果事务执行失败，需要进行RollBack,回滚事务。如果事务执行成功则提交给数据库，关闭SqlSession.
+
+over~
 
 
 
