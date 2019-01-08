@@ -96,7 +96,7 @@ public class UserController {
 }
 ```
 
-## 3.校验结果
+### 3.校验结果
 
 在html中可以取出当个对象的校验结果。
 
@@ -126,3 +126,16 @@ public class UserController {
 </html>
 
 ```
+## 3. 校验规则
+
+@NotEmpty 用在集合类上面
+@NotBlank 用在String上面 不能为空 （去掉首尾空格）
+@NotNull    用在基本类型上
+
+@Length（min=4,max=8，message="最小4位，最大8位"）：限定字符串长度 min:最小值，max:最大值，messgae:提示信息。
+
+@Min 限制最小值
+
+@Max限制最大值
+
+@Email 邮箱校验
