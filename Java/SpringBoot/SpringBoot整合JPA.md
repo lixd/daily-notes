@@ -1,5 +1,7 @@
 # SpringBoot整合JPA
 
+
+
 ## 2. Repository接口使用
 
 方法名称方式查询 驼峰式命名规则：finfBy+要查询的字段+条件 
@@ -327,5 +329,20 @@ public class OneToManyTest {
         }
     }
 }
+```
+
+## 8. 多对多
+
+```java
+//类A中
+@ManyToMany
+//JoinTable name 映射中间表
+//joinCloums 当前表中主键所关联的中间表的外键字段 inverseJoinColumn 关联字段另一侧关联的字段
+@JoinTable(name="t_manytomany",joinCloums=@JoinColumn(name="manya_id"),inverseJoinColumn=@joinColumn(name="manyb_id"))
+private Set<ManyB> manyb=new HashSet<>();
+//类B中
+@ManyToMany(mappedBy="manyb")
+private Set<ManyA> manya=new HashSet<>();
+
 ```
 

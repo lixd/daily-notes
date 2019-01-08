@@ -126,7 +126,7 @@ public class UserController {
 </html>
 
 ```
-## 3. 校验规则
+## 3. 常用校验规则
 
 @NotEmpty 用在集合类上面
 @NotBlank 用在String上面 不能为空 （去掉首尾空格）
