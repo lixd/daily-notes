@@ -314,14 +314,12 @@ public class ShiroConfiguration {
         bean.setSecurityManager(manager);
         //配置登录的url和登录成功的url
         bean.setLoginUrl("/login");
-        bean.setSuccessUrl("/home");
+        bean.setSuccessUrl("/index");
         //配置访问权限
         LinkedHashMap<String, String> filterChainDefinitionMap = new LinkedHashMap<>();
-        filterChainDefinitionMap.put("/jsp/login.jsp*", "anon"); //表示可以匿名访问
-        filterChainDefinitionMap.put("/loginUser", "anon");
+        filterChainDefinitionMap.put("/login.*", "anon"); //表示可以匿名访问
         filterChainDefinitionMap.put("/logout*", "anon");
-        filterChainDefinitionMap.put("/jsp/error.jsp*", "anon");
-        filterChainDefinitionMap.put("/jsp/index.jsp*", "authc");
+        filterChainDefinitionMap.put("/index.*", "authc");
         filterChainDefinitionMap.put("/*", "authc");//表示需要认证才可以访问
         filterChainDefinitionMap.put("/**", "authc");//表示需要认证才可以访问
         filterChainDefinitionMap.put("/*.*", "authc");
@@ -462,3 +460,13 @@ public class UserController {
     }
 }
 ```
+
+
+
+
+
+## 4. 问题
+
+1.controller层获取不到页面传过来的值（username,pwd等）
+
+原因：springmvc的自动绑定参数要求前台请求参数和controller层的方法的参数名字要一样。如果是对象属性自动绑定时，那么前台的参数一定要是对象的某个属性。在这里，前台的parm参数，与后台的参数不一致，或者不是后台对象的属性。在前台我看到你用json格式化对象得到parm，这样传到后台是不能识别的。
