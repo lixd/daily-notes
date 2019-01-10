@@ -298,3 +298,167 @@ public class CredentialsMatcher extends SimpleCredentialsMatcher {
 
 ### 3.8 shiro配置
 
+需要手动导入包`import org.apache.shiro.mgt.SecurityManager;`,不然默认会导入`java.lang.SecurityManager`包
+
+```java
+/**
+ * shiro的配置类
+ *
+ * @author Administrator
+ */
+@Configuration
+public class ShiroConfiguration {
+    @Bean(name = "shiroFilter")
+    public ShiroFilterFactoryBean shiroFilter(@Qualifier("securityManager") SecurityManager manager) {
+        ShiroFilterFactoryBean bean = new ShiroFilterFactoryBean();
+        bean.setSecurityManager(manager);
+        //配置登录的url和登录成功的url
+        bean.setLoginUrl("/login");
+        bean.setSuccessUrl("/home");
+        //配置访问权限
+        LinkedHashMap<String, String> filterChainDefinitionMap = new LinkedHashMap<>();
+        filterChainDefinitionMap.put("/jsp/login.jsp*", "anon"); //表示可以匿名访问
+        filterChainDefinitionMap.put("/loginUser", "anon");
+        filterChainDefinitionMap.put("/logout*", "anon");
+        filterChainDefinitionMap.put("/jsp/error.jsp*", "anon");
+        filterChainDefinitionMap.put("/jsp/index.jsp*", "authc");
+        filterChainDefinitionMap.put("/*", "authc");//表示需要认证才可以访问
+        filterChainDefinitionMap.put("/**", "authc");//表示需要认证才可以访问
+        filterChainDefinitionMap.put("/*.*", "authc");
+        bean.setFilterChainDefinitionMap(filterChainDefinitionMap);
+        return bean;
+    }
+
+    //配置核心安全事务管理器
+    @Bean(name = "securityManager")
+    public SecurityManager securityManager(@Qualifier("authRealm") AuthRealm authRealm) {
+        System.err.println("--------------shiro已经加载----------------");
+        DefaultWebSecurityManager manager = new DefaultWebSecurityManager();
+        manager.setRealm(authRealm);
+        return manager;
+    }
+
+    //配置自定义的权限登录器
+    @Bean(name = "authRealm")
+    public AuthRealm authRealm(@Qualifier("credentialsMatcher") CredentialsMatcher matcher) {
+        AuthRealm authRealm = new AuthRealm();
+        authRealm.setCredentialsMatcher(matcher);
+        return authRealm;
+    }
+
+    //配置自定义的密码比较器
+    @Bean(name = "credentialsMatcher")
+    public CredentialsMatcher credentialsMatcher() {
+        return new CredentialsMatcher();
+    }
+
+    @Bean
+    public LifecycleBeanPostProcessor lifecycleBeanPostProcessor() {
+        return new LifecycleBeanPostProcessor();
+    }
+
+    @Bean
+    public DefaultAdvisorAutoProxyCreator defaultAdvisorAutoProxyCreator() {
+        DefaultAdvisorAutoProxyCreator creator = new DefaultAdvisorAutoProxyCreator();
+        creator.setProxyTargetClass(true);
+        return creator;
+    }
+
+    @Bean
+    public AuthorizationAttributeSourceAdvisor authorizationAttributeSourceAdvisor(@Qualifier("securityManager") SecurityManager manager) {
+        AuthorizationAttributeSourceAdvisor advisor = new AuthorizationAttributeSourceAdvisor();
+        advisor.setSecurityManager(manager);
+        return advisor;
+    }
+}
+```
+
+这样,shiro的配置就完成了!紧接着建立页面.login.jsp用于用户登录,index.jsp是用户主页,在没有登录的情况下是进不去的.
+
+### 3.9 页面
+
+没登录不让进index.html
+
+login.html
+
+```html
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>用户登陆</title>
+</head>
+<body>
+<form>
+    用户名:<input type="text" name="uname"><br/>
+    密码:<input type="password" name="upwd"><br/>
+    <input type="submit" value="登陆"><br/>
+</form>
+</body>
+</html>
+```
+
+index.html
+
+```html
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org"
+      xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+
+<head>
+    <meta charset="UTF-8">
+    <title>首页</title>
+</head>
+<body>
+欢迎您，<span th:text="${user.uname}"></span>
+<ul>
+    <shiro:hasPermission name="add"><li>增加</li></shiro:hasPermission>
+    <shiro:hasPermission name="delete"><li>删除</li></shiro:hasPermission>
+    <shiro:hasPermission name="update"><li>修改</li></shiro:hasPermission>
+    <shiro:hasPermission name="query"><li>查询</li></shiro:hasPermission>
+</ul>
+<a href="${pageContext.request.contextPath }/logOut">点我注销</a>
+</body>
+</html>
+```
+
+OK,紧接着就是建立LoginController去测试结果了!这里需要注意,我们和shiro框架的交互完全通过Subject这个类去交互,用它完成登录,注销,获取当前的用户对象等操作
+
+### 3.10 controller
+
+```java
+@Controller
+public class UserController {
+    @Autowired
+    private UserServiceImpl userService;
+
+    @RequestMapping(value = "/login")
+    public String login(HttpServletRequest request, String name, String pwd, boolean rememberMe) {
+        UsernamePasswordToken usernamePasswordToken = new UsernamePasswordToken(name, pwd, rememberMe);
+        Subject subject = SecurityUtils.getSubject();
+        try {
+            //登录
+            subject.login(usernamePasswordToken);
+            User user = (User) subject.getPrincipal();
+            request.getSession().setAttribute("user", user);
+            return "index";
+        } catch (AuthenticationException e) {
+            return "login";
+        }
+    }
+
+    @RequestMapping(value = "/logout")
+    public String logout(HttpServletRequest request) {
+        Subject subject = SecurityUtils.getSubject();
+        subject.logout();
+        request.getSession().removeAttribute("user");
+        return "login";
+    }
+
+
+    @RequestMapping(value = "/{page}")
+    private String show(@PathVariable("page") String page) {
+        return page;
+    }
+}
+```
