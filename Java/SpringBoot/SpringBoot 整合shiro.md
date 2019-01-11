@@ -324,7 +324,7 @@ public class CredentialsMatcher extends SimpleCredentialsMatcher {
 @Configuration
 public class ShiroConfiguration {
  //配置shiro-thymeleaf该方言标签：
-     @Bean
+@Bean(name = "shiroDialect")
 public ShiroDialect shiroDialect() {
     return new ShiroDialect();
 }
@@ -535,8 +535,40 @@ public ShiroDialect shiroDialect() {
 
 第三方库：https://github.com/theborakompanioni/thymeleaf-extras-shiro
 
-## 5. 问题
+## 5. 缓存
+
+EhCache
+
+
+
+
+
+##  问题
 
 1.controller层获取不到页面传过来的值（username,pwd等）
 
 原因：springmvc的自动绑定参数要求前台请求参数和controller层的方法的参数名字要一样。如果是对象属性自动绑定时，那么前台的参数一定要是对象的某个属性。在这里，前台的parm参数，与后台的参数不一致，或者不是后台对象的属性。在前台我看到你用json格式化对象得到parm，这样传到后台是不能识别的。
+
+2.异常处理
+
+DisabledAccountException（禁用的帐号）、
+
+LockedAccountException（锁定的帐号）、
+
+UnknownAccountException（错误的帐号）、
+
+ExcessiveAttemptsException（登录失败次数过多）、
+
+IncorrectCredentialsException （错误的凭证）、
+
+ExpiredCredentialsException（过期的凭证）
+
+模糊处理 账户或 密码错误。
+
+3.权限管理
+
+编程式
+
+注解式
+
+shiro标签
