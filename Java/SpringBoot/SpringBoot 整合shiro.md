@@ -39,6 +39,12 @@ pom.xml
             <artifactId>shiro-spring</artifactId>
             <version>1.3.2</version>
         </dependency>
+  		 <!--shiro-thymeleaf整合-->
+        <dependency>
+            <groupId>com.github.theborakompanioni</groupId>
+            <artifactId>thymeleaf-extras-shiro</artifactId>
+            <version>2.0.0</version>
+        </dependency>
 ```
 
 
@@ -150,26 +156,26 @@ UserMapper.java
 ```java
 public interface UserMapper {
     User findUserByName(String name);
+     List<String> selectPermissionByUserId(Integer id);
 }
 ```
 
 UserMapper.xml
 
 ```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
-        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.illusory.shiro.mapper.UserMapper">
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+    "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.example.shiro.mapper.UserMapper">
     <resultMap type="User" id="userMap">
-        <id property="uid" column="id"/>
-        <result property="uname" column="name"/>
-        <result property="upwd" column="pwd"/>
+        <id property="uid" column="id" />
+        <result property="uname" column="name" />
+        <result property="upwd" column="pwd" />
         <collection property="roles" ofType="Role">
-            <id property="rid" column="id"/>
-            <result property="rname" column="name"/>
+            <id property="rid" column="id" />
+            <result property="rname" column="name" />
             <collection property="permissions" ofType="Permission">
-                <id property="pid" column="id"/>
-                <result property="permission" column="permission"/>
+                <id property="pid" column="id" />
+                <result property="permission" column="permission" />
             </collection>
         </collection>
     </resultMap>
@@ -182,6 +188,11 @@ UserMapper.xml
                  INNER JOIN permission p ON pr.pid = p.id
         WHERE u.name = #{name};
     </select>
+    <select id="selectPermissionByUserId" parameterType="integer" resultType="string">
+SELECT permission FROM permission p INNER JOIN permission_role pr ON p.id=pr.pid
+INNER JOIN user_role ur ON ur.rid=pr.rid
+WHERE ur.uid=#{id}
+    </select>
 </mapper>
 ```
 
@@ -192,6 +203,7 @@ UserService.java
 ```java
 public interface UserService {
     User findUserByName(String name);
+    List<String> selectPermissionByUserId(Integer id);
 }
 ```
 
@@ -206,6 +218,10 @@ public class UserServiceImpl implements UserService {
     @Override
     public User findUserByName(String name) {
         return userMapper.findUserByName(name);
+    }
+       @Override
+    public List<String> selectPermissionByUserId(Integer id) {
+        return userMapper.selectPermissionByUserId(id);
     }
 }
 ```
@@ -233,23 +249,12 @@ public class AuthRealm extends AuthorizingRealm {
     protected AuthorizationInfo doGetAuthorizationInfo(PrincipalCollection principalCollection) {
         //获取session中的用户
         User user = (User) principalCollection.fromRealm(this.getClass().getName()).iterator().next();
-        //权限 list集合
-        List<String> permission = new ArrayList<>();
-        //获取user的角色 然后获取每个角色的权限 接着添加到集合中 最后将权限放入shiro中.
-        Set<Role> roles = user.getRoles();
-        if (roles.size() > 0) {
-            for (Role r : roles) {
-                Set<Permission> permissions = r.getPermissions();
-                if (permissions.size() > 0) {
-                    for (Permission p : permissions) {
-                        permission.add(p.getPermission());
-                    }
-                }
-            }
-        }
+        //查询权限
+        List<String> strings = userService.selectPermissionByUserId(user.getUid());
         SimpleAuthorizationInfo simpleAuthorizationInfo = new SimpleAuthorizationInfo();
         //将权限放入shiro中.
-        simpleAuthorizationInfo.addStringPermissions(permission);
+        simpleAuthorizationInfo.addStringPermissions(strings);
+//        System.out.println("添加时的权限" + permission.toString());
         return simpleAuthorizationInfo;
     }
 
@@ -266,9 +271,19 @@ public class AuthRealm extends AuthorizingRealm {
         UsernamePasswordToken usernamePasswordToken = (UsernamePasswordToken) authenticationToken;
         String username = usernamePasswordToken.getUsername();
         User user = userService.findUserByName(username);
+        System.out.println("认证：" + user.toString());
+        Set<Role> roles = user.getRoles();
+        for (Role r : roles
+        ) {
+            Set<Permission> permissions = r.getPermissions();
+            for (Permission p : permissions
+            ) {
+                String permission = p.getPermission();
+                System.out.println("权限--》" + permission);
+            }
+        }
         //放入shiro.调用CredentialsMatcher检验密码
         return new SimpleAuthenticationInfo(user, user.getUpwd(), this.getClass().getName());
-
     }
 }
 ```
@@ -308,6 +323,12 @@ public class CredentialsMatcher extends SimpleCredentialsMatcher {
  */
 @Configuration
 public class ShiroConfiguration {
+ //配置shiro-thymeleaf该方言标签：
+     @Bean
+public ShiroDialect shiroDialect() {
+    return new ShiroDialect();
+}
+    
     @Bean(name = "shiroFilter")
     public ShiroFilterFactoryBean shiroFilter(@Qualifier("securityManager") SecurityManager manager) {
         ShiroFilterFactoryBean bean = new ShiroFilterFactoryBean();
@@ -400,7 +421,7 @@ index.html
 
 ```html
 <!DOCTYPE html>
-<html lang="en" xmlns:th="http://www.thymeleaf.org"
+<html xmlns:th="http://www.thymeleaf.org"
       xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
 
 <head>
@@ -409,13 +430,13 @@ index.html
 </head>
 <body>
 欢迎您，<span th:text="${user.uname}"></span>
-<ul>
-    <shiro:hasPermission name="add"><li>增加</li></shiro:hasPermission>
-    <shiro:hasPermission name="delete"><li>删除</li></shiro:hasPermission>
-    <shiro:hasPermission name="update"><li>修改</li></shiro:hasPermission>
-    <shiro:hasPermission name="query"><li>查询</li></shiro:hasPermission>
-</ul>
-<a href="${pageContext.request.contextPath }/logOut">点我注销</a>
+<div>
+    <p shiro:hasPermission="add">添加用户</p>
+    <p shiro:hasPermission="delete">删除用户</p>
+    <p shiro:hasPermission="update">更新用户</p>
+    <p shiro:hasPermission="query">查询用户</p>
+</div>
+<a th:href="@{logout}">点我注销</a>
 </body>
 </html>
 ```
@@ -461,11 +482,60 @@ public class UserController {
 }
 ```
 
+## 4. Thymeleaf引入shiro标签
 
+### 4.1 引入thymeleaf-extras-shiro
 
+在pom中引入：
 
+```xml
+<dependency>
+    <groupId>com.github.theborakompanioni</groupId>
+    <artifactId>thymeleaf-extras-shiro</artifactId>
+    <version>2.0.0</version>
+</dependency>
+```
 
-## 4. 问题
+### 4.2 Shiro配置文件修改
+
+引入依赖后，需要在ShiroConfig中配置该方言标签：
+
+```java
+ @Bean
+public ShiroDialect shiroDialect() {
+    return new ShiroDialect();
+}
+```
+
+### 4.3 使用
+
+```html
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:shiro="http://www.pollix.at/thymeleaf/shiro">
+
+<head>
+    <meta charset="UTF-8">
+    <title>首页</title>
+</head>
+<body>
+欢迎您，<span th:text="${user.uname}"></span>
+<div>
+    <p shiro:hasPermission="add">添加用户</p>
+    <p shiro:hasPermission="delete">删除用户</p>
+    <p shiro:hasPermission="update">更新用户</p>
+    <p shiro:hasPermission="query">查询用户</p>
+</div>
+<a th:href="@{logout}">点我注销</a>
+</body>
+</html>
+```
+
+参考：https://mrbird.cc/Spring-Boot-Themeleaf%20Shiro%20tag.html
+
+第三方库：https://github.com/theborakompanioni/thymeleaf-extras-shiro
+
+## 5. 问题
 
 1.controller层获取不到页面传过来的值（username,pwd等）
 
