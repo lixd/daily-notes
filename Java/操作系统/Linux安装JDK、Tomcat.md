@@ -1,4 +1,10 @@
-# Linux安装JDK、Tomcat、MySQL
+# Linux安装JDK、Tomcat
+
+本章主要讲了如何通过解压方式在Linux下安装JDK和Tomcat等软件。
+
+<!-- more-->
+
+> 点击阅读更多Linux入门系列文章[我的个人博客-->幻境云图](https://www.lixueduan.com/categories/Linux/)
 
 软件统一放在`/usr/software`下 解压后放在单独的文件夹下`/usr/local/java`/`/usr/local/mysql`
 
@@ -59,27 +65,3 @@ export CATANILA_HOME=/usr/local/tomcat
 
 5.解析该文件 命令`source /etc/profile`
 
-## 3.MySQL
-
-安装包下载``
-
-网址`https://dev.mysql.com/downloads/mysql/5.7.html#downloads`
-
-1.压缩包上传到虚拟机`/usr/software目录下`
-
-2.解压文件 `tar zxvf apache-tomcat-8.5.37.tar.gz `
-
-3.将解压后的文件移动到`/usr/local/tomcat`,命令`mv apache-tomcat-8.5.37 /usr/local/tomcat`
-
-4.配置环境变量 
-
- 命令`vim /etc/profile` 
-
-添加以下内容
-
-```xml
-export TOMCAT_HOME=/usr/local/tomcat
-export CATANILA_HOME=/usr/local/tomcat
-```
-
-5.解析该文件 命令`source /etc/profile`
