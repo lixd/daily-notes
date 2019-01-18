@@ -110,7 +110,7 @@ InputStreamReader 、OutputStreamWriter 要InputStream或OutputStream作为参�
 
 # 2.NIO
 
-## 1..NIO简介
+## 1.NIO简介
 
 Java NIO 是 java 1.4, 之后新出的一套IO接口NIO中的N可以理解为**Non-blocking**，不单纯是New。 
 
@@ -127,14 +127,14 @@ Java NIO 是 java 1.4, 之后新出的一套IO接口NIO中的N可以理解为**N
 **IO流是阻塞的，NIO流是不阻塞的**。
 
 - Java NIO使我们可以进行非阻塞IO操作。比如说，单线程中从通道读取数据到buffer，同时可以继续做别的事情，当数据读取到buffer中后，线程再继续处理数据。写数据也是一样的。另外，非阻塞写也是如此。一个线程请求写入一些数据到某通道，但不需要等待它完全写入，这个线程同时可以去做别的事情。
-- Java IO的各种流是阻塞的。这意味着，当一个线程调用read() 或 write()时，该线程被阻塞，直到有一些数据被读取，或数据完全写入。该线程在此期间不能再干任何事情了
+- Java IO的各种流是阻塞的。这意味着，当一个线程调用read() 或 write()时，该线程被阻塞，直到有一些数据被读取，或数据完全写入。该线程在此期间不能再干任何事情了.
 
 **NIO有选择器，而IO没有。**
 
 * 选择器用于使用单个线程处理多个通道。因此，它需要较少的线程来处理这些通道。
-* 线程之间的切换对于操作系统来说是昂贵的。 因此，为了提高系统效率选择器是有用的
+* 线程之间的切换对于操作系统来说是昂贵的。 因此，为了提高系统效率选择器是有用的.
 
-
+**准确的说NIO不是非阻塞IO,而是多路复用IO,应为NIO也会阻塞在selector上**
 
 ## 3.NIO核心组件简单介绍
 
@@ -384,6 +384,64 @@ Pipe.SourceChannel sourceChannel = pipe.source();
 ByteBuffer buf = ByteBuffer.allocate(48);  
 int bytesRead = inChannel.read(buf);//将读取的内容写入buffer，返回值为读取到的字节数
 ```
+
+```java
+    @Test
+    public void clientChannel() {
+        try {
+            //连接
+            SocketChannel sc = SocketChannel.open();
+            sc.connect(new InetSocketAddress("127.0.0.1", 33333));
+            //读数据
+            ByteBuffer writeBuffer = ByteBuffer.allocate(100);
+            writeBuffer.put("this is message from client".getBytes());
+            writeBuffer.flip();
+            sc.write(writeBuffer);
+            //写数据
+            ByteBuffer readBuffer = ByteBuffer.allocate(100);
+            sc.read(readBuffer);
+            StringBuffer sb = new StringBuffer();
+            readBuffer.flip();
+            while (readBuffer.hasRemaining()) {
+                sb.append((char) readBuffer.get());
+            }
+            System.out.println("from service:" + sb);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    @Test
+    public void ServiceChannel() {
+        try {
+            //连接
+            ServerSocketChannel ssc = ServerSocketChannel.open();
+            ServerSocket socket = ssc.socket();
+            socket.bind(new InetSocketAddress("127.0.0.1", 33333));
+            SocketChannel socketChannel = ssc.accept();
+            //读数据
+            ByteBuffer writeBuffer = ByteBuffer.allocate(100);
+            writeBuffer.put("this is message from service".getBytes());
+            writeBuffer.flip();
+            socketChannel.write(writeBuffer);
+            //写数据
+            ByteBuffer readBuffer = ByteBuffer.allocate(100);
+            socketChannel.read(readBuffer);
+            StringBuilder sb = new StringBuilder();
+            readBuffer.flip();
+            while (readBuffer.hasRemaining()) {
+                sb.append((char) readBuffer.get());
+            }
+            System.out.println("from client:" + sb);
+            socketChannel.close();
+            ssc.close();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+```
+
+
 
 ### 3.2 NIO之Buffer
 
