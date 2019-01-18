@@ -1,6 +1,8 @@
 # SpringBoot整合JPA
 
+## JPA
 
+*JPA*是Java Persistence API的简称，中文名Java持久层API，是JDK 5.0注解或XML描述对象
 
 ## 2. Repository接口使用
 
