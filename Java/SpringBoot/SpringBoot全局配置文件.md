@@ -67,7 +67,11 @@ server.port=${random.int[1024,9999]}
 
 SpringBoot中新增的一种配置文件格式，具备天然的树状结构。
 
-相比之下比较简洁。
+与properties文件相比，yml格式比较简洁。
+
+数据格式和json比较像，都是K-V结构的，以冒号： 进行分割。
+
+**K和V之间必须要有空格。**
 
 application.yml
 
