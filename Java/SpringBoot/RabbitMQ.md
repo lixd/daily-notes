@@ -144,6 +144,8 @@ Eshell V10.2  (abort with ^G)
 
 环境变量生效：`source /etc/profile`
 
+
+
 ### 2.4 使用
 
 进入/usr/local/opt/rabbitmq/sbin目录
@@ -164,7 +166,7 @@ Eshell V10.2  (abort with ^G)
 
 配置linux 端口： 15672 网页管理，  5672 AMQP端口
 
-然后访问http://10.100.3.126:15672
+然后访问`http://192.168.5.154:15672/`
 
 rabbitmq默认会创建guest账号，只能用于localhost登录页面管理员
 
@@ -186,13 +188,13 @@ cd opt/rabbitmq/sbin
 
 查看用户权限：rabbitmqctl list_user_permissions guest
 
-新增用户： rabbitmqctl add_user admin 123456
+新增用户： `# rabbitmqctl add_user root root`  用户名root,密码root
 
 赋予管理员权限：
 
-rabbitmqctl set_user_tags admin administrator 
+`rabbitmqctl set_user_tags root administrator `
 
-rabbitmqctl set_permissions -p "/" admin ".*" ".*" ".*" 
+`rabbitmqctl set_permissions -p "/" root ".*" ".*" ".*" `
 
 
 
@@ -230,3 +232,5 @@ Crash dump is being written to: erl_crash.dump...done
 ```
 
 这个问题网上查了一下，有的说是权限问题，也有说是erlang和rabbitmq版本对应不上，暂时没解决。
+
+以解决，确实是版本问题，erlang版本和rabbitmq的版本对应不上。最前面单独写了这个关于版本的问题。
