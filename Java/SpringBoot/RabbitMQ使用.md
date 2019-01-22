@@ -175,7 +175,9 @@ public class DemomqApplicationTests {
 
 ## 3. 原理图
 
-![](https://github.com/illusorycloud/illusorycloud.github.io/raw/hexo/myImages/mq/rabbitmq-resouce.png)
+![原理图](https://github.com/illusorycloud/illusorycloud.github.io/raw/hexo/myImages/mq/rabbitmq-resouce.png)
+
+![架构](https://github.com/illusorycloud/illusorycloud.github.io/raw/hexo/myImages/mq/rabbitmq-design.png)
 
 | 名称        | 详细信息                                                     |
 | ----------- | :----------------------------------------------------------- |
@@ -204,6 +206,32 @@ public class DemomqApplicationTests {
 2.若不用信道，应用程序直接以TCP链接到rabbit，每秒成千上万的条消息就会有成千上万条链接，`造成资源的浪费`，而且`操作系统每秒处理TCP链接的数量是有限的`，会造成性能瓶颈。
 
 3.信道的原理是`一条线程一条信道，多条线程多个信道`，多个信道共用一个TCP链接，一条TCP链接可以容纳无限的信道，即使每秒成千上万的请求也不会成为性能的瓶颈。
+
+### 通信过程
+
+假设P1和C1注册了相同的Broker，Exchange和Queue。P1发送的消息最终会被C1消费。基本的通信流程大概如下所示：
+
+>   1）、1生产消息，发送给服务器端的。
+>
+> 2）、  ExchangeExchange收到消息，根据ROUTINKEY，将消息转发给匹配的Queue1。
+>
+> 3）、  Queue1收到消息，将消息发送给订阅者C1。
+>
+> 4）、  C1收到消息，发送ACK给队列确认收到消息。
+>
+> 5）、  Queue1收到ACK，删除队列中缓存的此条消息。
+
+Consumer收到消息时需要显式的向rabbit broker发送basic.ack消息或者consumer订阅消息时设置auto_ack参数为true。在通信过程中，队列对ACK的处理有以下几种情况：
+
+> 1）、如果consumer接收了消息，发送ack，rabbitmq会删除队列中这个消息，发送另一条消息给consumer。
+>
+> 2）、  如果cosumer接受了消息，但在发送ack之前断开连接，Rabbitmq会认为这条消息没有被deliver，在consumer在次连接的时候，这条消息会被redeliver。
+>
+> 3）、  如果consumer接受了消息，但是程序中有bug，忘记了ack，Rabbitmq不会重复发送消息。
+>
+> 4）、  Rabbitmq2.0.0和之后的版本支持consumer reject某条（类）消息，可以通过设置requeue参数中的reject为true达到目地，那么Rabbitmq将会把消息发送给下一个注册的consumer。
+
+
 
 ## 参考
 
