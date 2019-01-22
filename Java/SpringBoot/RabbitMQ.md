@@ -5,18 +5,15 @@ tags:
 categories:
   - Linux
 date: 2019-01-21 22:00:00
-
 ---
 
-本章主要讲了如何通过解压方式在Linux下安装RabbitMQ和Erlang，超级详细的安装过程，和安装过程中遇到的一些问题。
+本章主要讲了如何通过解压方式在Linux下安装RabbitMQ和Erlang，超级详细的安装过程，和安装过程中遇到的各种坑。
 
 <!-- more-->
 
 > 点击阅读更多Linux入门系列文章[欢迎访问我的个人博客-->幻境云图](https://www.lixueduan.com/categories/Linux/)
 
 软件统一放在`/usr/software`下 解压后放在单独的文件夹下`/usr/locac/opt/rabbitmq`,`/usr/local/opt/erlang`
-
-# RabbitMQ
 
 ## 0. 版本问题
 
@@ -198,7 +195,7 @@ cd opt/rabbitmq/sbin
 
 
 
-## 3.问题
+## 3. 问题
 
 1.启动报错
 
@@ -233,4 +230,4 @@ Crash dump is being written to: erl_crash.dump...done
 
 这个问题网上查了一下，有的说是权限问题，也有说是erlang和rabbitmq版本对应不上，暂时没解决。
 
-以解决，确实是版本问题，erlang版本和rabbitmq的版本对应不上。最前面单独写了这个关于版本的问题。
+已解决，确实是版本问题，erlang版本和rabbitmq的版本对应不上。最前面单独写了这个关于版本的问题。
