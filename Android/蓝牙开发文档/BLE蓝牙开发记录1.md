@@ -375,5 +375,146 @@ public void onCharacteristicChanged(BluetoothGatt gatt,
     }
 ```
 
+### 7.广播
+
+可以用广播来监听蓝牙。
+
+```java
+ /**
+     * 注册蓝牙监听广播
+     */
+    private void registerBleListenerReceiver() {
+        IntentFilter intentFilter = new IntentFilter();
+        intentFilter.addAction(BluetoothAdapter.ACTION_STATE_CHANGED);
+        intentFilter.addAction(BluetoothDevice.ACTION_ACL_CONNECTED);
+        intentFilter.addAction(BluetoothDevice.ACTION_ACL_DISCONNECTED);
+        registerReceiver(bleListenerReceiver, intentFilter);
+    }
+
+    /**
+     * 蓝牙监听广播接受者
+     */
+    private BroadcastReceiver bleListenerReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent.getAction();
+            //连接的设备信息
+            BluetoothDevice device = intent.getParcelableExtra(BluetoothDevice.EXTRA_DEVICE);
+            Log.e(TAG, "蓝牙广播" + action);
+
+            if (mBluetoothDevice != null && mBluetoothDevice.equals(device)) {
+                Log.e(TAG, "收到广播-->是当前连接的蓝牙设备");
+
+                if (BluetoothDevice.ACTION_ACL_CONNECTED.equals(action)) {
+                    Log.e(TAG, "广播 蓝牙已经连接");
+
+                } else if (BluetoothDevice.ACTION_ACL_DISCONNECTED.equals(action)) {
+                    Log.e(TAG, "广播 蓝牙断开连接");
+                }
+            } else {
+                Log.e(TAG, "收到广播-->不是当前连接的蓝牙设备");
+            }
+
+            if (BluetoothAdapter.ACTION_STATE_CHANGED.equals(action)) {
+                int state = intent.getIntExtra(BluetoothAdapter.EXTRA_STATE, BluetoothAdapter.ERROR);
+                switch (state) {
+                    case BluetoothAdapter.STATE_OFF:
+                        Log.e(TAG, "STATE_OFF 蓝牙关闭");
+                        deviceList.clear();
+                        releaseResource();
+                        break;
+                    case BluetoothAdapter.STATE_TURNING_OFF:
+                        Log.e(TAG, "STATE_TURNING_OFF 蓝牙正在关闭");
+                        //停止蓝牙扫描
+                        isScanning = false;
+                        scanLeDeviceOld();
+                        break;
+                    case BluetoothAdapter.STATE_ON:
+                        Log.d(TAG, "STATE_ON 蓝牙开启");
+                        //扫描蓝牙设备
+                        isScanning = true;
+                        scanLeDeviceOld();
+                        break;
+                    case BluetoothAdapter.STATE_TURNING_ON:
+                        Log.e(TAG, "STATE_TURNING_ON 蓝牙正在开启");
+                        break;
+                }
+            }
+        }
+    };
+```
 
 
+
+Adapter
+
+```java
+public class MyAdapter extends BaseAdapter {
+    private List<BluetoothDevice> data;
+    private LayoutInflater inflater;
+    private Context context;
+
+
+    MyAdapter(List<BluetoothDevice> data, Context context) {
+        this.data = data;
+        inflater = LayoutInflater.from(context);
+        this.context = context;
+    }
+
+    @Override
+    public int getCount() {
+        return data.size();
+    }
+
+    @Override
+    public Object getItem(int position) {
+        return data.get(position);
+    }
+
+    @Override
+    public long getItemId(int position) {
+        return position;
+    }
+
+    @Override
+    public View getView(int position, View convertView, ViewGroup parent) {
+        ViewHolder viewHolder;
+        //如果view未被实例化过，缓存池中没有对应的缓存
+        if (convertView == null) {
+            viewHolder = new ViewHolder();
+            // 由于我们只需要将XML转化为View，并不涉及到具体的布局，所以第二个参数通常设置为null
+            convertView = inflater.inflate(R.layout.device_element, null);
+
+            //对viewHolder的属性进行赋值
+            viewHolder.address = convertView.findViewById(R.id.device_add);
+            viewHolder.name = convertView.findViewById(R.id.device_name);
+
+            //通过setTag将convertView与viewHolder关联
+            convertView.setTag(viewHolder);
+        } else {//如果缓存池中有对应的view缓存，则直接通过getTag取出viewHolder
+            viewHolder = (ViewHolder) convertView.getTag();
+        }
+        // 取出bean对象
+        BluetoothDevice bluetoothDevice = data.get(position);
+
+        // 设置控件的数据
+        viewHolder.address.setText(bluetoothDevice.getAddress());
+        viewHolder.name.setText(bluetoothDevice.getName());
+
+        return convertView;
+    }
+
+    /**
+     * ViewHolder用于缓存控件，三个属性分别对应item布局文件的三个控件
+     */
+    class ViewHolder {
+        TextView address;
+        TextView name;
+    }
+
+}
+```
+
+## 参考
+
+`https://www.jianshu.com/p/a27f3ca027e3`
