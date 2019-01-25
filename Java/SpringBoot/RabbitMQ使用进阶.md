@@ -75,7 +75,7 @@ RabbitMQ中有三种交换器：
 
 首先创建两个SpringBoot项目，一个消费者和一个生产者。
 
-#### 1.全局配置文件
+#### 1. 全局配置文件
 
 分别修改两个项目的全局配置文件，包括rabbitmq配置和自定义的交换器，路由键，队列等属性。
 
@@ -125,7 +125,7 @@ server:
   port: 8081
 ```
 
-#### 2.消息接收者
+#### 2. 消息接收者
 
 在consumer项目中创建消息两个消息接收者 
 
@@ -195,7 +195,7 @@ public class InfoReceiver {
 }
 ```
 
-#### 3.消息发送者
+#### 3. 消息发送者
 
 在provider项目中创建一个消息发送者
 
@@ -231,7 +231,7 @@ public class Sender {
 }
 ```
 
-#### 4.测试
+#### 4. 测试
 
 接着就可以测试了，在provider项目中创建一个测试类。
 
@@ -257,4 +257,523 @@ public class ProviderApplicationTests {
 ### 2.2 Topic交换器
 
 主题，规则匹配。由完全匹配换为模糊匹配` routingkey=*.log.info `这种
+
+也是建两个项目。
+
+#### 1. 全局配置文件
+
+consumer
+
+```yaml
+spring:
+  rabbitmq:
+    host: 192.168.1.111
+    port: 5672
+    username: root
+    password: root
+# 交换器名称
+mq:
+ config:
+  exchange: log.topic
+  queue:
+    info:
+     name: log.info
+    error:
+     name: log.error
+    logs:
+     name: log.all
+```
+
+provider
+
+```yaml
+spring:
+  rabbitmq:
+    host: 192.168.1.111
+    port: 5672
+    username: root
+    password: root
+# 自定义属性
+mq:
+  config:
+    exchange: log.topic
+  
+```
+
+#### 2. 消息发送者
+
+3个消息发送者，分别是user,product,order
+
+```java
+/**
+ * 消息发送者
+ *
+ * @author illusoryCloud
+ */
+@Component
+public class UserSender {
+    /**
+     * 操作rabbitmq的模板
+     */
+    @Autowired
+    private RabbitTemplate rabbitTemplate;
+    //交换器
+    @Value(value = "${mq.config.exchange}")
+    private String exchange;
+   
+    /**
+     * 发送消息
+     *
+     * @param msg 需要发送的消息
+     */
+    public void send(String msg) {
+        //参数一：消息队列名称
+        //参数二：消息
+        this.rabbitTemplate.convertAndSend(this.exchange,"user.log.info", "info"+msg);
+        this.rabbitTemplate.convertAndSend(this.exchange,"user.log.debug", "debug"+msg);
+        this.rabbitTemplate.convertAndSend(this.exchange,"user.log.error", "error"+msg);
+    }
+}
+```
+
+```java
+/**
+ * 消息发送者
+ *
+ * @author illusoryCloud
+ */
+@Component
+public class ProductSender {
+    /**
+     * 操作rabbitmq的模板
+     */
+    @Autowired
+    private RabbitTemplate rabbitTemplate;
+    //交换器
+    @Value(value = "${mq.config.exchange}")
+    private String exchange;
+    /**
+     * 发送消息
+     *
+     * @param msg 需要发送的消息
+     */
+    public void send(String msg) {
+        //参数一：消息队列名称
+        //参数二：消息
+        this.rabbitTemplate.convertAndSend(this.exchange,"product.log.info", "info"+msg);
+        this.rabbitTemplate.convertAndSend(this.exchange,"product.log.debug", "debug"+msg);
+        this.rabbitTemplate.convertAndSend(this.exchange,"product.log.error", "error"+msg);
+    }
+}
+```
+
+```java
+/**
+ * 消息发送者
+ *
+ * @author illusoryCloud
+ */
+@Component
+public class OrderSender {
+    /**
+     * 操作rabbitmq的模板
+     */
+    @Autowired
+    private RabbitTemplate rabbitTemplate;
+    //交换器
+    @Value(value = "${mq.config.exchange}")
+    private String exchange;
+    /**
+     * 发送消息
+     *
+     * @param msg 需要发送的消息
+     */
+    public void send(String msg) {
+        //参数一：消息队列名称
+        //参数二：消息
+        this.rabbitTemplate.convertAndSend(this.exchange,"order.log.info", "info"+msg);
+        this.rabbitTemplate.convertAndSend(this.exchange,"order.log.debug", "debug"+msg);
+        this.rabbitTemplate.convertAndSend(this.exchange,"order.log.error", "error"+msg);
+    }
+}
+```
+
+#### 3. 消息接收者
+
+也是三个，分别接收不同等级的消息。info,error,all.
+
+和上边的也差不多，主要改了交换器和路由键
+
+```java
+/**
+ * 消息接收者
+ *
+ * @author illusoryCloud
+ * RabbitListener bindings:绑定队列
+ * QueueBinding
+ * @Queue value :配置队列名称
+ * autoDelete:是否是一个可删除的临时队列
+ * @Exchange value:交换器名称
+ * type:指定具体的交换器类型
+ */
+@Component
+@RabbitListener(
+        bindings = @QueueBinding(
+                value = @Queue(value = "${mq.config.queue.error.name}", autoDelete = "true"),
+                exchange = @Exchange(value = "${mq.config.exchange}", type = ExchangeTypes.TOPIC),
+                key = "*.log.error"
+        )
+)
+public class ErrorReceiver {
+    /**
+     * 接收消息的方法 采用消息队列监听机制
+     *
+     * @param msg 接收到的消息
+     */
+    @RabbitHandler
+    public void process(String msg) {
+        System.out.println("error接收到的消息-->" + msg);
+    }
+}
+```
+
+```java
+/**
+ * 消息接收者
+ *
+ * @author illusoryCloud
+ * RabbitListener bindings:绑定队列
+ * QueueBinding
+ * @Queue value :配置队列名称
+ * autoDelete:是否是一个可删除的临时队列
+ * @Exchange value:交换器名称
+ * type:指定具体的交换器类型
+ */
+@Component
+@RabbitListener(
+        bindings = @QueueBinding(
+                value = @Queue(value = "${mq.config.queue.info.name}", autoDelete = "true"),
+                exchange = @Exchange(value = "${mq.config.exchange}", type = ExchangeTypes.TOPIC),
+                key = "*.log.info"
+        )
+)
+public class InfoReceiver {
+    /**
+     * 接收消息的方法 采用消息队列监听机制
+     *
+     * @param msg 接收到的消息
+     */
+    @RabbitHandler
+    public void process(String msg) {
+        System.out.println("info接收到的消息-->" + msg);
+    }
+}
+```
+
+```java
+/**
+ * 消息接收者
+ *
+ * @author illusoryCloud
+ * RabbitListener bindings:绑定队列
+ * QueueBinding
+ * @Queue value :配置队列名称
+ * autoDelete:是否是一个可删除的临时队列
+ * @Exchange value:交换器名称
+ * type:指定具体的交换器类型
+ */
+@Component
+@RabbitListener(
+        bindings = @QueueBinding(
+                value = @Queue(value = "${mq.config.queue.logs.name}", autoDelete = "true"),
+                exchange = @Exchange(value = "${mq.config.exchange}", type = ExchangeTypes.TOPIC),
+                key = "*.log.*"
+        )
+)
+public class LogsReceiver {
+    /**
+     * 接收消息的方法 采用消息队列监听机制
+     *
+     * @param msg 接收到的消息
+     */
+    @RabbitHandler
+    public void process(String msg) {
+        System.out.println("logs接收到的消息-->" + msg);
+    }
+}
+```
+
+#### 4. 测试
+
+```java
+@RunWith(SpringRunner.class)
+@SpringBootTest
+public class TopicProviderApplicationTests {
+    @Autowired
+    private UserSender userSender;
+    @Autowired
+    private ProductSender productSender;
+    @Autowired
+    private OrderSender orderSender;
+
+    @Test
+    public void testSend() {
+        this.userSender.send("UserSender...");
+        this.productSender.send("ProductSender...");
+        this.orderSender.send("OrderSender...");
+    }
+
+}
+```
+
+同样是先启动consumer，在运行测试方法。
+
+输出如下：
+
+```xml
+logs接收到的消息-->infoUserSender...
+logs接收到的消息-->debugUserSender...
+logs接收到的消息-->errorUserSender...
+logs接收到的消息-->infoProductSender...
+logs接收到的消息-->debugProductSender...
+logs接收到的消息-->errorProductSender...
+logs接收到的消息-->infoOrderSender...
+logs接收到的消息-->debugOrderSender...
+logs接收到的消息-->errorOrderSender...
+info接收到的消息-->infoUserSender...
+info接收到的消息-->infoProductSender...
+error接收到的消息-->errorUserSender...
+error接收到的消息-->errorProductSender...
+error接收到的消息-->errorOrderSender...
+info接收到的消息-->infoOrderSender...
+```
+
+可以看到，logs队列收到了所有的9条消息，info收到了路由键位`*.log.info`的3条消息，error同样是3条消息。
+
+`*.log.debug`的路由键没有单独的队列接收，却可以被logs匹配`*.log.*`,所以进入了logs队列。
+
+### 2.3 Fanout交换器
+
+广播模式
+
+也是创建两个项目。
+
+#### 1. 全局配置文件
+
+fanout-consumer
+
+```yaml
+spring:
+  rabbitmq:
+    host: 192.168.1.111
+    port: 5672
+    username: root
+    password: root
+# 交换器名称
+mq:
+ config:
+  exchange: order.fanout
+  queue:
+    sms:
+     name: order.sms
+    push:
+     name: order.push
+
+```
+
+fanout-provider
+
+```yaml
+spring:
+  rabbitmq:
+    host: 192.168.1.111
+    port: 5672
+    username: root
+    password: root
+# 交换器名称
+mq:
+  config:
+    exchange: order.fanout
+
+```
+
+#### 2. 消息接收者
+
+fanout模式下不用配置路由键。
+
+```java
+/**
+ * 消息接收者
+ *
+ * @author illusoryCloud
+ * RabbitListener bindings:绑定队列
+ * QueueBinding
+ * @Queue value :配置队列名称
+ * autoDelete:是否是一个可删除的临时队列
+ * @Exchange value:交换器名称
+ * type:指定具体的交换器类型
+ * key 路由键
+ */
+@Component
+@RabbitListener(
+        bindings = @QueueBinding(
+                value = @Queue(value = "${mq.config.queue.push.name}", autoDelete = "true"),
+                exchange = @Exchange(value = "${mq.config.exchange}", type = ExchangeTypes.FANOUT)
+        )
+)
+public class PushReceiver {
+    /**
+     * 接收消息的方法 采用消息队列监听机制
+     *
+     * @param msg 接收到的消息
+     */
+    @RabbitHandler
+    public void process(String msg) {
+        System.out.println("push接收到的消息-->" + msg);
+    }
+}
+```
+
+```java
+/**
+ * 消息接收者
+ *
+ * @author illusoryCloud
+ * RabbitListener bindings:绑定队列
+ * QueueBinding
+ * @Queue value :配置队列名称
+ * autoDelete:是否是一个可删除的临时队列
+ * @Exchange value:交换器名称
+ * type:指定具体的交换器类型
+ * key 路由键
+ */
+@Component
+@RabbitListener(
+        bindings = @QueueBinding(
+                value = @Queue(value = "${mq.config.queue.sms.name}", autoDelete = "true"),
+                exchange = @Exchange(value = "${mq.config.exchange}", type = ExchangeTypes.FANOUT)
+        )
+)
+public class SmsReceiver {
+    /**
+     * 接收消息的方法 采用消息队列监听机制
+     *
+     * @param msg 接收到的消息
+     */
+    @RabbitHandler
+    public void process(String msg) {
+        System.out.println("sms接收到的消息-->" + msg);
+    }
+}
+```
+
+#### 3. 消息发送者
+
+```java
+/**
+ * 消息发送者
+ *
+ * @author illusoryCloud
+ */
+@Component
+public class OrdersSender {
+    /**
+     * 操作rabbitmq的模板
+     */
+    @Autowired
+    private RabbitTemplate rabbitTemplate;
+    //交换器
+    @Value(value = "${mq.config.exchange}")
+    private String exchange;
+    /**
+     * 发送消息
+     *
+     * @param msg 需要发送的消息
+     */
+    public void send(String msg) {
+        //参数一：消息队列名称
+        //参数二：消息
+        this.rabbitTemplate.convertAndSend(this.exchange,"", msg);
+    }
+}
+```
+
+#### 4. 测试
+
+```java
+@RunWith(SpringRunner.class)
+@SpringBootTest
+public class FanoutProviderApplicationTests {
+    @Autowired
+    private OrdersSender ordersSender;
+    
+    @Test
+    public void testSend() {
+        this.ordersSender.send("Hello RabbitMQ...");
+    }
+}
+//结果
+push接收到的消息-->Hello RabbitMQ...
+sms接收到的消息-->Hello RabbitMQ...
+发送的消息两个队列都可以接收到
+```
+
+## 3. 消息处理
+
+### 1.消息持久化
+
+**autoDelete**
+
+```java
+@RabbitListener(
+        bindings = @QueueBinding(
+                value = @Queue(value = "${mq.config.queue.push.name}", autoDelete = "true"),
+                exchange = @Exchange(value = "${mq.config.exchange}", type = ExchangeTypes.FANOUT)
+        )
+)
+```
+
+在`@RabbitListener`注解中可以配置autoDelete属性。
+
+* 在@Queue中设置表示：当所有消费者连接断开后，是否自动删除队列，true:删除，false:不删除。
+
+* 在@Exchange中设置：当所有绑定队列都不在使用时，是否自动删除交换器。true:删除，false:不删除。
+
+先开启`consumer`，然后开启`provider`开始发送消息。当设置为`autoDelete = "true"`时，停掉`consumer`后，`provider`还在继续发送消息，此时已经没人接收消息了。接着在此开启`consumer`依然可以收到消息。但是这之间的消息却丢失了。因为`consumer`关闭后队列已经删除了，再次开启后已经是新的队列了，无法收到以前的消息。然后当`autoDelete = "false"`时，未消费的消息会存放在`RabbitMQ服务器的内存`中，重新启动后依旧可以读取到以前的消息。
+
+### 2.消息确认ACK
+
+**什么是消息确认ACk?**
+
+如果在处理消息过程中，消费者的服务器可能出现了异常，那么这条消息可能没有完成消费，数据就会丢失，为了确保数据不丢失，RabbitMQ支持消息确认ACK.
+
+**ACK消息确认机制**
+
+指消费者从RabbitMQ收到消息并处理完成后，反馈给RabbitMQ，然后RabbitMQ在收到反馈首才将此消息删除。
+
+1.若消费者在处理消息过程中出现了服务器异常，网络不稳定等现象，那么就不会有ACK反馈，RabbitMQ认为该消息没有被消费，会重新放入队列中。
+
+2.如果在集群环境中，出现这种情况RabbitMQ会立即将这个消息发送给这个在线的其他消费者。
+
+3.消息永远不会从RabbitMQ中删除，只有消费者正确发送ACK反馈，RabbitMQ确认收到后，才会删除。
+
+4.AC确认机制是默认开启的。
+
+**注意事项：**
+
+如果忘记ACK后果很严重，consumer退出时，RabbitMQ会一直重新分发消息，最后占用内存越来越多。
+
+对于这种情况可以在配置文件中设置最多重试次数，达到次数后将直接丢弃消息。
+
+```yaml
+spring:
+  rabbitmq:
+    listener:
+      simple:
+        retry:
+          #开启重试
+          enabled: true
+          #最大重试次数
+          max-attempts: 5
+```
 
