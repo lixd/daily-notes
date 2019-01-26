@@ -175,7 +175,6 @@
          */
         @Override
         public void onConnectionStateChange(BluetoothGatt gatt, int status, int newState) {
-            super.onConnectionStateChange(gatt, status, newState);
             //连接成功
             if (newState == BluetoothProfile.STATE_CONNECTED) {
                 Log.v(TAG, "onConnectionStateChange 蓝牙连接");
@@ -216,7 +215,6 @@
          */
         @Override
         public void onServicesDiscovered(BluetoothGatt gatt, int status) {
-            super.onServicesDiscovered(gatt, status);
             //找到服务了
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 //在这里可以对服务进行解析，寻找到你需要的服务
@@ -233,7 +231,6 @@
          */
         @Override
         public void onCharacteristicWrite(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic, int status) {
-            super.onCharacteristicWrite(gatt, characteristic, status);
             Log.i(TAG, "蓝牙指令 发送完成");
             if (status == BluetoothGatt.GATT_SUCCESS) {
                 Log.i(TAG, "数据包发送成功！");
@@ -251,8 +248,7 @@
          * @param characteristic 特征值
          */
         @Override
-        public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
-            super.onCharacteristicChanged(gatt, characteristic);
+        public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) { 
             //byte[]转为16进制字符串
             Log.v(TAG, "接收：" + Arrays.toString(characteristic.getValue()));
             Toast.makeText(MainActivity.this, "onReceive", Toast.LENGTH_SHORT).show();
