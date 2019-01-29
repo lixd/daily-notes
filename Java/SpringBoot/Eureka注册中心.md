@@ -147,5 +147,41 @@ eureka:
 
 然后运行两个项目。就可以访问了`http://localhost:8761/`
 
+## 5. 在高可用Eureka注册中心创建provider服务
+
+### 1.创建项目
+
+同上
+
+### 2.修改pom文件
+
+和注册中心差不多，但是这里的`eureka-client`换成为`eureka-client`
+
+```xml
+ <dependency>
+            <groupId>org.springframework.cloud</groupId>
+            <artifactId>spring-cloud-starter-netflix-eureka-client</artifactId>
+</dependency>
+```
+
+### 3.修改启动类
+
+在启动类上添加`@EnableEurekaClient`注解，表明这是一个EurekaClient
+
+### 4.全局配置文件
+
+其中需要将服务注册到Eureka集群的所有节点中
+
+```yaml
+server:
+  port: 8763
+eureka:
+  client:
+    serviceUrl:
+      #服务注册中心地址，需要向所有的两个节点注册
+      defaultZone: http://localhost:8761/,http://localhost:8762/
+
+```
+
 
 
