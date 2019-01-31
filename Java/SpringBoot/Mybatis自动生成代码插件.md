@@ -186,3 +186,5 @@ pom文件中`<configurationFile>${basedir}/src/main/resources/generator/generato
 命令：`mybatis-generator:generate -e`
 
 当前数据库中必须有表才能自动生成。
+
+最后需要注意生成的xml文件的`namespace`属性是否正确
