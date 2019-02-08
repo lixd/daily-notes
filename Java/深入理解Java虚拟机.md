@@ -420,9 +420,10 @@ Parallel Scavenge 收集器类似于ParNew 收集器。 **那么它有什么特�
 
 通过在java命令种加入参数来指定对应的gc类型，打印gc日志信息并输出至文件等策略。
 
-代码
+#### 1.编写代码
 
 ```java
+//ReferenceCountingGC.java
 public class ReferenceCountingGC {
     public Object instance = null;
     private static final int ONE_MB = 1024 * 1024;
@@ -449,7 +450,7 @@ public class ReferenceCountingGC {
 }
 ```
 
-编译执行
+#### 2.编译执行
 
 ```java
 //编译
@@ -466,7 +467,7 @@ java -XX:+PrintGCDateStamps -XX:+PrintGCDetails ReferenceCountingGC
 -Xloggc:../logs/gc.log 日志文件的输出路径
 ```
 
-日志
+#### 3.查看日志
 
 ```java
 2019-02-08T16:26:30.677+0800: [GC (System.gc()) [PSYoungGen: 5345K->736K(36352K)] 5345K->744K(119808K), 0.0769922 secs] [Times: user=0.00 sys=0.00, real=0.08 secs]
@@ -482,9 +483,10 @@ Heap
   class space    used 278K, capacity 386K, committed 512K, reserved 1048576K
 ```
 
-PSYoungGen表示新生代，这个名称由收集器决定，这里的收集器是Parallel Scavenge。老年代为ParOldGen，永久代为PSPermGen 
-如果收集器为ParNew收集器，新生代为ParNew，Parallel New Generation 
-如果收集器是Serial收集器，新生代为DefNew，Default New Generation
+`PSYoungGen`表示`新生代`，这个名称`由收集器决定`，这里的收集器是Parallel Scavenge。老年代为ParOldGen，永久代为PSPermGen 
+
+> 如果收集器为ParNew收集器，新生代为ParNew，Parallel New Generation 
+> 如果收集器是Serial收集器，新生代为DefNew，Default New Generation
 
 可以看到上面有两种GC类型：GC和Full GC，有Full表示这次GC是发生了Stop-The-World的。
 
@@ -494,20 +496,35 @@ PSYoungGen表示新生代，这个名称由收集器决定，这里的收集器�
 
 `[GC [PSYoungGen: 6123K->400K(38912K)] 6123K->400K(125952K), 0.0012070 secs][Times: user=0.00 sys=0.00, real=0.00 secs]`
 
-上面方括号内部的6123K->400K(38912K)，表示GC前该内存区域已使用容量->GC后该内存区域已使用容量，后面圆括号里面的38912K为该内存区域的总容量。
+上面方括号内部的`6123K->400K(38912K)`，表示`GC前该内存区域已使用容量->GC后该内存区域已使用容量`，后面圆括号里面的38912K为`该内存区域的总容量`。
 
-方括号外面的6123K->400K(125952K)，表示GC前Java堆已使用容量->GC后Java堆已使用容量，后面圆括号里面的125952K为Java堆总容量。
+方括号外面的`6123K->400K(125952K)`，表示`GC前Java堆已使用容量->GC后Java堆已使用容量`，后面圆括号里面的125952K为`Java堆总容量`。
 
-[Times: user=0.00 sys=0.00, real=0.00 secs]分别表示用户消耗的CPU时间，内核态消耗的CPU时间和操作从开始到结束所经过的墙钟时间（Wall Clock Time），CPU时间和墙钟时间的差别是，墙钟时间包括各种非运算的等待耗时，例如等待磁盘I/O、等待线程阻塞，而CPU时间不包括这些耗时。
+`[Times: user=0.00 sys=0.00, real=0.00 secs]`分别表示用户消耗的CPU时间，内核态消耗的CPU时间和操作从开始到结束所经过的墙钟时间（Wall Clock Time），CPU时间和墙钟时间的差别是，墙钟时间包括各种非运算的等待耗时，例如等待磁盘I/O、等待线程阻塞，而CPU时间不包括这些耗时。
 
-志格式都吋以不一样。但虚拟机设计者为了方便用户阅读，将各个收集器的日志都维持一定的共性，例如以下两段典型的GC口志：
+#### 4.日志格式
+
+日志格式由收集器决定的，每个收集器的日志格式都可能是不一样。但虚拟机设计者为了方便用户阅读，将各个收集器的日志都维持一定的共性，例如以下两段典型的GC口志：
 
 ```java
-
-33.125:丨GC[DefNew:3324K->152K(3712K),0.0025925secs】3324K>152K(119040.0031680secs]
-100.667:[FullGC[Tenured:0K>210K(10240K),0.0149142secsj4603K->210K(19456K),[Perm:2999K>2999K(21248K)],0.0150007secs][Times:user-0.01sys=0.00,real-0.02secs】
-
-
+33.125:GC[DefNew:3324K->152K(3712K),0.0025925secs]3324K>152K(119040.0031680secs]
+100.667:[FullGC[Tenured:0K>210K(10240K),0.0149142secsj4603K->210K(19456K),[Perm:2999K>2999K(21248K)],0.0150007secs][Times:user-0.01sys=0.00,real-0.02secs]
 ```
 
-最前面的数字“33.125:”和“100.667:”代表了GC发生的时间，这个数字的含义是从Java虚拟机启动以来经过的秒数。GCH志开头的“[GC”和“[FullGC”说明了这次垃圾收集的停顿类型，而不是用来区分新生代GC还是老年代GC的。如果有“Full”，说明这次GC是发生了Stop-The-World的，例如下面这段新生代收集器ParNew的日志也会出现“[FullGC”（这一般是因为出现了分配担保失败之类的问题，所以才导致STW)。如果是调用System.gc〇方法所触发的收集，那么/+•汶宙你品示“「FullfiCNvstem、
+最前面的数字`33.125:`和`100.667:`代表了`GC发生的时间`，这个数字的含义是`从Java虚拟机启动以来经过的秒数`。
+
+GCH志开头的`[GC`和`[FullGC`说明了这次`垃圾收集的停顿类型`，而`不是用来区分新生代GC还是老年代GC的`。如果有`Full`，说明这次GC是发生了Stop-The-World的.
+
+例如下面这段新生代收集器ParNew的日志也会出现`[FullGC`（这一般是因为出现了分配担保失败之类的问题，所以才导致STW)。如果是调用`SyStem.gc()方法`所触发的收集，那么在这里将显示`[FullGC(System)`。`[FullGC283_736:[ParNew:261599K->261599K(261952K),0.0000288secs]`
+
+接下来的`[DefNew`、`[Tenured`、`[Perm`表示`GC发生的区域`，这里显示的区域名称与使用的GC收集器是密切相关的，例如上面样例所使用的`Serial收集器`中的新生代名为`DefaultNewGeneration`，所以显示的是`[DefNew`。如果是`ParNew收集器`，新生代名称就会变为`[ParNcw`，意为`ParallelNewGeneration`.如果采用ParaUelScavenge收集器，那它配套的新生代称为“PSYoungGen”，老年代和永久代同理，名称也是由收集器决定的。
+
+后面方括号内部的`3324K->152K(3712K)`含义是`GC前该内存K域已使用容M->GC后该内存区域已使用容量（该内存区域总容量）`。
+
+而在方括号之外的
+
+`3324K->152IC(11904K)`表示`GC前Java堆已使用容M->GC后Java堆已使用容M(Java堆总容量)`。
+
+再往后，`0.0025925secs`表示`该内存区域GC所占用的时间`，单位是秒。
+
+有的收集器会给出更具体的时间数据，如`[Times:user=0.01sys=0.00，real=0.02secs]`，这里面的`user`、`sys`和`real`与Linux的time命令所输出的时间含义一致，分别代表`用户态消耗的CPU时间`、`内核态消耗的CPU时间和`操作从开始到结束所经过的墙钟时间（WallClockTime)`。CPU时间与墙钟时间的区别是，墙钟时间包括各种非运算的等待耗时，例如等待磁盘I/O、等待线程阻塞，而CPU时间不包括这些耗时，但当系统有多CPU或者多核的话，多线程操作会叠加这些CPU时间，所以读者看到user或sys时间超过real时间是完全正常的。
