@@ -221,7 +221,7 @@ finalize()方法是对象逃脱死亡命运的最后一次机会。
 
 状态变迁图：
 
-![img](http://img.blog.csdn.net/20131006163937765)
+![img](https://github.com/illusorycloud/illusorycloud.github.io/raw/hexo/myImages/jvm/finalize-status.png)
 
 变迁说明：
 
@@ -314,7 +314,7 @@ SerialOld可以和Serial  、  ParNew、  Parallel scavenge搭配
 
 ParallelOld只能和Parallel scavenge搭配
 
-
+![Garbage collection](https://github.com/illusorycloud/illusorycloud.github.io/raw/hexo/myImages/jvm/garbage-collection.png)
 
 注意：
 
@@ -414,3 +414,100 @@ Parallel Scavenge 收集器类似于ParNew 收集器。 **那么它有什么特�
 
 > G1用于堆比较大的应用上，GC 的时间难以预估的这种效果更好，内存200G以上，JDK9（含）以上，jdk版本较低的G1功能有欠缺 
 
+### 7.理解GC日志
+
+理解GC日志是处理Java虚拟机内存问题的基本技能，下面我们具体来看看。
+
+通过在java命令种加入参数来指定对应的gc类型，打印gc日志信息并输出至文件等策略。
+
+代码
+
+```java
+public class ReferenceCountingGC {
+    public Object instance = null;
+    private static final int ONE_MB = 1024 * 1024;
+
+    private byte[] bigSize = new byte[2 * ONE_MB];
+
+    public static void main(String[] args) {
+        testGC();
+
+
+    }
+
+    public static void testGC() {
+            ReferenceCountingGC objA = new ReferenceCountingGC();
+            ReferenceCountingGC objB = new ReferenceCountingGC();
+            objA.instance = objB;
+            objB.instance = objA;
+
+            objA = null;
+            objB = null;
+
+            System.gc();
+    }
+}
+```
+
+编译执行
+
+```java
+//编译
+javac ReferenceCountingGC.java  
+//执行
+java -XX:+PrintGCDateStamps -XX:+PrintGCDetails ReferenceCountingGC
+
+对应的参数列表
+-XX:+PrintGC 输出GC日志
+-XX:+PrintGCDetails 输出GC的详细日志
+-XX:+PrintGCTimeStamps 输出GC的时间戳（以基准时间的形式）
+-XX:+PrintGCDateStamps 输出GC的时间戳（以日期的形式，如 2013-05-04T21:53:59.234+0800）
+-XX:+PrintHeapAtGC 在进行GC的前后打印出堆的信息
+-Xloggc:../logs/gc.log 日志文件的输出路径
+```
+
+日志
+
+```java
+2019-02-08T16:26:30.677+0800: [GC (System.gc()) [PSYoungGen: 5345K->736K(36352K)] 5345K->744K(119808K), 0.0769922 secs] [Times: user=0.00 sys=0.00, real=0.08 secs]
+2019-02-08T16:26:30.754+0800: [Full GC (System.gc()) [PSYoungGen: 736K->0K(36352K)] [ParOldGen: 8K->627K(83456K)] 744K->627K(119808K), [Metaspace: 2531K->2531K(1056768K)], 0.0970499 secs] [Times: user=0.06 sys=0.00, real=0.10 secs]
+Heap
+ PSYoungGen      total 36352K, used 625K [0x00000000d7980000, 0x00000000da200000, 0x0000000100000000)
+  eden space 31232K, 2% used [0x00000000d7980000,0x00000000d7a1c400,0x00000000d9800000)
+  from space 5120K, 0% used [0x00000000d9800000,0x00000000d9800000,0x00000000d9d00000)
+  to   space 5120K, 0% used [0x00000000d9d00000,0x00000000d9d00000,0x00000000da200000)
+ ParOldGen       total 83456K, used 627K [0x0000000086c00000, 0x000000008bd80000, 0x00000000d7980000)
+  object space 83456K, 0% used [0x0000000086c00000,0x0000000086c9cd10,0x000000008bd80000)
+ Metaspace       used 2537K, capacity 4486K, committed 4864K, reserved 1056768K
+  class space    used 278K, capacity 386K, committed 512K, reserved 1048576K
+```
+
+PSYoungGen表示新生代，这个名称由收集器决定，这里的收集器是Parallel Scavenge。老年代为ParOldGen，永久代为PSPermGen 
+如果收集器为ParNew收集器，新生代为ParNew，Parallel New Generation 
+如果收集器是Serial收集器，新生代为DefNew，Default New Generation
+
+可以看到上面有两种GC类型：GC和Full GC，有Full表示这次GC是发生了Stop-The-World的。
+
+新生代GC（Minor GC）：指发生在新生代的垃圾收集动作，因为Java对象大多都具备朝生夕灭的特性，所以Minor GC非常频繁，一般回收速度非常快。
+
+老年代GC（Major GC/Full GC）：指发生在老年代的GC，出现了Major GC，经常会伴随至少一次的Minor GC，Major GC的速度一般会比Minor GC慢10倍以上。
+
+`[GC [PSYoungGen: 6123K->400K(38912K)] 6123K->400K(125952K), 0.0012070 secs][Times: user=0.00 sys=0.00, real=0.00 secs]`
+
+上面方括号内部的6123K->400K(38912K)，表示GC前该内存区域已使用容量->GC后该内存区域已使用容量，后面圆括号里面的38912K为该内存区域的总容量。
+
+方括号外面的6123K->400K(125952K)，表示GC前Java堆已使用容量->GC后Java堆已使用容量，后面圆括号里面的125952K为Java堆总容量。
+
+[Times: user=0.00 sys=0.00, real=0.00 secs]分别表示用户消耗的CPU时间，内核态消耗的CPU时间和操作从开始到结束所经过的墙钟时间（Wall Clock Time），CPU时间和墙钟时间的差别是，墙钟时间包括各种非运算的等待耗时，例如等待磁盘I/O、等待线程阻塞，而CPU时间不包括这些耗时。
+
+志格式都吋以不一样。但虚拟机设计者为了方便用户阅读，将各个收集器的日志都维持一定的共性，例如以下两段典型的GC口志：
+
+```java
+
+33.125:丨GC[DefNew:3324K->152K(3712K),0.0025925secs】3324K>152K(119040.0031680secs]
+100.667:[FullGC[Tenured:0K>210K(10240K),0.0149142secsj4603K->210K(19456K),[Perm:2999K>2999K(21248K)],0.0150007secs][Times:user-0.01sys=0.00,real-0.02secs】
+
+
+```
+
+最前面的数字“33.125:”和“100.667:”代表了GC发生的时间，这个数字的含义是从Java虚拟机启动以来经过的秒数。GCH志开头的“[GC”和“[FullGC”说明了这次垃圾收集的停顿类型，而不是用来区分新生代GC还是老年代GC的。如果有“Full”，说明这次GC是发生了Stop-The-World的，例如下面这段新生代收集器ParNew的日志也会出现“[FullGC”（这一般是因为出现了分配担保失败之类的问题，所以才导致STW)。如果是调用System.gc〇方法所触发的收集，那么/+•汶宙你品示“「FullfiCNvstem、
