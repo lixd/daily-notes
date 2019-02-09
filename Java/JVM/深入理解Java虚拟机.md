@@ -607,6 +607,22 @@ JDK团队采用java代码来实现这些监控工具是有用意的:当应用程
 | -l   | 输出主类的全名，如果进程执行的是jar包，输出jar路径 |
 | -v   | 输出虚拟机进程启动时jvm参数                        |
 
+例子：
+
+```java
+D:\illusoryCloud\Common\Java\jdk1.8.0_181\bin>jps
+
+11552 EurekaserverCluApplication
+6336
+9104 EurekaServerApplication
+13348 RemoteMavenServer
+2820 EurekaProviderApplication
+11948 Jps
+7212 Launcher
+```
+
+
+
 ##### 2.jstat：虚拟机统计信息监视工具
 
 　　jstat是用于监视虚拟机各种运行状态信息的命令行工具。它可以显示本地或者远程虚拟机进程中的类装载、内存、垃圾回收、JIT编译等运行数据，在没有GUI图形界面，只是提供了纯文本控制台环境的服务器上，它将是运行期定位虚拟机性能问题的首选工具
@@ -636,6 +652,17 @@ JDK团队采用java代码来实现这些监控工具是有用意的:当应用程
 | -compiler         | 输出JIT编译过的方法、耗时等信息                              |
 | -printcompilation | 输出已经被JIT编译过的方法                                    |
 
+例子：
+
+```java
+D:\lillusory\Common\Java\jdk1.8.0_181\bin>jstat -gc 2820
+    
+ S0C    S1C    S0U    S1U      EC       EU        OC         OU       MC     MU    CCSC   CCSU   YGC     YGCT    FGC    FGCT     GCT
+11776.0 15360.0  0.0    0.0   179712.0 152791.4  84992.0    22011.5   35456.0 33624.4 4992.0 4560.4      8    0.101   2      0.142    0.242
+```
+
+
+
 ##### 3.jinfo：java配置信息工具
 
 　　jinfo的作用是实时的查看和调整虚拟机各项参数。使用jps命令的-v参数可以查看虚拟机启动时显示指定的参数列表，但如果想知道未被显式指定的参数的系统默认值，除了去找资料以外，就得使用jinfo的-flag选项
@@ -643,6 +670,30 @@ JDK团队采用java代码来实现这些监控工具是有用意的:当应用程
 　　jinfo格式 `jinfo [option] pid`
 
 　　jinfo在windows 平台仍有很大的限制
+
+| option           | 说明                       |
+| ---------------- | -------------------------- |
+| no option        | 输出全部参数和系统属性     |
+| -flag  name      | 输出对应名称的参数         |
+| -flag [+-]name   | 开启或者关闭对应名称的参数 |
+| -flag name=value | 设定对应名称的参数         |
+| -flags           | 输出全部参数               |
+| -sysprops        | 输出系统属性               |
+
+例子：
+
+```java
+D:\lillusory\Common\Java\jdk1.8.0_181\bin>jinfo -flags 2820
+    
+Attaching to process ID 2820, please wait...
+Debugger attached successfully.
+Server compiler detected.
+JVM version is 25.181-b13
+Non-default VM flags: -XX:-BytecodeVerificationLocal -XX:-BytecodeVerificationRemote -XX:CICompilerCount=3 -XX:InitialHeapSize=127926272 -XX:+ManagementServer -XX:MaxHeapSize=2034237440 -XX:MaxNewSize=677904384 -XX:MinHeapDeltaBytes=524288 -XX:NewSize=42467328 -XX:OldSize=85458944 -XX:TieredStopAtLevel=1 -XX:+UseCompressedClassPointers -XX:+UseCompressedOops -XX:+UseFastUnorderedTimeStamps -XX:-UseLargePagesIndividualAllocation -XX:+UseParallelGC
+Command line:  -XX:TieredStopAtLevel=1 -Xverify:none -Dspring.output.ansi.enabled=always -Dcom.sun.management.jmxremote -Dcom.sun.management.jmxremote.port=11926 -Dcom.sun.management.jmxremote.authenticate=false -Dcom.sun.management.jmxremote.ssl=false -Djava.rmi.server.hostname=localhost -Dspring.liveBeansView.mbeanDomain -Dspring.application.admin.enabled=true -javaagent:D:\lillusory\Java\IntelliJ IDEA 2018.3\lib\idea_rt.jar=11927:D:\lillusory\Java\IntelliJ IDEA 2018.3\bin -Dfile.encoding=UTF-8
+```
+
+
 
 ##### 4.jmap：java内存映像工具
 
@@ -656,22 +707,156 @@ JDK团队采用java代码来实现这些监控工具是有用意的:当应用程
 
 | 选项           | 作用                                                         |
 | -------------- | ------------------------------------------------------------ |
-| -dump          | 生成java堆转储快照。格式为： -dump:[live,]format=b,file=<filename>,其中live子参数说明是否只dump出存活的对象 |
+| -dump          | 生成java堆转储快照。格式为： -dump:live,format=b,file=文件名,dump堆到文件,format指定输出格式，live指明是活着的对象,file指定文件名 |
 | -finalizerinfo | 显示在F-Queue中等待Finalizer线程执行finalize方法的对象。只在Linux/Solaris平台下有效 |
 | -heap          | 显示java堆详细信息，如使用哪种收集器、参数配置、分代情况等，在Linux/Solaris平台下有效 |
 | -jisto         | 显示堆中对象统计信息，包含类、实例对象、合集容量             |
 | -permstat      | 以ClassLoader为统计口径显示永久代内存状态。只在Linux/Solaris平台下有效 |
 | -F             | 当虚拟机进程对-dump选项没有相应时。可使用这个选项强制生成dump快照。只在Linux/Solaris平台下有效 |
 
+例子：
+
+```java
+D:\lillusory\Common\Java\jdk1.8.0_181\bin>jmap -heap 2820
+    
+Attaching to process ID 2820, please wait...
+Debugger attached successfully.
+Server compiler detected.
+JVM version is 25.181-b13
+
+using thread-local object allocation.
+Parallel GC with 4 thread(s)
+
+Heap Configuration:
+   MinHeapFreeRatio         = 0
+   MaxHeapFreeRatio         = 100
+   MaxHeapSize              = 2034237440 (1940.0MB)
+   NewSize                  = 42467328 (40.5MB)
+   MaxNewSize               = 677904384 (646.5MB)
+   OldSize                  = 85458944 (81.5MB)
+   NewRatio                 = 2
+   SurvivorRatio            = 8
+   MetaspaceSize            = 21807104 (20.796875MB)
+   CompressedClassSpaceSize = 1073741824 (1024.0MB)
+   MaxMetaspaceSize         = 17592186044415 MB
+   G1HeapRegionSize         = 0 (0.0MB)
+
+Heap Usage:
+PS Young Generation
+Eden Space:
+   capacity = 184025088 (175.5MB)
+   used     = 164187512 (156.58141326904297MB)
+   free     = 19837576 (18.91858673095703MB)
+   89.22017850087919% used
+From Space:
+   capacity = 12058624 (11.5MB)
+   used     = 0 (0.0MB)
+   free     = 12058624 (11.5MB)
+   0.0% used
+To Space:
+   capacity = 15728640 (15.0MB)
+   used     = 0 (0.0MB)
+   free     = 15728640 (15.0MB)
+   0.0% used
+PS Old Generation
+   capacity = 87031808 (83.0MB)
+   used     = 22539744 (21.495574951171875MB)
+   free     = 64492064 (61.504425048828125MB)
+   25.898283073701055% used
+
+22291 interned Strings occupying 2785472 bytes.
+```
+
+生成dump文件
+
+```java
+D:\lillusory\Common\Java\jdk1.8.0_181\bin>jmap -dump:live,format=b,file=test.bin 2820
+    
+Dumping heap to D:\lillusory\Common\Java\jdk1.8.0_181\bin\test.bin ...
+Heap dump file created
+```
+
+
+
 ##### 5.jhat：虚拟机堆转储快照分析工具
 
 　　Sun JDK提供jhat与jmap搭配使用，来分析dump生成的堆快照。jhat内置了一个微型的HTTP/HTML服务器，生成dump文件的分析结果后，可以在浏览器中查看。
 
-　　用法举例 `jhat test1.bin` 
+　　用法举例 `jhat test.bin` 
 
-　　test1.bin为生成的dump文件。
+　　test.bin为生成的dump文件。
 
 　　分析结果默认是以包围单位进行分组显示，分析内存泄漏问题主要会使用到其中的“Heap Histogram”与OQL标签的功能。前者可以找到内存中总容量最大的对象。后者是标准的对象查询语言，使用类似SQL的语法对内存中的对象进行查询统计。
+
+例子：
+
+```java
+D:\lillusory\Common\Java\jdk1.8.0_181\bin>jhat test.bin
+
+Reading from test.bin...
+Dump file created Sat Feb 09 10:42:07 CST 2019
+Snapshot read, resolving...
+Resolving 414341 objects...
+Chasing references, expect 82 dots..................................................................................
+Eliminating duplicate references..................................................................................
+Snapshot resolved.
+Started HTTP server on port 7000
+Server is ready.
+```
+
+服务开启后 在浏览器中查看`http://localhost:7000/` 内容大概是这样的：
+
+```java
+All Classes (excluding platform)
+Package <Arrays>
+class [Lch.qos.logback.classic.spi.IThrowableProxy; [0x87fae378]
+class [Lch.qos.logback.classic.spi.StackTraceElementProxy; [0x87fae2a8]
+class [Lch.qos.logback.classic.spi.ThrowableProxy; [0x87fae310]
+class [Lch.qos.logback.core.Appender; [0x86f6bff8]
+class [Lch.qos.logback.core.filter.Filter; [0x86f6c708]
+Package ch.qos.logback.classic
+class ch.qos.logback.classic.BasicConfigurator [0x86f77918]
+class ch.qos.logback.classic.Level [0x86f7bfd8]
+class ch.qos.logback.classic.Logger [0x86f7c0a0]
+class ch.qos.logback.classic.LoggerContext [0x86f781a0]
+class ch.qos.logback.classic.PatternLayout [0x86f12178]
+Package ch.qos.logback.classic.encoder
+class ch.qos.logback.classic.encoder.PatternLayoutEncoder [0x86f14c50]
+Package ch.qos.logback.classic.jul
+class ch.qos.logback.classic.jul.JULHelper [0x86f14d20]
+class ch.qos.logback.classic.jul.LevelChangePropagator [0x86f1dbf8]
+Package ch.qos.logback.classic.layout
+class ch.qos.logback.classic.layout.TTLLLayout [0x86f6c558]
+Package ch.qos.logback.classic.pattern
+class ch.qos.logback.classic.pattern.Abbreviator [0x86f0e068]
+class ch.qos.logback.classic.pattern.CallerDataConverter [0x86f105a8]
+class ch.qos.logback.classic.pattern.ClassOfCallerConverter [0x86f10e58]
+class ch.qos.logback.classic.pattern.ClassicConverter [0x86f6c348]
+Package ch.qos.logback.classic.pattern.color
+class ch.qos.logback.classic.pattern.color.HighlightingCompositeConverter [0x86f0edf0]
+Package ch.qos.logback.classic.selector
+class ch.qos.logback.classic.selector.ContextSelector [0x86f6beb8]
+class ch.qos.logback.classic.selector.DefaultContextSelector [0x86f6be50]
+Package ch.qos.logback.classic.spi
+class ch.qos.logback.classic.spi.ClassPackagingData [0x87f6bdd0]
+class ch.qos.logback.classic.spi.Configurator [0x86f779f0]
+class ch.qos.logback.classic.spi.EventArgUtil [0x87804e08]
+class ch.qos.logback.classic.spi.ILoggingEvent [0x87804ed8]
+Package ch.qos.logback.classic.turbo
+class ch.qos.logback.classic.turbo.TurboFilter [0x86f693b8]
+Package ch.qos.logback.classic.util
+class ch.qos.logback.classic.util.ContextInitializer [0x86f7bef0]
+class ch.qos.logback.classic.util.ContextSelectorStaticBinder [0x86f7bf68]
+class ch.qos.logback.classic.util.EnvUtil [0x86f77980]
+class ch.qos.logback.classic.util.LogbackMDCAdapter [0x87804ae0]
+class ch.qos.logback.classic.util.LoggerNameUtil [0x86f6bde8]
+Package ch.qos.logback.core
+class ch.qos.logback.core.Appender [0x86f6c060]
+class ch.qos.logback.core.BasicStatusManager [0x86f780b8]
+class ch.qos.logback.core.ConsoleAppender [0x86f77750]
+```
+
+
 
 ##### 6.jstack：java堆栈跟踪工具
 
@@ -688,4 +873,63 @@ JDK团队采用java代码来实现这些监控工具是有用意的:当应用程
 | -m   | 如果调用到本地方法的话，可以显示c/c++的堆栈  |
 
 Tread类新增了一个getAllStackTraces（）方法用于获取虚拟机中所有的线程的StackTraceElement对象。
+
+例子：
+
+```java
+D:\lillusory\Common\Java\jdk1.8.0_181\bin>jstack -l 2820
+2019-02-09 10:47:33
+Full thread dump Java HotSpot(TM) 64-Bit Server VM (25.181-b13 mixed mode):
+
+"AsyncResolver-bootstrap-executor-0" #76 daemon prio=5 os_prio=0 tid=0x000000001bcb1800 nid=0x3a70 waiting on condition [0x000000001fb6e000]
+   java.lang.Thread.State: WAITING (parking)
+        at sun.misc.Unsafe.park(Native Method)
+        - parking to wait for  <0x0000000087c7fa48> (a java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1134)
+        at java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+        at java.lang.Thread.run(Thread.java:748)
+
+   Locked ownable synchronizers:
+        - None
+
+"DiscoveryClient-1" #75 daemon prio=5 os_prio=0 tid=0x000000001bcb0800 nid=0xd30 waiting on condition [0x000000001fa6f000]
+   java.lang.Thread.State: TIMED_WAITING (parking)
+        at sun.misc.Unsafe.park(Native Method)
+        - parking to wait for  <0x0000000087ecd908> (a java.util.concurrent.locks.AbstractQueuedSynchronizer$ConditionObject)
+java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
+        at java.lang.Thread.run(Thread.java:748)
+
+   Locked ownable synchronizers:
+        - None
+
+"DiscoveryClient-HeartbeatExecutor-0" #74 daemon prio=5 os_prio=0 tid=0x000000001bca8800 nid=0x2240 waiting on condition [0x000000001f96e000]
+   java.lang.Thread.State: WAITING (parking)
+        at sun.misc.Unsafe.park(Native Method)
+        - parking to wait for  <0x0000000087c80c98> (a java.util.concurrent.SynchronousQueue$TransferStack)
+        at java.util.concurrent.locks.LockSupport.park(LockSupport.java:175)
+
+   Locked ownable synchronizers:
+        - None
+
+"DestroyJavaVM" #67 prio=5 os_prio=0 tid=0x000000001bcaf000 nid=0x283c waiting on condition [0x0000000000000000]
+   java.lang.Thread.State: RUNNABLE
+
+   Locked ownable synchronizers:
+        - None
+
+"http-nio-8763-Acceptor-0" #65 daemon prio=5 os_prio=0 tid=0x000000001bcae800 
+
+"VM Thread" os_prio=2 tid=0x0000000017a07800 nid=0x25c4 runnable
+
+"GC task thread#0 (ParallelGC)" os_prio=0 tid=0x0000000002f6e800 nid=0xb74 runnable
+
+"GC task thread#1 (ParallelGC)" os_prio=0 tid=0x0000000002f70800 nid=0x31b8 runnable
+
+"GC task thread#2 (ParallelGC)" os_prio=0 tid=0x0000000002f72000 nid=0x12a4 runnable
+
+"GC task thread#3 (ParallelGC)" os_prio=0 tid=0x0000000002f74800 nid=0x978 runnable
+
+"VM Periodic Task Thread" os_prio=2 tid=0x00000000197be000 nid=0x76c waiting on condition
+
+JNI global references: 1121
+```
 
