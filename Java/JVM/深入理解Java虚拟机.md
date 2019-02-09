@@ -569,3 +569,123 @@ GCH志开头的`[GC`和`[FullGC`说明了这次`垃圾收集的停顿类型`，�
 
 Java与C++之间有一堵由内存动态分配和垃圾收集技术所围成的“高墙”，墙外面的人想迸去，墙的人却想出来。
 
+#### 1.JDK命令行工具
+
+大家应该都知道`java.exe` ,`javac.exe`这两个命令行工具，但bin目录下其实还有很多工具。
+
+这些工具都很小，只有几十K，因为这些命令行工具大多是jdk/lib/tools.jar类库的一层包装。主要功能在tools类库中实现的。
+
+若是Linux版本的jdk，那么这些工具直接是Shell脚本写的。
+
+JDK团队采用java代码来实现这些监控工具是有用意的:当应用程序部署到生产环境后，无论是直接接触物理服务器还是远程Telnet到服务器上都可能会受到限制，借助tools.jar类库里面的接口，我们可以直接在应用程序中实现功能强大的监控分析功能。
+
+#### 2.Sun JDK监控和故障处理工具
+
+| 名称   | 主要作用                                                     |
+| ------ | ------------------------------------------------------------ |
+| jps    | jvm process status tool,显示指定系统内所有的hotspot虚拟机进程 |
+| jstat  | jvm statistics monitoring tool,用于收集hotspot虚拟机各方面的运行数据 |
+| jinfo  | configuration info for java，显示虚拟机配置信息              |
+| jmap   | memory map for java,生成虚拟机的内存转储快照（heapdump文件） |
+| jhat   | jvm heap dump browser，用于分析heapmap文件，它会建立一个http/html服务器让用户可以在浏览器上查看分析结果 |
+| jstack | stack trace for java ,显示虚拟机的线程快照                   |
+
+##### 1.jps:虚拟机进程状况工具
+
+可以列出正在运行的虚拟机进程，并显示虚拟机执行主类名称以及这些进程的本地虚拟机唯一ID(Local Virtual Machine Identifier,LVMID)。虽然功能比较单一，但它是使用频率最高的jDK命令行工具，因为其他的JDK工具大多需要输入它査询到的LVMID来确定要监控的是哪一个虚拟机进程。对于本地虚拟机进程来说，LVMID与操作系统的进程ID(Process Identifier，PID)是一致的.
+
+　　jps命令格式 `jps [options][hostid]`
+
+　　jps可以通过RMI协议开启了RMI服务的远程虚拟机进程状态，hostid为RMI注册表中注册的主机名。
+
+　　jps常用的选项
+
+| 属性 | 作用                                               |
+| ---- | -------------------------------------------------- |
+| -p   | 只输出LVMID，省略主类的名称                        |
+| -m   | 输出虚拟机进程启动时传递给主类main（）函数的参数   |
+| -l   | 输出主类的全名，如果进程执行的是jar包，输出jar路径 |
+| -v   | 输出虚拟机进程启动时jvm参数                        |
+
+##### 2.jstat：虚拟机统计信息监视工具
+
+　　jstat是用于监视虚拟机各种运行状态信息的命令行工具。它可以显示本地或者远程虚拟机进程中的类装载、内存、垃圾回收、JIT编译等运行数据，在没有GUI图形界面，只是提供了纯文本控制台环境的服务器上，它将是运行期定位虚拟机性能问题的首选工具
+
+　　jstat的命令格式 ` jstat [option vmid [interval [s|ms][count]] ]`
+
+　　对于铭霖格式中的VMID和LVMID，如过是本地虚拟机进程，VMID和LVMID是一致的，如果是远程虚拟机，那VMID的格式应当是：
+
+　`[protocol:][//] lvmid[@hostname[:port]/servername]`
+
+　　参数interval 和count分别表示查询的间隔和次数，如果省略这两个参数，说明只查询一次。
+
+　　主要选项
+
+| 选项              | 作用                                                         |
+| ----------------- | ------------------------------------------------------------ |
+| -class            | 监视装载类、卸载类、总空间以及类装载所耗费的时间             |
+| -gc               | 监视java堆状况，包括eden区、两个survivor区、老年代、永久代等的容量、已用空间、GC时间合计信息 |
+| -gccapacity       | 监视内容与-gc基本相同，但输出主要关注java堆各个区域使用到最大、最小空间 |
+| -gcutil           | 监视内容与-gc基本相同，但输出主要关注已使用控件占总空间的百分比 |
+| -gccause          | 与-gcutil功能一样，但是会额外输出导致上一次gc产生的原因      |
+| -gcnew            | 监视新生代GC情况                                             |
+| -gcnewcapacity    | 监视内容与-gcnew基本相同，输出主要关注使用到的最大、最小空间 |
+| -gcold            | 监视老年代GC情况                                             |
+| -gcoldcapacity    | 监视内容与-gcold基本相同，输出主要关注使用到的最大、最小空间 |
+| -gcpermcapacity   | 输出永久代使用到的最大、最小空间                             |
+| -compiler         | 输出JIT编译过的方法、耗时等信息                              |
+| -printcompilation | 输出已经被JIT编译过的方法                                    |
+
+##### 3.jinfo：java配置信息工具
+
+　　jinfo的作用是实时的查看和调整虚拟机各项参数。使用jps命令的-v参数可以查看虚拟机启动时显示指定的参数列表，但如果想知道未被显式指定的参数的系统默认值，除了去找资料以外，就得使用jinfo的-flag选项
+
+　　jinfo格式 `jinfo [option] pid`
+
+　　jinfo在windows 平台仍有很大的限制
+
+##### 4.jmap：java内存映像工具
+
+　　jmap命令用于生成堆转储快照。jmap的作用并不仅仅为了获取dump文件，它还可以查询finalize执行队列、java堆和永久代的详细信息。如空间使用率、当前用的是哪种收集器等。
+
+　　和jinfo命令一样，jmap在windows下也受到比较大的限制。除了生成dump文件的-dump选项和用于查看每个类的实例、控件占用统计的-histo选项在所有操作系用都提供之外，其余选项只能在linux/solaris下使用。
+
+　　jmap格式 `jmap [option] vmid`
+
+　　选项：
+
+| 选项           | 作用                                                         |
+| -------------- | ------------------------------------------------------------ |
+| -dump          | 生成java堆转储快照。格式为： -dump:[live,]format=b,file=<filename>,其中live子参数说明是否只dump出存活的对象 |
+| -finalizerinfo | 显示在F-Queue中等待Finalizer线程执行finalize方法的对象。只在Linux/Solaris平台下有效 |
+| -heap          | 显示java堆详细信息，如使用哪种收集器、参数配置、分代情况等，在Linux/Solaris平台下有效 |
+| -jisto         | 显示堆中对象统计信息，包含类、实例对象、合集容量             |
+| -permstat      | 以ClassLoader为统计口径显示永久代内存状态。只在Linux/Solaris平台下有效 |
+| -F             | 当虚拟机进程对-dump选项没有相应时。可使用这个选项强制生成dump快照。只在Linux/Solaris平台下有效 |
+
+##### 5.jhat：虚拟机堆转储快照分析工具
+
+　　Sun JDK提供jhat与jmap搭配使用，来分析dump生成的堆快照。jhat内置了一个微型的HTTP/HTML服务器，生成dump文件的分析结果后，可以在浏览器中查看。
+
+　　用法举例 `jhat test1.bin` 
+
+　　test1.bin为生成的dump文件。
+
+　　分析结果默认是以包围单位进行分组显示，分析内存泄漏问题主要会使用到其中的“Heap Histogram”与OQL标签的功能。前者可以找到内存中总容量最大的对象。后者是标准的对象查询语言，使用类似SQL的语法对内存中的对象进行查询统计。
+
+##### 6.jstack：java堆栈跟踪工具
+
+ 　　jstack命令用于生成虚拟机当前时刻的线程快照。线程快照就是当前虚拟机内每一条线程正在执行的方法堆栈集合，生成线程快照的主要目的是定位线程出现长时间停顿的原因，如线程死锁、死循环、请求外部资源导致长时间等待等。
+
+　　jstack 格式 `jstack [option] vmid`
+
+　　option选项的合法值和具体含义
+
+| 选项 | 作用                                         |
+| ---- | -------------------------------------------- |
+| -F   | 当正常输出的请求不被响应时，强制输出线程堆栈 |
+| -l   | 除堆栈外，显示关于锁的附加信息               |
+| -m   | 如果调用到本地方法的话，可以显示c/c++的堆栈  |
+
+Tread类新增了一个getAllStackTraces（）方法用于获取虚拟机中所有的线程的StackTraceElement对象。
+
