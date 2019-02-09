@@ -933,3 +933,14 @@ java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:624)
 JNI global references: 1121
 ```
 
+#### 4.HSIDS:JIT生成代码反汇编
+
+HSDIS是一个Sun官方推荐的HotSpot虚拟机JIT编译代码的反汇编插件，它包含在HotSpot虚拟机的源码之中但没有提供编译后的程序。在Project Kenai的网站也可以下载.到单独的源码.它的作占HotSpot的-XX:+PrintAssembly指令调用它来把动态生成的本.地代码还原为汇编编代码输出，同时还生成了大量非常右价值的注释，这样我们就可以通过输出的代妈来分析问题。
+
+//TODO
+
+参考：`https://www.cnblogs.com/stevenczp/p/7975776.html`
+
+#### 5.JDK的可视化工具
+
+JDK中除了提供命令行工具外还提供了两个功能强大的可视化工具：Jconsole和VisualVM，这两个工具是JDK的正式成员。
