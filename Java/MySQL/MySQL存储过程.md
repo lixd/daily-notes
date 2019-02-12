@@ -320,6 +320,192 @@ SET @uid=123;
 
 #### 1. 变量作用域
 
+**(1). 变量作用域**
+
+内部的变量在其作用域范围内享有更高的优先权，当执行到 end。变量时，内部变量消失，此时已经在其作用域外，变量不再可见了，应为在存储过程外再也不能找到这个申明的变量，但是你可以通过 out 参数或者将其值指派给会话变量来保存其值。
+
+```sql
+mysql > DELIMITER //  
+mysql > CREATE PROCEDURE proc3()  
+     -> begin 
+     -> declare x1 varchar(5) default 'outer';  
+     -> begin 
+     -> declare x1 varchar(5) default 'inner';  
+      -> select x1;  
+      -> end;  
+       -> select x1;  
+     -> end;  
+     -> //  
+mysql > DELIMITER ;
+```
+
+
+
+**(2). 条件语句**
+
+\1. if-then-else 语句
+
+```sql
+mysql > DELIMITER //  
+mysql > CREATE PROCEDURE proc2(IN parameter int)  
+     -> begin 
+     -> declare var int;  
+     -> set var=parameter+1;  
+     -> if var=0 then 
+     -> insert into t values(17);  
+     -> end if;  
+     -> if parameter=0 then 
+     -> update t set s1=s1+1;  
+     -> else 
+     -> update t set s1=s1+2;  
+     -> end if;  
+     -> end;  
+     -> //  
+mysql > DELIMITER ;
+```
+
+
+
+\2. case语句：
+
+```sql
+mysql > DELIMITER //  
+mysql > CREATE PROCEDURE proc3 (in parameter int)  
+     -> begin 
+     -> declare var int;  
+     -> set var=parameter+1;  
+     -> case var  
+     -> when 0 then   
+     -> insert into t values(17);  
+     -> when 1 then   
+     -> insert into t values(18);  
+     -> else   
+     -> insert into t values(19);  
+     -> end case;  
+     -> end;  
+     -> //  
+mysql > DELIMITER ; 
+case
+    when var=0 then
+        insert into t values(30);
+    when var>0 then
+    when var<0 then
+    else
+end case
+```
+
+
+
+**(3). 循环语句**
+
+\1. while ···· end while
+
+```sql
+mysql > DELIMITER //  
+mysql > CREATE PROCEDURE proc4()  
+     -> begin 
+     -> declare var int;  
+     -> set var=0;  
+     -> while var<6 do  
+     -> insert into t values(var);  
+     -> set var=var+1;  
+     -> end while;  
+     -> end;  
+     -> //  
+mysql > DELIMITER ;
+```
+
+
+
+```
+while 条件 do
+    --循环体
+endwhile
+```
+
+\2. repeat···· end repea
+
+它在执行操作后检查结果，而 while 则是执行前进行检查。
+
+```sql
+mysql > DELIMITER //  
+mysql > CREATE PROCEDURE proc5 ()  
+     -> begin   
+     -> declare v int;  
+     -> set v=0;  
+     -> repeat  
+     -> insert into t values(v);  
+     -> set v=v+1;  
+     -> until v>=5  
+     -> end repeat;  
+     -> end;  
+     -> //  
+mysql > DELIMITER ;
+```
+
+
+
+```
+repeat
+    --循环体
+until 循环条件  
+end repeat;
+```
+
+\3. loop ·····endloop
+
+loop 循环不需要初始条件，这点和 while 循环相似，同时和 repeat 循环一样不需要结束条件, leave 语句的意义是离开循环。
+
+```sql
+mysql > DELIMITER //  
+mysql > CREATE PROCEDURE proc6 ()  
+     -> begin 
+     -> declare v int;  
+     -> set v=0;  
+     -> LOOP_LABLE:loop  
+     -> insert into t values(v);  
+     -> set v=v+1;  
+     -> if v >=5 then 
+     -> leave LOOP_LABLE;  
+     -> end if;  
+     -> end loop;  
+     -> end;  
+     -> //  
+mysql > DELIMITER ;
+```
+
+
+
+\4. LABLES 标号：
+
+标号可以用在 begin repeat while 或者 loop 语句前，语句标号只能在合法的语句前面使用。可以跳出循环，使运行指令达到复合语句的最后一步。
+
+**(4). ITERATE迭代**
+
+ITERATE 通过引用复合语句的标号,来从新开始复合语句:
+
+```sql
+mysql > DELIMITER //  
+mysql > CREATE PROCEDURE proc10 ()  
+     -> begin 
+     -> declare v int;  
+     -> set v=0;  
+     -> LOOP_LABLE:loop  
+     -> if v=3 then   
+     -> set v=v+1;  
+     -> ITERATE LOOP_LABLE;  
+     -> end if;  
+     -> insert into t values(v);  
+     -> set v=v+1;  
+     -> if v>=5 then 
+     -> leave LOOP_LABLE;  
+     -> end if;  
+     -> end loop;  
+     -> end;  
+     -> //  
+mysql > DELIMITER ;
+```
+
 
 
 ## 4. 存储过程操作语法
@@ -384,3 +570,10 @@ DELIMITER ;
 CALL myif(2);
 ```
 
+## 参考
+
+`http://www.runoob.com/w3cnote/mysql-stored-procedure.html`
+
+`https://www.2cto.com/database/201805/746743.html`
+
+`https://www.cnblogs.com/mark-chan/p/5384139.html`
