@@ -49,24 +49,24 @@ SQL语句需要先编译然后执行，而存储过程（Stored Procedure）是�
 例如：
 
 ```sql
-#存储过程
-#将语句的结束符号从分号;临时改为两个//(可以是自定义) 让编译器把两个"//"之间的内容当做存储过程的代码，不会执行这些代码
+-- 存储过程
+-- 将语句的结束符号从分号;临时改为两个//(可以是自定义) 让编译器把两个"//"之间的内容当做存储过程的代码，不会执行这些代码
 DELIMITER // 
-# 创建存储过程 名称为 add_sum
+-- 创建存储过程 名称为 add_sum
 CREATE PROCEDURE add_sum(IN a INT,IN b INT,OUT c INT)
-#过程体开始
+-- 过程体开始
 BEGIN
-#SET 赋值
+-- SET 赋值
  SET c=a+b;
-#过程体结束
+-- 过程体结束
 END
-//  # 存储过程结束
-DELIMITER ; # 将分隔符还原为分号 ；
-# 调用存储过程
+//  -- 存储过程结束
+DELIMITER ; -- 将分隔符还原为分号 ；
+-- 调用存储过程
 SET @a=1;
 SET @b=2;
 CALL add_sum(@a,@b,@c);
-SELECT @c AS SUM; #输出为3
+SELECT @c AS SUM; -- 输出为3
 ```
 
 MySQL默认以";"为分隔符，如果没有声明分隔符，则编译器会把存储过程当成SQL语句进行处理，因此编译过程会报错。
@@ -211,16 +211,16 @@ DELIMITER //
     END;
     //
 DELIMITER ;
-#调用
-SET @p_in=1; # 这里@p_in为1
-CALL in_param(@p_in); #这里 修改@p_in值为2
-SELECT @p_in; # 查询@p_in值依旧为1
+-- 调用
+SET @p_in=1; -- 这里@p_in为1
+CALL in_param(@p_in); -- 这里 修改@p_in值为2
+SELECT @p_in; -- 查询@p_in值依旧为1
 ```
 
 **p_in 在存储过程中被修改，但并不影响 @p_id 的值，因为前者为局部变量、后者为全局变量。**
 
 ```sql
-# 此语句的意思就是根据where条件uid=1查询user表，得到的行数存入变量u_count中（给变量赋值）
+-- 此语句的意思就是根据where条件uid=1查询user表，得到的行数存入变量u_count中（给变量赋值）
 select count(*) into u_count from user where uid=1;
 ```
 
@@ -228,35 +228,35 @@ select count(*) into u_count from user where uid=1;
 
 ```sql
 #存储过程
-DELIMITER // #将语句的结束符号从分号;临时改为两个//(可以是自定义) 让编译器把两个"//"之间的内容当做存储过程的代码，不会执行这些代码
+DELIMITER // -- 将语句的结束符号从分号;临时改为两个//(可以是自定义) 让编译器把两个"//"之间的内容当做存储过程的代码，不会执行这些代码
 CREATE PROCEDURE out_param(OUT p_out  INT)
 BEGIN
 SELECT p_out ;
  SET p_out =999;
 END
-//  # 存储过程结束
-DELIMITER ; # 将分隔符还原为分号 ；
+//  -- 存储过程结束
+DELIMITER ; -- 将分隔符还原为分号 ；
 SET @p_out=111;
-CALL out_param(@p_out); #因为out是向调用者输出参数，不接收输入的参数，所以存储过程里的p_out为null
-SELECT @p_out; #调用了out_param存储过程，输出参数，改变了p_out变量的值
+CALL out_param(@p_out); -- 因为out是向调用者输出参数，不接收输入的参数，所以存储过程里的p_out为null
+SELECT @p_out; -- 调用了out_param存储过程，输出参数，改变了p_out变量的值
 ```
 
-#### 3.inout输入参数
+#### 3.INOUT输入参数
 
 ```sql
-#存储过程
-DELIMITER // #将语句的结束符号从分号;临时改为两个//(可以是自定义) 让编译器把两个"//"之间的内容当做存储过程的代码，不会执行这些代码
+-- 存储过程
+DELIMITER // -- 将语句的结束符号从分号;临时改为两个//(可以是自定义) 让编译器把两个"//"之间的内容当做存储过程的代码，不会执行这些代码
 CREATE PROCEDURE inout_param(INOUT p_inout  INT)
 BEGIN
  SELECT p_inout ;
  SET p_inout =999;
  SELECT p_inout ;
 END
-//  # 存储过程结束
-DELIMITER ; # 将分隔符还原为分号 ；
+//  -- 存储过程结束
+DELIMITER ; -- 将分隔符还原为分号 ；
 SET @p_inout=111;
-CALL inout_param(@p_inout);  # 能接受输入的值 查询结果为111
-SELECT @p_inout; # 存储过程修改了值 所以结果为999
+CALL inout_param(@p_inout);  -- 能接受输入的值 查询结果为111
+SELECT @p_inout; -- 存储过程修改了值 所以结果为999
 ```
 
 **注意：**
@@ -277,7 +277,7 @@ CREATE PROCEDURE sp_name ([proc_parameter[,...]]) ……
 
 ### 4.变量
 
-#### 4.1变量定义
+#### 1变量定义
 
 局部变量声明一定要放在存储过程体的开始：
 
@@ -297,13 +297,13 @@ DECLARE l_datetime datetime DEFAULT '1999-12-31 23:59:59';
 DECLARE l_varchar varchar(255) DEFAULT 'This will not be padded';`
 ```
 
-#### 4.2 变量赋值
+#### 2 变量赋值
 
 ```
 SET 变量名 = 表达式值 [,variable_name = expression ...]
 ```
 
-#### 4.3 用户变量
+#### 3 用户变量
 
 ```sql
 SET @ValueName=value; 
@@ -316,9 +316,49 @@ SET @uid=123;
 - 1、用户变量名一般以@开头
 - 2、滥用用户变量会导致程序难以理解及管理
 
+### 5.存储过程控制语句
+
+#### 1. 变量作用域
 
 
 
+## 4. 存储过程操作语法
+
+#### 4.1 存储过程查询
+
+查看某个数据库下面的存储过程
+
+```sql
+-- 查询数据库中的存储过程
+SELECT * FROM mysql.proc WHERE db='数据库名'; 
+
+-- MySQL存储过程和函数的信息存储在information_schema数据库下的Routines表中。通过查询该表的记录查询信息
+SELECT * FROM information_schema.routines WHERE routine_schema='数据库名';
+
+-- 这个语句是MySQL的扩展，它返回子程序的特征，如数据库、名字、类型、创建者及创建和修改日期。PROCEDURE和FUNCTION分别表示查看存储过程和函数
+SHOW PROCEDURE STATUS WHERE db='数据库名'; 
+```
+
+查看详细的存储过程
+
+```sql
+SHOW CREATE PROCEDURE 数据库.存储过程名; -- 它返回一个可用来重新创建已命名子程序的确切字符串
+```
+
+#### 4.2 修改删除
+
+```sql
+-- 修改
+ALTER {PROCEDURE | FUNCTION} proc_or_func [characterustic...]
+
+ALTER PROCEDURE 存储过程名字  
+ALTER PROCEDURE inout_param  
+-- 删除
+DROP {PROCEDURE | FUNCTION} [IF EXISTS] proc_name
+
+DROP PROCEDURE  inout_param;
+DROP PROCEDURE IF EXISTS inout_param;
+```
 
 
 
