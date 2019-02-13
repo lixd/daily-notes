@@ -320,127 +320,112 @@ SET @uid=123;
 
 #### 1. 变量作用域
 
-**(1). 变量作用域**
-
 内部的变量在其作用域范围内享有更高的优先权，当执行到 end。变量时，内部变量消失，此时已经在其作用域外，变量不再可见了，应为在存储过程外再也不能找到这个申明的变量，但是你可以通过 out 参数或者将其值指派给会话变量来保存其值。
 
+
+
+##### 2.条件语句
+
+#####  1.if-then-else 语句
+
 ```sql
-mysql > DELIMITER //  
-mysql > CREATE PROCEDURE proc3()  
-     -> begin 
-     -> declare x1 varchar(5) default 'outer';  
-     -> begin 
-     -> declare x1 varchar(5) default 'inner';  
-      -> select x1;  
-      -> end;  
-       -> select x1;  
-     -> end;  
-     -> //  
-mysql > DELIMITER ;
+DROP PROCEDURE IF EXISTS myif;  -- 删除存储过程myif 如果存在
+DELIMITER //
+CREATE PROCEDURE myif(IN a INT)
+BEGIN
+DECLARE msg VARCHAR(30);
+IF a = 0 THEN
+	SET msg='a is 0';
+ELSEIF a = 1 THEN 
+	SET msg='a is 1';
+ELSE 
+	SET msg='a is others,not 0 or 1';
+END IF;
+SELECT msg;
+END
+//
+DELIMITER ;
+
+CALL myif(2); -- 调用
 ```
 
 
 
-**(2). 条件语句**
-
-\1. if-then-else 语句
+##### 2.case语句：
 
 ```sql
-mysql > DELIMITER //  
-mysql > CREATE PROCEDURE proc2(IN parameter int)  
-     -> begin 
-     -> declare var int;  
-     -> set var=parameter+1;  
-     -> if var=0 then 
-     -> insert into t values(17);  
-     -> end if;  
-     -> if parameter=0 then 
-     -> update t set s1=s1+1;  
-     -> else 
-     -> update t set s1=s1+2;  
-     -> end if;  
-     -> end;  
-     -> //  
-mysql > DELIMITER ;
-```
+DROP PROCEDURE IF EXISTS mycase;
+DELIMITER //
+CREATE PROCEDURE mycase(IN a INT)
+BEGIN
+DECLARE msg VARCHAR(30); -- 定义变量
+CASE a
+WHEN 0 THEN
+	SET msg='a is 0';
+WHEN 1 THEN
+	SET msg='a is 1';
+ELSE  -- 相当于switch中的default
+	SET msg='a is others,not 0 or 1';
+SELECT msg;
+END CASE;
+END 
+//
+DELIMITER ;
 
-
-
-\2. case语句：
-
-```sql
-mysql > DELIMITER //  
-mysql > CREATE PROCEDURE proc3 (in parameter int)  
-     -> begin 
-     -> declare var int;  
-     -> set var=parameter+1;  
-     -> case var  
-     -> when 0 then   
-     -> insert into t values(17);  
-     -> when 1 then   
-     -> insert into t values(18);  
-     -> else   
-     -> insert into t values(19);  
-     -> end case;  
-     -> end;  
-     -> //  
-mysql > DELIMITER ; 
-case
-    when var=0 then
-        insert into t values(30);
-    when var>0 then
-    when var<0 then
-    else
-end case
+CALL mycase(1); -- 调用
 ```
 
 
 
 **(3). 循环语句**
 
-\1. while ···· end while
+###### 1.while ···· end while
 
 ```sql
-mysql > DELIMITER //  
-mysql > CREATE PROCEDURE proc4()  
-     -> begin 
-     -> declare var int;  
-     -> set var=0;  
-     -> while var<6 do  
-     -> insert into t values(var);  
-     -> set var=var+1;  
-     -> end while;  
-     -> end;  
-     -> //  
-mysql > DELIMITER ;
+DROP PROCEDURE IF EXISTS mywhile;
+DELIMITER //
+CREATE PROCEDURE mywhile(IN a INT)
+BEGIN
+DECLARE msg VARCHAR(30);
+WHILE a>1 DO
+INSERT INTO user2 VALUES(NULL,a);  -- 循环往表中插入数据
+SET a=a-1; 			   -- 每次执行结束a减1
+END WHILE;
+END
+//
+DELIMITER ;
+DROP PROCEDURE mywhile;
+
+CALL mywhile(5);
 ```
 
 
 
-```
+```sql
 while 条件 do
     --循环体
 endwhile
 ```
 
-\2. repeat···· end repea
+###### 2. repeat···· end repea
 
 它在执行操作后检查结果，而 while 则是执行前进行检查。
 
 ```sql
-mysql > DELIMITER //  
-mysql > CREATE PROCEDURE proc5 ()  
-     -> begin   
-     -> declare v int;  
-     -> set v=0;  
-     -> repeat  
-     -> insert into t values(v);  
-     -> set v=v+1;  
-     -> until v>=5  
-     -> end repeat;  
-     -> end;  
-     -> //  
-mysql > DELIMITER ;
+DROP PROCEDURE IF EXISTS myrepeat;
+DELIMITER //
+CREATE PROCEDURE myrepeat(IN a INT)
+BEGIN
+REPEAT
+ INSERT INTO user2 VALUES(NULL,a);
+ SET a=a-1;
+ UNTIL a<1
+ END REPEAT;
+ END
+ //
+DELIMITER ;
+ 
+CALL myrepeat(10);
 ```
 
 
@@ -452,58 +437,57 @@ until 循环条件
 end repeat;
 ```
 
-\3. loop ·····endloop
+###### 3.loop ·····endloop
 
-loop 循环不需要初始条件，这点和 while 循环相似，同时和 repeat 循环一样不需要结束条件, leave 语句的意义是离开循环。
+-- loop 与 leave,iterate 实现循环  
+-- loop 标志位无条件循环，leave 类似于break 语句，跳出循环，跳出 begin end，iterate 类似于continue ，结束本次循环
 
 ```sql
-mysql > DELIMITER //  
-mysql > CREATE PROCEDURE proc6 ()  
-     -> begin 
-     -> declare v int;  
-     -> set v=0;  
-     -> LOOP_LABLE:loop  
-     -> insert into t values(v);  
-     -> set v=v+1;  
-     -> if v >=5 then 
-     -> leave LOOP_LABLE;  
-     -> end if;  
-     -> end loop;  
-     -> end;  
-     -> //  
-mysql > DELIMITER ;
+DROP PROCEDURE IF EXISTS myloop;
+DELIMITER //
+CREATE PROCEDURE myloop(IN a INT)
+BEGIN
+loop_label: LOOP
+INSERT INTO user2 VALUES(NULL,a);
+SET a=a-1;
+IF a<1 THEN
+	LEAVE loop_label;
+END IF;
+END LOOP;
+END
+//
+DELIMITER ;
+
+CALL myloop(10);
 ```
 
-
-
-\4. LABLES 标号：
+###### 4. LABLES 标号
 
 标号可以用在 begin repeat while 或者 loop 语句前，语句标号只能在合法的语句前面使用。可以跳出循环，使运行指令达到复合语句的最后一步。
-
-**(4). ITERATE迭代**
 
 ITERATE 通过引用复合语句的标号,来从新开始复合语句:
 
 ```sql
-mysql > DELIMITER //  
-mysql > CREATE PROCEDURE proc10 ()  
-     -> begin 
-     -> declare v int;  
-     -> set v=0;  
-     -> LOOP_LABLE:loop  
-     -> if v=3 then   
-     -> set v=v+1;  
-     -> ITERATE LOOP_LABLE;  
-     -> end if;  
-     -> insert into t values(v);  
-     -> set v=v+1;  
-     -> if v>=5 then 
-     -> leave LOOP_LABLE;  
-     -> end if;  
-     -> end loop;  
-     -> end;  
-     -> //  
-mysql > DELIMITER ;
+DROP PROCEDURE IF EXISTS myiterate;
+DELIMITER //
+CREATE PROCEDURE myiterate(IN a INT)
+BEGIN
+loop_label: LOOP
+IF a<3 THEN
+	SET a=a+1;
+ITERATE loop_label; -- 退出这次循环 继续下一次循环 类似于continue
+END IF;
+INSERT INTO user2 VALUES(NULL,a);
+SET a=a+1;
+IF a>=5 THEN
+	LEAVE loop_label;
+END IF;
+END LOOP;
+END
+//
+DELIMITER ;
+
+CALL myiterate(1);
 ```
 
 
