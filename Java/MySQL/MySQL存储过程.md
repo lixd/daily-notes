@@ -377,7 +377,7 @@ CALL mycase(1); -- 调用
 
 
 
-**(3). 循环语句**
+##### 3.循环语句
 
 ###### 1.while ···· end while
 
@@ -407,7 +407,7 @@ while 条件 do
 endwhile
 ```
 
-###### 2. repeat···· end repea
+###### 2.repeat···· end repea
 
 它在执行操作后检查结果，而 while 则是执行前进行检查。
 
@@ -461,7 +461,7 @@ DELIMITER ;
 CALL myloop(10);
 ```
 
-###### 4. LABLES 标号
+###### 4.LABLES 标号
 
 标号可以用在 begin repeat while 或者 loop 语句前，语句标号只能在合法的语句前面使用。可以跳出循环，使运行指令达到复合语句的最后一步。
 
