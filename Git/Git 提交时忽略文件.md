@@ -4,6 +4,17 @@ Git ignore
 
 **.gitignore只能忽略那些原来没有被track的文件，如果某些文件已经被纳入了版本管理中，则修改.gitignore是无效的。**
 
+
+
+```git
+//git忽略已提交文件 首先修改.gitignore
+git rm -r --cached . #删除追踪状态
+git add . 
+git commit -m "fixed untracked files"
+```
+
+
+
  `正确的做法`是在每个clone下来的仓库中手动设置不要检查特定文件的更改情况。
  git update-index --assume-unchanged PATH    在PATH处输入要忽略的文件。
 

@@ -189,8 +189,3 @@ git +命令 --help
 #查看git的版本
 git --version
 ```
-
-git reset –soft 不会改变stage区，仅仅将commit回退到了指定的提交 
-git reset –mixed 不回改变工作区，但是会用指定的commit覆盖stage 区，之前所有暂存的内容都变为为暂存的状态 
-
-git reset –hard 使用指定的commit的内容覆盖stage区和工作区。
