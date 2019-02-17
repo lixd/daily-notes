@@ -1,0 +1,5 @@
+
+最近在研究Java的动态代理时对InvocationHandler中invoke方法中的第一个参数一直不理解它的用处
+1. 可以使用反射获取代理对象的信息（也就是proxy.getClass().getName()）。
+
+2. 可以将代理对象返回以进行连续调用，这就是proxy存在的目的，因为this并不是代理对象。
