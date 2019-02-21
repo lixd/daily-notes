@@ -1,6 +1,6 @@
+# IO学习记录
 
-
-# 阻塞式IO
+## 1. 阻塞式IO
 
 ```java
 package com.kct.api.test.Proxy.cglib;
@@ -102,7 +102,7 @@ public class ServerClient {
 
 ```
 
-## nio
+## 2. NIO
 
 ```java
 package com.kct.api.test.Proxy.cglib;
@@ -205,7 +205,7 @@ public class NIOServerClient {
 }
 ```
 
-## Aio
+## 3. AIO
 
 ```java
 package com.kct.api.test.Proxy.cglib;
@@ -422,7 +422,7 @@ public class AIOFile {
 }
 ```
 
-## netty
+## 4. Netty
 
 ```java
 package com.kct.api.test.Proxy.cglib.netty;
