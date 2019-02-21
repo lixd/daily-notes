@@ -511,3 +511,192 @@ public class test {
     }
 }
 ```
+
+
+
+
+```
+package com.kct.api.test.Proxy.cglib.netty;
+
+import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.ChannelInboundHandlerAdapter;
+
+public class EchoServerHandler extends ChannelInboundHandlerAdapter {
+    @Override
+    public void channelRead(ChannelHandlerContext ctx, Object msg) throws Exception {
+        System.out.println("server channelRead: " + msg);
+        ctx.write(msg);
+    }
+
+    @Override
+    public void channelReadComplete(ChannelHandlerContext ctx) throws Exception {
+        System.out.println("server channelReadComplete ");
+        // 第一种方法：写一个空的buf，并刷新写出区域。完成后关闭sock channel连接。
+        ctx.writeAndFlush(Unpooled.EMPTY_BUFFER).addListener(ChannelFutureListener.CLOSE);
+        //ctx.flush(); // 第二种方法：在client端关闭channel连接，这样的话，会触发两次channelReadComplete方法。
+        //ctx.flush().close().sync(); // 第三种：改成这种写法也可以，但是这种写法，没有第一种方法的好。
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        System.out.println("server exceptionCaught: " + cause.getMessage());
+        cause.printStackTrace();
+        ctx.close();
+    }
+}
+```
+
+```
+package com.kct.api.test.Proxy.cglib.netty;
+
+import java.nio.charset.Charset;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.util.CharsetUtil;
+
+public class EchoClientHandler extends SimpleChannelInboundHandler<ByteBuf> {
+    @Override
+    protected void channelRead0(ChannelHandlerContext channelHandlerContext, ByteBuf o) throws Exception {
+        System.out.println("client channelRead0");
+        ByteBuf b = o.readBytes(o.readableBytes());
+        System.out.println("client receive: " + b + "value is: " + b.toString(Charset.forName("utf-8")));
+    }
+
+    @Override
+    public void channelActive(ChannelHandlerContext ctx) throws Exception {
+        System.out.println("client channelActive");
+        ctx.writeAndFlush(Unpooled.copiedBuffer("Netty rocks", CharsetUtil.UTF_8));
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        System.out.println("client exceptionCaught" + cause.getMessage());
+        cause.printStackTrace();
+        ctx.close();
+    }
+}
+```
+
+easychat
+
+```
+package com.kct.api.test.easychat;
+
+import java.net.SocketAddress;
+
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.channel.group.ChannelGroup;
+import io.netty.channel.group.DefaultChannelGroup;
+import io.netty.util.concurrent.GlobalEventExecutor;
+
+/**
+ * SimpleChannelInboundHandler 实现了ChannelInboundHandlerAdapter并添加了一些功能
+ */
+public class SimpleChatServerHandler extends SimpleChannelInboundHandler<String> {
+    /**
+     * 把所有连上来的客户端channel都存在里面
+     * 有人发送消息时循环遍历 给每个客户端都发一遍
+     */
+    public static ChannelGroup channels = new DefaultChannelGroup(GlobalEventExecutor.INSTANCE);
+
+    /**
+     * 有新客户端连接时回调
+     *
+     * @param ctx ChannelHandlerContext代表了ChannelPipeline和ChannelHandler之间的关联，是ChannelHandler之间信息传递的桥梁。
+     * @throws Exception
+     */
+    @Override
+    public void handlerAdded(ChannelHandlerContext ctx) throws Exception {
+        Channel channel = ctx.channel();
+        SocketAddress socketAddress = channel.remoteAddress();
+        channels.writeAndFlush("[SERVER] - " + socketAddress + " 进入聊天室\n");
+        channels.add(channel);
+    }
+
+    /**
+     * 客户端断开连接时回调
+     *
+     * @param ctx 同上
+     * @throws Exception
+     */
+    @Override
+    public void handlerRemoved(ChannelHandlerContext ctx) throws Exception {
+        Channel channel = ctx.channel();
+        SocketAddress socketAddress = channel.remoteAddress();
+        channels.writeAndFlush("[SERVER] - " + socketAddress + " 退出聊天室\n");
+        channels.remove(channel);
+    }
+
+    /**
+     * 服务端读到客户端写入信息时回调
+     * 将消息转发给其他客户端
+     *
+     * @param channelHandlerContext 同上
+     * @param o 收到的消息
+     * @throws Exception
+     */
+    @Override
+    protected void channelRead0(ChannelHandlerContext channelHandlerContext, String o) throws Exception {
+        Channel channel = channelHandlerContext.channel();
+        SocketAddress socketAddress = channel.remoteAddress();
+        for (Channel c : channels  //循环遍历转发消息给所有的客户端
+        ) {
+            if (c == channel) { //如果是自己发的消息就显示你说了什么什么
+                c.writeAndFlush("you：" + o + "\n");
+            } else { //如果不是就显示 XXX(地址)说了什么
+                c.writeAndFlush(socketAddress + ": " + o + "\n");
+            }
+        }
+    }
+
+    /**
+     * 服务端监听到客户端-活动-时回调
+     *
+     * @param ctx 同上
+     * @throws Exception
+     */
+    @Override
+    public void channelActive(ChannelHandlerContext ctx) throws Exception {
+        Channel channel = ctx.channel();
+        SocketAddress socketAddress = channel.remoteAddress();
+        System.out.println(socketAddress + "在线\n");
+
+    }
+
+    /**
+     * 服务端监听到客户端-不活动-时回调
+     *
+     * @param ctx 同上
+     * @throws Exception
+     */
+    @Override
+    public void channelInactive(ChannelHandlerContext ctx) throws Exception {
+        Channel channel = ctx.channel();
+        SocketAddress socketAddress = channel.remoteAddress();
+        System.out.println(socketAddress + "离线\n");
+    }
+
+    /**
+     * 出现异常时回调
+     *
+     * @param ctx 同上
+     * @param cause 异常信息
+     * @throws Exception
+     */
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        Channel channel = ctx.channel();
+        SocketAddress socketAddress = channel.remoteAddress();
+        System.out.println(socketAddress + "异常\n");
+        ctx.close();
+        cause.printStackTrace();
+    }
+}
+```
