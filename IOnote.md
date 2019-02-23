@@ -700,3 +700,311 @@ public class SimpleChatServerHandler extends SimpleChannelInboundHandler<String>
     }
 }
 ```
+
+
+
+
+
+
+
+## charserver
+
+```
+package com.example.demo.netty;
+
+import java.net.InetSocketAddress;
+import java.security.cert.CertificateException;
+
+import io.netty.bootstrap.ServerBootstrap;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.EventLoop;
+import io.netty.channel.EventLoopGroup;
+import io.netty.channel.group.ChannelGroup;
+import io.netty.channel.group.DefaultChannelGroup;
+import io.netty.channel.nio.NioEventLoopGroup;
+import io.netty.channel.socket.nio.NioServerSocketChannel;
+import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.util.SelfSignedCertificate;
+import io.netty.util.concurrent.ImmediateEventExecutor;
+
+/**
+ * @author Administrator
+ */
+public class ChatServer {
+    private final ChannelGroup channels = new DefaultChannelGroup(ImmediateEventExecutor.INSTANCE);
+    private final EventLoopGroup group = new NioEventLoopGroup();
+    private Channel channel;
+
+    public ChannelFuture start(InetSocketAddress address) {
+        ServerBootstrap b = new ServerBootstrap();
+        b.group(group)
+                .channel(NioServerSocketChannel.class)
+                .childHandler(createInitializer(channels));
+        ChannelFuture future = b.bind(address);
+        future.syncUninterruptibly();
+        channel = future.channel();
+        return future;
+    }
+
+    protected ChannelInitializer<Channel> createInitializer(ChannelGroup group) {        //3
+        return new ChatServerInitializer(group);
+    }
+
+    SelfSignedCertificate selfSignedCertificate;
+
+    private SecureChatServerIntializer creatSecureChatServerIntializer(ChannelGroup group) {
+        try {
+            selfSignedCertificate = new SelfSignedCertificate();
+            return new SecureChatServerIntializer(channels, SslContext.newServerContext(selfSignedCertificate.certificate(), selfSignedCertificate.privateKey()));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    public void destroy() {        //4
+        if (channel != null) {
+            channel.close();
+        }
+        channels.close();
+        group.shutdownGracefully();
+    }
+
+    public static void main(String[] args) throws Exception {
+
+        int port = 8080;
+
+        final ChatServer endpoint = new ChatServer();
+        ChannelFuture future = endpoint.start(new InetSocketAddress(port));
+
+        Runtime.getRuntime().addShutdownHook(new Thread() {
+            @Override
+            public void run() {
+                endpoint.destroy();
+            }
+        });
+        future.channel().closeFuture().syncUninterruptibly();
+    }
+}
+
+```
+
+```
+package com.example.demo.netty;
+
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelPipeline;
+import io.netty.channel.group.ChannelGroup;
+import io.netty.handler.codec.http.HttpObjectAggregator;
+import io.netty.handler.codec.http.HttpServerCodec;
+import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
+import io.netty.handler.stream.ChunkedWriteHandler;
+
+public class ChatServerInitializer extends ChannelInitializer {
+    private ChannelGroup group;
+
+    public ChatServerInitializer(ChannelGroup group) {
+        this.group = group;
+    }
+
+    @Override
+    protected void initChannel(Channel channel) throws Exception {
+        ChannelPipeline pipeline = channel.pipeline();
+        pipeline.addLast(new HttpServerCodec());
+        pipeline.addLast(new HttpObjectAggregator(64 * 1024));
+        pipeline.addLast(new ChunkedWriteHandler());
+        pipeline.addLast(new HttpRequestHandler("/ws"));
+        pipeline.addLast(new WebSocketServerProtocolHandler("/ws"));
+        pipeline.addLast(new TextWebSocketFrameHandler(group));
+    }
+}
+
+```
+
+```
+package com.example.demo.netty;
+
+import java.util.List;
+
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.ByteToMessageDecoder;
+
+public class FixedLengthFrameDecoder extends ByteToMessageDecoder {
+    private final int len;
+
+    public FixedLengthFrameDecoder(int len) {
+        this.len = len;
+    }
+
+    @Override
+    protected void decode(ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, List<Object> list) throws Exception {
+        if (byteBuf.readableBytes() >= len) {
+            ByteBuf byteBuf1 = byteBuf.readBytes(len);
+            list.add(byteBuf);
+        }
+    }
+}
+
+```
+
+```
+package com.example.demo.netty;
+
+import java.io.File;
+import java.io.RandomAccessFile;
+import java.net.URI;
+import java.net.URL;
+
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.DefaultFileRegion;
+import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.handler.codec.http.DefaultFullHttpResponse;
+import io.netty.handler.codec.http.FullHttpRequest;
+import io.netty.handler.codec.http.FullHttpResponse;
+import io.netty.handler.codec.http.HttpHeaderNames;
+import io.netty.handler.codec.http.HttpHeaderValues;
+import io.netty.handler.codec.http.HttpHeaders;
+import io.netty.handler.codec.http.HttpResponseStatus;
+import io.netty.handler.codec.http.HttpUtil;
+import io.netty.handler.codec.http.HttpVersion;
+import io.netty.handler.codec.http.LastHttpContent;
+import io.netty.handler.ssl.SslHandler;
+import io.netty.handler.stream.ChunkedNioFile;
+
+public class HttpRequestHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
+    private final String wsUri;
+    private static File INDEX = null;
+
+    public HttpRequestHandler(String wsUri) {
+        this.wsUri = wsUri;
+    }
+
+    static {
+        URL location = HttpRequestHandler.class.getProtectionDomain().getCodeSource().getLocation();
+        try {
+            URI uri = location.toURI();
+            String path = uri + "index.html";
+            path = !path.contains("file:") ? path : path.substring(5);
+            INDEX = new File(path);
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+
+    @Override
+    protected void channelRead0(ChannelHandlerContext channelHandlerContext, FullHttpRequest fullHttpRequest) throws Exception {
+        if (wsUri.equalsIgnoreCase(fullHttpRequest.uri())) {
+            channelHandlerContext.fireChannelRead(fullHttpRequest.retain());
+        } else {
+            if (HttpUtil.is100ContinueExpected(fullHttpRequest)) {
+                send100Continue(channelHandlerContext);
+            }
+
+            RandomAccessFile r = new RandomAccessFile(INDEX, "r");
+            DefaultFullHttpResponse response = new DefaultFullHttpResponse(fullHttpRequest.protocolVersion(), HttpResponseStatus.OK);
+            //设置响应头
+            response.headers().set(HttpHeaderNames.CONTENT_TYPE, "text/html;charset=UTF-8");
+            boolean keepAlive = HttpUtil.isKeepAlive(fullHttpRequest);
+            if (keepAlive) {
+                response.headers().set(HttpHeaderNames.CONTENT_LENGTH, r.length());
+                response.headers().set(HttpHeaderNames.CONNECTION, HttpHeaderValues.KEEP_ALIVE);
+            }
+            channelHandlerContext.write(response);
+            //判断是否有ssl 没有就使用DefaultFileRegion 否则ChunkedNioFile
+            if (channelHandlerContext.pipeline().get(SslHandler.class) == null) {
+                channelHandlerContext.write(new DefaultFileRegion(r.getChannel(), 0, r.length()));
+            } else {
+                channelHandlerContext.write(new ChunkedNioFile(r.getChannel()));
+            }
+            ChannelFuture channelFuture = channelHandlerContext.writeAndFlush(LastHttpContent.EMPTY_LAST_CONTENT);
+            if (!keepAlive) {
+                channelFuture.addListener(ChannelFutureListener.CLOSE);
+            }
+
+        }
+    }
+
+    private static void send100Continue(ChannelHandlerContext ctx) {
+        FullHttpResponse response = new DefaultFullHttpResponse(HttpVersion.HTTP_1_1, HttpResponseStatus.CONTINUE);
+        ctx.writeAndFlush(response);
+    }
+
+    @Override
+    public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
+        cause.printStackTrace();
+        ctx.close();
+    }
+}
+
+```
+
+```
+package com.example.demo.netty;
+
+import javax.net.ssl.SSLEngine;
+
+import io.netty.channel.Channel;
+import io.netty.channel.group.ChannelGroup;
+import io.netty.handler.ssl.SslContext;
+import io.netty.handler.ssl.SslHandler;
+
+public class SecureChatServerIntializer extends ChatServerInitializer {
+    private final SslContext sslContext;
+
+    public SecureChatServerIntializer(ChannelGroup group, SslContext sslContext) {
+        super(group);
+        this.sslContext = sslContext;
+    }
+
+    @Override
+    protected void initChannel(Channel channel) throws Exception {
+        super.initChannel(channel);
+        SSLEngine sslEngine = sslContext.newEngine(channel.alloc());
+        sslEngine.setUseClientMode(false);
+        channel.pipeline().addLast(new SslHandler(sslEngine));
+    }
+}
+
+```
+
+```
+package com.example.demo.netty;
+
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.channel.SimpleChannelInboundHandler;
+import io.netty.channel.group.ChannelGroup;
+import io.netty.handler.codec.http.websocketx.TextWebSocketFrame;
+import io.netty.handler.codec.http.websocketx.WebSocketServerProtocolHandler;
+
+public class TextWebSocketFrameHandler extends SimpleChannelInboundHandler<TextWebSocketFrame> {
+    private ChannelGroup group;
+
+    public TextWebSocketFrameHandler(ChannelGroup group) {
+        this.group = group;
+    }
+
+    @Override
+    public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
+        if (evt == WebSocketServerProtocolHandler.ServerHandshakeStateEvent.HANDSHAKE_COMPLETE) {
+            ctx.pipeline().remove(HttpRequestHandler.class);
+            group.writeAndFlush("Client " + ctx.channel() + " joined");
+            group.add(ctx.channel());
+        } else {
+            super.userEventTriggered(ctx, evt);
+        }
+    }
+
+    @Override
+    protected void channelRead0(ChannelHandlerContext channelHandlerContext, TextWebSocketFrame msg) throws Exception {
+        group.writeAndFlush(msg.retain());
+    }
+}
+
+```
