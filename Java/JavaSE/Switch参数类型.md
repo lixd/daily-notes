@@ -17,9 +17,11 @@ public class test1 {
         switch (week) {
             case MONDAY:
                 System.out.println("星期一");
+                System.out.println(week.ordinal()); //1
                 break;
             case FRIDAY:
                 System.out.println("星期五");
+                System.out.println(week.ordinal()); //5
                 break;
         }
     }
@@ -95,9 +97,11 @@ public class test1 {
         switch (s) {
             case "a":
                 System.out.println("a");
+                System.out.println("a".hashCode()); //97
                 break;
             case "b":
                 System.out.println("b");
+                System.out.println("b".hashCode()); //98
                 break;
         }
     }
