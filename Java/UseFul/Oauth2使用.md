@@ -1,11 +1,64 @@
-# 第三方登录
+# Oauth2使用
 
-https://www.cnblogs.com/flashsun/p/7424071.html
+## 1. 流程
 
-http://www.ruanyifeng.com/blog/2014/05/oauth_2_0.html
+* 1.App端调用第三方进行登录
+* 2.第三方返回`code`
+* 3.App端根据`code`获取到`AccessToken`
+* 4.App端根据`AccessToken`获取到`openID`(有的也叫uid)并发送`AccessToken`和`openID`到后台
+* 4.后台根据`AccessToken`调用第三方提供的校验API进行`openID`校验
+* 5.校验成功返回本应用的访问令牌token
 
-## 1.大概流程
-```proto
+## 1. RequestTokenURL
+
+当用户点击第三方登录按钮：QQ、微信 时会跳转到授权界面
+
+当击用QQ登录的小图标时，实际上是向后台服务器发起了一个 `http://www.illusory.com/goToAuthorize` (这是随便举例的，就是一个OAuth请求)的请求，后台服务器会响应一个重定向地址，指向QQ授权登录页面：`http://www.qq.com/authorize?callback=www.illusory.com/callback`浏览器接到重定向地址 `http://www.qq.com/authorize?callback=www.illusory.com/callback` 再次访问。
+
+并注意到这次访问带了一个参数是callback:`callback=www.illusory.com/callback`，以便QQ那边授权成功再次让浏览器发起这个callback请求。
+QQ这边授权完成后就会根据callback发起一个请求跳转回你的应用页面 这里的callback就是：`https://www.illusory.com/callback`
+不然qq怎么知道你让我授权后要返回那个页面啊，每天让我授权的像这样的网站这么多。
+
+## 2.CallBackURL&Code
+
+ 2.在授权页面输入账号密码点击同意授权
+
+一定还会访问QQ、微信服务器中校验用户名密码的方法，若校验成功，该方法会响应浏览器一个重定向地址就是自己带过去的callback，并附上一个code（授权码）。
+由于illusory后台服务器只关心向qq发起authorize请求后会返回一个`code`，并不关心qq是如何校验用户的，并且这个过程每个授权服务器可能会做些个性化的处理，
+只要最终的结果是返回给浏览器一个重定向并附上code即可.
+当用户点击同意授权后，QQ服务器校验账号密码，若通过则回调callback，并带上一个code授权码
+浏览器重定向到`https://www.illusory.com/callback?code=123456`
+
+**code有效期很短，一般是10秒左右**
+
+## 3. UserAuthorizationURL&AccessTok
+
+illusory后台服务器获取到code授权码 用code去获取token
+
+浏览器重定向到`https://www.illusory.com/callback?code=123456` (这就是UserAuthorizationURL)后 illusory服务器就可以拿到QQ服务器给的code授权码了
+此时后台服务器会用拿到的code再次访问QQ服务器，获取`AccessToken`,token时有时间限制的，过期后就不可用了，一般是10天左右。
+
+## 4. RefreshToken
+
+可以在url中拼接一个Boolean类型参数来刷新AccessToken，如：`...&need_refresh_token=true&··`然后就可以获取到一个新的AccessToken
+
+**获取code后再用code去获取token主要是为了提高安全性，因为code很快就过期了，就算被劫持了可能也不知道appid和app_sercet而无法获取到token 然后code就过期了**
+
+## 5. openID
+
+最后App端根据`AccessToken`获取到`openID`,然后就可以通过`openID`获取到用户的头像，昵称等信息。
+
+然后将`AccessToken`和`OpenID`传到后台服务器。
+
+## 6. 服务器检验
+
+后台服务器收到`AccessToken`和`OpenID`后调用QQ的API，根据`AccessToken`获取到用户信息，其中就包括了`OpenId`，在和App端发过来的`OpenId`对比，若相同则用户登陆成功，这里就可以生成一个自己的账号，和这个`OpenId`关联，在返回一个用于访问自己应用的Token或者Session。
+
+
+
+登陆相关代码：
+
+```protobuf
 // 开放授权登录的第三方账号信息
 syntax = "proto3";
 /******************************** 用户登录注册 begin ********************************/
@@ -279,72 +332,4 @@ message OAuthAccountInfo {
     string       avatar_url   = 4;
 }
 ```
-> 1.流程：
-  App端调用第三方进行登录
-  ->
-  第三方返回openid(微博叫uid)与access_token
-  ->
-  App端发送openid与access_token到后台
-  ->
-  后台调用第三方提供的校验API进行校验
-  ->
-  校验成功返回本应用的访问令牌token
 
-## 1. RequestTokenURL
-
-1.用户点击第三方登录按钮：QQ、微信 跳转到授权界面
-
-当你点击用qq登录的小图标时，实际上是向后台服务器发起了一个 `http://www.douban.com/goToAuthorize` 的请求，
-后台服务器会响应一个重定向地址，指向qq授权登录页面：`http://www.qq.com/authorize?callback=www.illusory.com/callback`
-浏览器接到重定向地址 `http://www.qq.com/authorize?callback=www.illusory.com/callback` 再次访问。
-并注意到这次访问带了一个参数是callback:`callback=www.illusory.com/callback`，以便qq那边授权成功再次让浏览器发起这个callback请求。
-QQ这边授权完成后就会根据callback发起一个请求跳转回你的应用页面 这里的callback就是：`https://www.illusory.com/callback`
-不然qq怎么知道你让我授权后要返回那个页面啊，每天让我授权的像这样的网站这么多。
-
-## 2.CallBackURL&Code
-
- 2.在授权页面输入账号密码点击同意授权
-
-一定还会访问QQ、微信服务器中校验用户名密码的方法，若校验成功，该方法会响应浏览器一个重定向地址就是自己带过去的callback，并附上一个code（授权码）。
-由于illusory后台服务器只关心向qq发起authorize请求后会返回一个`code`，并不关心qq是如何校验用户的，并且这个过程每个授权服务器可能会做些个性化的处理，
-只要最终的结果是返回给浏览器一个重定向并附上code即可.
-当用户点击同意授权后，QQ服务器校验账号密码，若通过则回调callback，并带上一个code授权码
-浏览器重定向到`https://www.illusory.com/callback?code=123456`
-
-**code有效期很短，一般是10秒左右**
-
-## 3. UserAuthorizationURL&AccessTok
-
- 3.illusory后台服务器获取到code授权码 用code去获取token
-
-浏览器重定向到`https://www.illusory.com/callback?code=123456` 后 illusory服务器就可以拿到QQ服务器给的code授权码了
-此时后台服务器会用拿到的code再次访问QQ服务器，获取`AccessToken`,token时有时间限制的，过期后就不可用了，一般是10天左右。
-
-## 4. RefreshToken
-
-可以在url中拼接一个Boolean类型参数来刷新AccessToken，如：`...&need_refresh_token=true&··`然后就可以获取到一个新的AccessToken
-
-**获取code后再用code去获取token主要是为了提高安全性，因为code很快就过期了，就算被劫持了可能也不知道appid和app_sercet而无法获取到token 然后code就过期了**
-
- 4. illusory后台服务器用token去获取用户信息
- > 后台服务器拿到token后就可以用这个token去获取用户的信息了，最后在将用户的信息存起来，返回给浏览器首页的视图。到此OAuth2.0授权结束。
-
-5. 后台验证
-后台服务器根据获取到的token去获取openid `https://api.weibo.com/oauth2/get_token_info`比对返回的uid与客户端提供的open_id是否一致
-```java
-        //获取token
-        String token = platform.getDb().getToken();
-        //第三方openID
-        String userId = platform.getDb().getUserId();
-```
-
-```xml
-url：
-https://graph.qq.com/oauth2.0/show
-?which=Login&display=pc
-&client_id=100490398
-&response_type=code
-&scope=get_user_info
-&redirect_uri=http%3A%2F%2Fpassport.mukewang.com%2Fuser%2Ftpcallback%3Freferer%3Dhttp%3A%2F%2Fwww.imooc.com
-%26browser_key%3D548b695b0584225ea4aa1884dcf771a7%26tp%3Dqq%26bind%3D0
-```
