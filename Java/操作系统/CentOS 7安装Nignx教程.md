@@ -487,13 +487,17 @@ service crond status  //查看服务状态
 */1 * * * * sh /usr/local/nginx/sbin/log.sh
 ```
 
-`*/1 * * * *`： 为定时时间 这里为了测试 是设置的每分钟执行一次
+`*/1 * * * *`： 为定时时间 这里为了测试 是设置的每分钟执行一次；
+
+`0 2 * * * ` :每天凌晨两点执行
 
 `sh` ：为任务类型 这里是一个sh脚本
 
 `/usr/local/nginx/sbin/log.sh` ：为脚本路径
 
 ## 6.cron表达式
+
+### 6.1 基本语法
 
 　cron表达式代表一个时间的集合，使用6个空格分隔的字段表示：
 
@@ -508,7 +512,9 @@ service crond status  //查看服务状态
 
 注：月(Month)和星期(Day of week)字段的值不区分大小写，如：SUN、Sun 和 sun 是一样的。 
 
-星期字段没提供相当于*
+**星期字段没提供相当于`*`**
+
+**一般只需要写5位就行了。即 `分 时 日 月 周`**
 
 ```java
  # ┌───────────── min (0 - 59)
@@ -522,3 +528,305 @@ service crond status  //查看服务状态
  # * * * * *  command to execute
 ```
 
+### 6.2 特定字符
+
+*  **星号(*)**:表示 cron 表达式能匹配该字段的所有值。如在第2个字段使用星号(hour)，表示每小时
+
+* **斜线(/)**:表示增长间隔，如第1个字段(minutes) 值是 `3/1`，表示每小时的第3分钟开始执行一次，之后每隔1分钟执行一次（1,2,3,4....59都执行一次）
+
+* **逗号(,)**:用于枚举值，如第6个字段值是 MON,WED,FRI，表示 星期一、三、五 执行。
+
+* **连字号(-)**:表示一个范围，如第3个字段的值为 9-17 表示 9am 到 5pm 之间每个小时（包括9和17）
+
+* **问号(?)**:只用于 日(Day of month) 和 星期(Day of week)，表示不指定值，可以用于代替 *
+
+## 7. location语法
+
+### 7.1 简介
+
+`nginx.conf`大概内容如下：
+
+```java
+http{
+    keepalive_timeout  65;
+    server{
+        listen 80; //端口号
+        server_name localhost; //域名
+        location \ {
+            root html; //网站根目录
+            index index.html; //网站首页
+        }  
+        access_log  logs/host.access.log  main; //访问日志
+        error page 500 error.html; //错误页面
+    }
+}
+```
+
+其中`server`代表虚拟主机，一个虚拟主机可以配置多个`location`
+
+`location`表示uri方法定位
+
+基本语法如下：
+
+* 1.location=pattern{} 静准匹配
+* 2.location pattern{} 一般匹配
+* 3.location~pattern{} 正则匹配
+
+**Nginx可以对数据进行压缩，对一些图片、css、js、html等文件进行缓存，从而实现动静分离等待优化功能**。
+
+**动态的就去访问tomcat服务器，静态的就直接访问Nginx服务器**。
+
+location [=|~|~*|^~|@] /uri/ { … }
+〖=〗 表示精确匹配，如果找到，立即停止搜索并立即处理此请求。
+〖~ 〗 表示区分大小写匹配
+〖~*〗 表示不区分大小写匹配
+〖^~ 〗 表示只匹配字符串,不查询正则表达式。
+
+〖@〗 指定一个命名的location，一般只用于内部重定向请求。
+
+### 7.2 正则表达式语法：
+
+  1.  语法格式：location [=|~|~*|^~|@]   /uri/ { … } ，
+             依据不同的前缀“= ”，“^~ ”，“~ ”，“~* ”和不带任何前缀的（因为[ ] 表示可选，可以不要的），表达不同的含义, 
+            简单的说尽管location 的/uri/ 配置一样，但前缀不一样，表达的是不同的指令含义。
+              注意：查询字符串不在URI范围内。例如：/films.htm?fid=123 的URI 是/films.htm 。）
+
+2.对这些不同前缀，分下类，就2 大类：
+      正则location ，英文说法是location using regular expressions 
+      普通location ，英文说法是location using literal strings 。
+      那么其中“~ ”和“~* ”前缀表示正则location ，“~ ”区分大小写，“~* ”不区分大小写；
+      其他前缀（包括：“=”，“^~ ”和“@ ”）和   无任何前缀   都属于普通location 。
+
+详细说明：
+~       区分大小写匹配
+
+~*     不区分大小写匹配
+
+!~      区分大小写不匹配
+        !~*    不区分大小写不匹配
+
+^      以什么开头的匹配
+
+$      以什么结尾的匹配
+
+*      代表任意字符
+
+
+## 8 .反向代理(proxy)
+
+### 8.1 简介
+
+如果您的内容服务器具有必须保持安全的敏感信息，如信用卡号数据库，可在防火墙外部设置一个`代理服务器`作为`内容服务器的替身`。当外部客户机尝试访问内容服务器时，会将其送到代理服务器。实际内容位于内容服务器上，在防火墙内部受到安全保护。代理服务器位于防火墙外部，在客户机看来就像是内容服务器。
+
+​                   当客户机向站点提出请求时，请求将转到代理服务器。然后，代理服务器通过防火墙中的特定通路，将客户机的请求发送到内容服务器。内容服务器再通过该通道将结果回传给代理服务器。代理服务器将检索到的信息发送给客户机，好像代理服务器就是实际的内容服务器。如果内容服务器返回错误消息，代理服务器会先行截取该消息并更改标头中列出的任何 URL，然后再将消息发送给客户机。如此可防止外部客户机获取内部内容服务器的重定向 URL。
+
+​                  这样，代理服务器就在安全数据库和可能的恶意攻击之间提供了又一道屏障。与有权访问整个数据库的情况相对比，就算是侥幸攻击成功，作恶者充其量也仅限于访问单个事务中所涉及的信息。未经授权的用户无法访问到真正的内容服务器，因为防火墙通路只允许代理服务器有权进行访问。
+
+**就是客户端先访问Nginx服务器，Nginx收到请求后再去请求内容服务器,这样中间多了一个Nginx服务器中转，会更加安全**。
+
+### 8.2 配置
+
+#### 1. 修改配置文件
+
+首先需要修改`Nginx服务器`配置文件``nginx.conf`。
+
+配置文件大概是这样的，在`server`中添加一个`location`用于中转。
+
+```nginx
+http{
+    keepalive_timeout  65;
+    server{
+        listen 80; //端口号
+        server_name localhost; //域名
+        location \ {
+            root html; //网站根目录
+            index index.html; //网站首页
+        }  
+        access_log  logs/host.access.log  main; //访问日志
+        error page 500 error.html; //错误页面
+        #这里就是代理 通过正则表达式来匹配
+        #后缀以.jsp结尾的请求都会跳转到 http://192.168.5.154:8080;
+        location ~ \.jsp$ {
+            proxy_pass   http://192.168.5.154:8080;
+        }  
+    }
+}
+```
+
+#### 2. 开启内容服务器
+
+然后在`192.168.5.154`的`8080`端口开启了一个``tomcat`,当做是真正的内容服务器，在tomcat默认的`index.jsp`中添加了一句显示IP地址的。
+
+```jsp
+<!--测试Nginx反向代理新增-->
+remote ip:<%=request.getRemoteAddr()%>
+```
+
+### 8.3. 测试
+
+然后开始访问：
+
+首先直接访问内容服务器(Tomcat)：`192.168.5.154:8080`
+
+```java
+remote ip:192.168.5.199 
+```
+
+然后访问Nginx通过代理来访问内容服务器：`192.168.5.154/index.jsp`
+
+```java
+remote ip:192.168.5.154
+```
+
+显示远程	IP是192.168.5.154，这个刚好就是Nginx服务器的IP；
+
+反向代理成功。
+
+### 8.4 问题
+
+前面设置后反向代理已经成功了,但是这样设置后，每次访问内容服务器都显示的是Nginx服务器的IP,内容服务器无法获取用户的真实IP，所以还需要进行一点修改。
+
+#### 1. 修改
+
+```nginx
+http{
+    keepalive_timeout  65;
+    server{
+        listen 80; //端口号
+        server_name localhost; //域名
+        location \ {
+            root html; //网站根目录
+            index index.html; //网站首页
+        }  
+        access_log  logs/host.access.log  main; //访问日志
+        error page 500 error.html; //错误页面
+        #这里就是代理 通过正则表达式来匹配
+        #后缀以.jsp结尾的请求都会跳转到 http://192.168.5.154:8080;
+        location ~ \.jsp$ {
+            #在请求头中添加上真实的IP 
+            #具体格式为 proxy_set_header 属性名 数据
+            proxy_set_header X-real-ip $remote_addr
+            proxy_pass   http://192.168.5.154:8080;
+        }  
+    }
+}
+```
+
+`proxy_set_header X-real-ip $remote_addr` :Nginx服务器是知道客户端真实IP的，所以为了让内容服务器知道真实IP，只需要将真实IP添加到请求头中就可以了。
+
+其中`X-real-ip` 是自定义的，内容服务器取数据时也使用这个`X-real-ip`
+
+`$remote_addr` 则是获取远程客户端IP。
+
+#### 2. 测试：
+
+修改jsp，添加了一句代码。
+
+```jsp
+                <!--测试Nginx反向代理新增-->
+ 			   <!--获取请求头中的真实IP-->
+                Real remote ip:<%=request.getHeader("X-real-ip")%> <br />
+                remote ip/Nginx ip:<%=request.getRemoteAddr()%>
+```
+
+然后开始访问：
+
+首先直接访问内容服务器(Tomcat)：`192.168.5.154:8080`
+
+```java
+Real remote ip:null 
+remote ip/Nginx ip:192.168.5.199 
+```
+
+然后访问Nginx通过代理来访问内容服务器：`192.168.5.154/index.jsp`
+
+```java
+Real remote ip:192.168.5.199 
+remote ip/Nginx ip:192.168.5.154
+```
+
+成功获取到真实IP，问题解决。
+
+## 9. 负载均衡(upstream)
+
+### 9.1 简介
+
+可以在一个组织内使用多个代理服务器来平衡各 Web 服务器间的网络负载。在此模型中，可以利用代理服务器的高速缓存特性，创建一个用于负载平衡的服务器池。此时，代理服务器可以位于防火墙的任意一侧。如果 Web 服务器每天都会接收大量的请求，则可以使用代理服务器分担 Web 服务器的负载并提高网络访问效率。
+
+​                   对于客户机发往真正服务器的请求，代理服务器起着中间调停者的作用。代理服务器会将所请求的文档存入高速缓存。如果有不止一个代理服务器，DNS 可以采用“循环复用法”选择其 IP 地址，随机地为请求选择路由。客户机每次都使用同一个 URL，但请求所采取的路由每次都可能经过不同的代理服务器。
+
+​                   可以使用多个代理服务器来处理对一个高用量内容服务器的请求，这样做的好处是内容服务器可以处理更高的负载，并且比其独自工作时更有效率。在初始启动期间，代理服务器首次从内容服务器检索文档，此后，对内容服务器的请求数会大大下降。
+
+**同样是客户端先访问Nginx服务器，然后Nginx服务器再根据负载均衡算法将请求分发到不同的内容服务器上**。
+
+### 9.2 配置
+
+同意需要修改`Nginx服务器`配置文件``nginx.conf`。
+
+配置文件大概是这样的，在`server`中添加一个`location`用于中转。
+
+```nginx
+http{
+    keepalive_timeout  65;
+    #upstream 负载均衡 与server同级
+    #tomcat_server 负载均衡名字 自定义的 
+    #要用在下面location反向代理处 
+    #poxy_pass   http://tomcat_server;
+    upstream tomcat_server{
+        #weight权重 max_fails 最大失败次数 超过后就认为该节点down掉了 fail_timeout 超时时间
+        #192.168.5.154:8080 IP地址或者域名都可以
+        server 192.168.5.154:8080 weight=1 max_fails=2 fail_timeout=30s;
+        server 192.168.5.155:8080 weight=1 max_fails=2 fail_timeout=30s;
+    }
+    
+    
+    server{
+        listen 80; //端口号
+        server_name localhost; //域名
+        location \ {
+            root html; //网站根目录
+            index index.html; //网站首页
+        }  
+        access_log  logs/host.access.log  main; //访问日志
+        error page 500 error.html; //错误页面
+        #proxy_pass 反向代理 通过正则表达式来匹配
+        #后缀以.jsp结尾的请求都会跳转到 http://192.168.5.154:8080;
+        #proxy_set_header 将真实IP添加到请求头中 传递到内容服务器
+        location ~ \.jsp$ {
+            proxy_set_header X-real-ip $remote_addr
+            #proxy_pass   http://192.168.5.154:8080;
+            #反向代理这里不光可以写IP 还可以写上面配置的负载均衡
+            proxy_pass   http://tomcat_server;
+        }  
+    }
+}
+```
+
+#### 2. 开启内容服务器
+
+开启两个tomcat，一个是`192.168.5.154`,一个是``192.168.5.155`.
+
+然后浏览器访问nginx服务器：`192.168.5.154/index.jsp`；
+
+会随机跳转到两个tomcat服务器中的一个就说明负载均衡配置成功了。
+
+## 10. Nginx中的信号量
+
+```java
+Nginx支持以下几种信号选项：
+
+TERM，INT：       快速关闭                          　　　　                       
+QUIT ：从容关闭（优雅的关闭进程,即等请求结束后再关闭）     
+HUP ：平滑重启，重新加载配置文件 （平滑重启，修改配置文件之后不用重启服务器。直接kill -PUT 进程号即可）
+USR1 ：重新读取日志文件，在切割日志时用途较大（停止写入老日志文件，打开新日志文件，之所以这样是因为老日志文件就算修改的文件名，由于inode的原因，nginx还会一直往老的日志文件写入数据） 
+USR2 ：平滑升级可执行程序  ，nginx升级时候用                           　　　　 
+WINCH ：从容关闭工作进程     
+```
+
+## 参考
+
+`https://www.cnblogs.com/crazylqy/p/6891929.html`
+
+`http://www.runoob.com/linux/nginx-install-setup.html`
+
+`https://www.cnblogs.com/javahr/p/8318728.html`
