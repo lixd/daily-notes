@@ -290,7 +290,7 @@ total 68
 
 
 
-## 4. Redis数据类型
+## 4. Redis基础数据类型详解
 
 Redis一共分5种数据类型：``String`、``Hash`、``List`、``Set`、``ZSet`
 
@@ -662,11 +662,100 @@ Java中List的升级版。
 | 19   | [ZUNIONSTORE destination numkeys key [key ...\]](http://www.runoob.com/redis/sorted-sets-zunionstore.html)  计算给定的一个或多个有序集的并集，并存储在新的 key 中 |
 | 20   | [ZSCAN key cursor [MATCH pattern\] [COUNT count]](http://www.runoob.com/redis/sorted-sets-zscan.html)  迭代有序集合中的元素（包括元素成员和元素分值） |
 
+## 5.Redis高级命令
 
+* 返回满足的所有键keys* (可以模糊匹配） 
+* exists是否存在指定的key
+* expire设置某个key的过期时间，使用ttl查看剰余时间 
+* persist取消过期时间
+* select选择数据库数据库为0到15 (—共16个数据库）默认进入的是0数据库 
+* move [key][数据库下标]将当前数据中的key转移到其他数据库中 
+* randomkey随机返回数据库里的一个key 
+* rename重命名key
+* echo打印命令 
+* dbsize查看数据库的key数量 
+* info 获取数据库信息 
+* conflg get 实时传储收到的请求(返回相关的配置信息} 
+* config get *返回所有配置 
+* flushdb 清空当前数据库，
+* flushall 清空所有数据库 
 
+Redis分片原因：
 
+* 最初是为了数据安全，分片用于做备份，现在Redis有集群了，这个基本不用了。
+* 快速查询，把不同数据存在不同的片中，查询时快速定位
+* 只是逻辑划分，不是物理划分。所有分片共用一个空间。
 
+## 6. 安全性
 
+可以为Redis设置密码。
+修改配置文件
+
+```shell
+[root@localhost etc]# vim redis.conf 
+
+# Warning: since Redis is pretty fast an outside user can try up to
+# 150k passwords per second against a good box. This means that you should
+# use a very strong password otherwise it will be very easy to break.
+#
+# requirepass foobared
+#设置密码 这里的redis就是密码
+requirepass redis
+
+```
+
+重启Redis，并进入客户端，执行查询keys * 提示无权限
+
+```shell
+[root@localhost etc]# /usr/local/redis/bin/redis-server /usr/local/redis/etc/redis.conf
+[root@localhost etc]# /usr/local/redis/bin/redis-cli 
+127.0.0.1:6379> keys *
+(error) NOAUTH Authentication required.
+
+```
+
+输入密码后即可正常使用。
+
+`auth password`
+
+```shell
+127.0.0.1:6379> auth redis
+OK
+127.0.0.1:6379> keys *
+1) "zset1"
+2) "set1"
+3) "list1"
+
+```
+
+也可以在进入客户端时输入密码
+
+```shell
+/usr/local/redis/bin/redis-cli -a password
+```
+
+不过一般都不设置密码，工作中都是只能内网访问。
+
+## 7.Redis主从复制
+
+主从复制：
+1 Master可以拥有多个slave
+2多个Slavic可以连接同一个master外，还可以连接到其他的slave 
+3主从复制不会阻塞master在同步数据时master可以继续处理client请求 
+4提供系统的伸缩性 
+主从复制过程：
+
+* 1 slave与master建立连接，发送sync同步命令
+* 2 master开启一个后台进程，将数据库快照保存到文件中，同时master主进程会开始收集新的写命令并缓存
+* 3后台完成保存后，就将文件发送给slave
+* 4 slave将此文件保存到硬盘上 
+
+主从复制配置：
+clone服务器之后修改slave的IP地址 
+修改配置文件：/usr/local/redis/etc/redis.conf 
+第一步：slaveof <masterip> <mastport>
+第二步：masterauth <master-password>
+使用info查看role角色即可知道是主服务或从服务，
 
 ## 参考
 
