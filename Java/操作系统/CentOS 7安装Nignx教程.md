@@ -2,36 +2,29 @@
 
 ## 1.简介
 
-Nginx是一款轻量级的Web服务器/反向代理服务器及电子邮件（IMAP/POP3）代理服务器，并在一个BSD-like协议下发行。由俄罗斯的程序设计师IgorSysoev所开发，供俄国大型的入口网站及搜索引擎Rambler（俄文：Рамблер）使用。其特点是占有内存少，并发能力强，事实上nginx的并发能力确实在同类型的网页服务器中表现较好。 
+Nginx是一款轻量级的Web服务器/反向代理服务器及电子邮件（IMAP/POP3）代理服务器，并在一个BSD-like协议下发行。由俄罗斯的程序设计师IgorSysoev所开发，供俄国大型的入口网站及搜索引擎Rambler（俄文：Рамблер）使用。其特点是**占有内存少，并发能力强**，事实上nginx的并发能力确实在同类型的网页服务器中表现较好。 
 
-1.Nginx 相对于 Apache 优点：
+**1.Nginx 相对于 Apache 优点**：
 1) 高并发响应性能非常好，官方 Nginx 处理静态文件并发 5w/s
 2) 反向代理性能非常强。（可用于负载均衡）
-3) 内存和 cpu 占用率低。（为 Apache 的 1/5-1/10）
+3) 内存和 cpu 占用率低。（为 Apache 的 1/5~1/10）
 4) 对后端服务有健康检查功能。
 5) 支持 PHP cgi 方式和 fastcgi 方式。
-6) 配置代码简洁且容易上手。 
+6) 配置代码简洁且容易上手。
 
- 
+**2.Nginx 工作原理及安装配置**：
 
-2.Nginx 工作原理及安装配置
+Nginx 由内核和模块组成，其中，内核的设计非常微小和简洁，完成的工作也非常简单，仅仅通过查找配置文件将客户端请求映射到一个` location block`（location 是 Nginx配置中的一个指令，用于 URL 匹配），而在这个 location 中所配置的每个指令将会启动不同的模块去完成相应的工作。
 
-Nginx 由内核和模块组成，其中，内核的设计非常微小和简洁，完成的工作也非常简单，仅仅通过查找配置文件将客户端请求映射到一个 location block（location 是 Nginx配置中的一个指令，用于 URL 匹配），而在这个 location 中所配置的每个指令将会启动不同的模块去完成相应的工作。
-Nginx 的模块从结构上分为
-
-核心模块、基础模块和第三方模块： 
-
- 
+Nginx 的模块从结构上分为核心模块、基础模块和第三方模块：  
 
 核心模块：HTTP 模块、 EVENT 模块和 MAIL 模块
 基础模块： HTTP Access 模块、HTTP FastCGI 模块、HTTP Proxy 模块和 HTTP Rewrite模块，
 第三方模块：HTTP Upstream Request Hash 模块、 Notice 模块和 HTTP Access Key模块。
 
-3.Nignx与Appache
+**3.Nignx与Appache**:
 
-Nginx 的高并发得益于其采用了 epoll 模型，与传统的服务器程序架构不同，epoll 是linux 内核 2.6 以后才出现的。 Nginx 采用 epoll 模型，异步非阻塞，而 Apache 采用的是select 模型 
-
- 
+Nginx 的高并发得益于其采用了 epoll 模型，与传统的服务器程序架构不同，epoll 是linux 内核 2.6 以后才出现的。 Nginx 采用 epoll 模型，异步非阻塞，而 Apache 采用的是select 模型 .
 
 Select 特点：select 选择句柄的时候，是遍历所有句柄，也就是说句柄有事件响应时，
 select 需要遍历所有句柄才能获取到哪些句柄有事件通知，因此效率是非常低。
