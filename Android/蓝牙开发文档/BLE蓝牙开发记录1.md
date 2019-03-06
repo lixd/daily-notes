@@ -271,17 +271,16 @@ BLE蓝牙协议下数据的通信方式采用BluetoothGattService、BluetoothGat
 BLE蓝牙开发主要有负责通信的BluetoothGattService完成的。当且称为通信服务。通信服务通过硬件工程师提供的UUID获取。获取方式如下：
 
 ```java
-BluetoothGattService service = mBluetoothGatt.getService(UUID.fromString("蓝牙模块提供的负责通信UUID字符串"));
+BluetoothGattService communicationService = mBluetoothGatt.getService(UUID.fromString("蓝牙模块提供的负责通信的服务的UUID字符串"));
 ```
 
 通信服务中包含负责读写的BluetoothGattCharacteristic，且分别称为notifyCharacteristic和writeCharacteristic。其中notifyCharacteristic负责开启监听，也就是启动收数据的通道，writeCharacteristic负责写入数据。
  具体操作方式如下：
 
 ```java
-  BluetoothGattService service = mBluetoothGatt.getService(UUID.fromString("蓝牙模块提供的负责通信服务UUID字符串"));
    // 例如形式如：49535343-fe7d-4ae5-8fa9-9fafd205e455
-  notifyCharacteristic = service.getCharacteristic(UUID.fromString("notify uuid"));
-  writeCharacteristic =  service.getCharacteristic(UUID.fromString("write uuid"));
+  notifyCharacteristic = communicationService.getCharacteristic(UUID.fromString("notify uuid"));
+  writeCharacteristic =  communicationService.getCharacteristic(UUID.fromString("write uuid"));
 ```
 
 ##### 2.开启监听
