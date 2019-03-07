@@ -9,7 +9,11 @@
 
 ## 2.Redis简介
 
+REmote DIctionary Server(Redis) 是一个由Salvatore Sanfilippo写的key-value存储系统。
 
+Redis是一个开源的使用ANSI C语言编写、遵守BSD协议、支持网络、可基于内存亦可持久化的日志型、Key-Value数据库，并提供多种语言的API。
+
+它通常被称为数据结构服务器，因为值（value）可以是 字符串(String), 哈希(Hash), 列表(list), 集合(sets) 和 有序集合(sorted sets)等类型。
 
 ## 3. Redis安装
 
@@ -1393,6 +1397,47 @@ For check, fix, reshard, del-node, set-timeout you can specify the host and port
 ```
 
 ## 13 JavaApi操作集群模式
+
+Redis集群操作主要使用`JedisCluster`这个类。
+
+```java
+
+    @Test
+    public void jedisClusterTest() {
+        String host = "192.168.5.154";
+        Set<HostAndPort> jedisClusterNode = new HashSet<>();
+        jedisClusterNode.add(new HostAndPort(host, 7001));
+        jedisClusterNode.add(new HostAndPort(host, 7002));
+        jedisClusterNode.add(new HostAndPort(host, 7003));
+        jedisClusterNode.add(new HostAndPort(host, 7004));
+        jedisClusterNode.add(new HostAndPort(host, 7005));
+        jedisClusterNode.add(new HostAndPort(host, 7006));
+        //jedsi连接池配置
+        JedisPoolConfig cfg = new JedisPoolConfig();
+        //最大实例数
+        cfg.setMaxTotal(100);
+        //最大空闲数
+        cfg.setMaxIdle(20);
+        //最大等待时间 -1 无限
+        cfg.setMaxWaitMillis(-1);
+        cfg.setTestOnBorrow(true);
+        JedisCluster jc = new JedisCluster(jedisClusterNode, 6000, 100, cfg);
+        //向单机操作一样 会自动从连接池中拿出一个实例来操作。
+        jc.set("name", "illusory");
+        jc.set("age", "22");
+        jc.set("sex", "man");
+        jc.set("addr", "cq");
+
+        System.out.println(jc.set("name", "illusory"));
+        System.out.println(jc.set("age", "22"));
+        System.out.println(jc.set("sex", "man"));
+        System.out.println(jc.set("addr", "cq"));
+
+        System.out.println(jc.get("name"));
+    }
+```
+
+
 
 
 ## 参考
