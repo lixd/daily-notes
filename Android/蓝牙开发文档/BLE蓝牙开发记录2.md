@@ -143,7 +143,7 @@ BluetoothGattService communicationService = mBluetoothGatt.getService(UUID.fromS
 ```java
 //--------------写数据-----------------
 //1.准备数据 是一个byte数组 具体和协议有关系 
-//一般是0xA9 这种16进制的 通过一系列转换后才变成一个byte数组
+//一般是0xA9 这种16进制的 通过一系列转换后才变成一个byte数组 具体方法这里就不写了
 byte[] data = new byte[]{-70, 0, 0, 6, -1, -49, 0, 12, 12, 0, -63, 0, 1, 1};
 //2.将数据存到特性的特征值中
 writeCharacter.setValue(data);
@@ -359,7 +359,26 @@ byte[] data = characteristic.getValue();
 **Characteristic通知开启后设备端的Characteristic变化时，`onCharacteristicChanged()`回调就会被触发。如果关心过个Characteristic,则每个Characteristic都要开启**
 
 ```java
-mBluetoothGatt.setCharacteristicNotification(notifyCharacteristic, true);
+ 	/**
+     * 这个UUID是通用的
+     */    
+private static final String COMMON_NOTIFY_UUID = "00002902-0000-1000-8000-00805f9b34fb";
+
+    /**
+     * 启用或禁用通知上的特性。
+     */
+    public void setCharacteristicNotification(BluetoothGattCharacteristic characteristic, boolean enabled) {
+        if (mBluetoothAdapter == null || mBluetoothGatt == null || characteristic == null) {
+            Log.e(TAG, "BluetoothAdapter not initialized or characteristic is null");
+            return;
+        }
+        BluetoothGattDescriptor descriptor = characteristic.getDescriptor(UUID.fromString(COMMON_NOTIFY_UUID));
+        mBluetoothGatt.setCharacteristicNotification(characteristic, enabled);
+        if (descriptor != null) {
+            descriptor.setValue(BluetoothGattDescriptor.ENABLE_NOTIFICATION_VALUE);
+            mBluetoothGatt.writeDescriptor(descriptor);
+        }
+    
 ```
 
 `onCharacteristicChanged()`方法如下：是BluetoothGattCallback回调中的方法。
@@ -367,6 +386,7 @@ mBluetoothGatt.setCharacteristicNotification(notifyCharacteristic, true);
 ```java
         @Override
         public void onCharacteristicChanged(BluetoothGatt gatt, BluetoothGattCharacteristic characteristic) {
+             //开启notify之后，就可以在这里接收数据了。
  			//判断到底是哪个characteristic发生了变化
             if (characteristic==writeCharacter){
                 //byte[]转为16进制字符串
@@ -389,23 +409,65 @@ mBluetoothGatt.setCharacteristicNotification(notifyCharacteristic, true);
 
 
 
-## 3. BLE数据拆包与粘包
+## 3. BLE数据拆包
+
+**BLE限制了一次只能发送20字节数据，超过20字节后需要拆成多个包**，如果发送的数据超过了20个字节就需要拆成多个包发送，然后接收方将收到的多个包合成一个。
 
 
 
+```java
+//数据拆分后放入队列 然后一个一个发送
+private Queue<byte[]> nextByte = new LinkedList<>();    
+public boolean writeToDevice(BluetoothGatt gatt, byte[] bytes) {
 
+        int length = bytes.length;
+        byte[] data;
+        if (length <= mtuSize) { // 每次最多写入20字节
+            data = bytes;
+        } else {
+            int count = length / mtuSize;
+            int remainder = length % mtuSize;
+            for (int i = 0; i < count; ++i) {
+                byte[] subCmd = new byte[mtuSize];
+                System.arraycopy(bytes, i * mtuSize, subCmd, 0, mtuSize);
+                nextByte.offer(subCmd);
+            }
+            if (remainder != 0) {
+                byte[] remainCmd = new byte[remainder];
+                System.arraycopy(bytes, count * mtuSize, remainCmd, 0, remainder);
+                nextByte.offer(remainCmd);
+            }
+            data = nextByte.peek();
+        }
+        boolean ok = gatt.write(data);
+        if (!ok) {
+            disconnect();
+        }
+        return ok;
+    }
+```
+
+一般发送都很少超过20字节，主要是接收，设备端发送过来的数据一般都会很长。
+
+然后数据一般都会有一个包头之类的，里面一般会有数据长度之类的东西，然后接收多个包合成一个完整的数据。
 
 ## 4. OTA升级
 
+![dfu](https://github.com/illusorycloud/dailynote/raw/master/Android/dfu.webp)
 
+流程：
 
-
+* 1.连接检测更新
+* 2.记录相关数据，升级后好恢复
+* 3.让设备进入DFU模式
+* 4.发送升级包，DFU升级
+* 5.重新连接，自检恢复
 
 ##  5. 数据格式转化的工具类
 
 #### 1. 两个byte -->int
 
-```
+```java
 private  int byteToInt(byte b, byte c) {//计算总包长，两个字节表示的
     short s = 0;
     int ret;
@@ -420,8 +482,10 @@ private  int byteToInt(byte b, byte c) {//计算总包长，两个字节表示�
 
 #### 2. int -->两个byte
 
-```
+```java
 private byte[] int2byte(int res) {
+     if (res == null)
+            return null;
     byte[] targets = new byte[2];
     targets[1] = (byte) (res & 0xff);// 最低位
     targets[0] = (byte) ((res >> 8) & 0xff);// 次低位
@@ -431,8 +495,10 @@ private byte[] int2byte(int res) {
 
 #### 3. 16进制字符串 -->byte[ ]
 
-```
+```java
 public static byte[] hexStringToByte(String hex) {
+     if (hex == null)
+            return null;
     int len = (hex.length() / 2);
     byte[] result = new byte[len];
     char[] achar = hex.toCharArray();
@@ -450,18 +516,20 @@ private static byte toByte(char c) {
 
 #### 4. byte[ ] -->16进制字符串
 
-```
- public static String byte2hex(byte [] buffer){
-        String h = "";
-        for(int i = 0; i < buffer.length; i++){
-            String temp = Integer.toHexString(buffer[i] & 0xFF);
-            if(temp.length() == 1){
-                temp = "0" + temp;
-            }
-            h = h + temp;
+```java
+    public String bytesToHexString(byte[] bArray) {
+        if (bArray == null)
+            return null;
+        StringBuffer sb = new StringBuffer(bArray.length);
+        String sTemp;
+        for (int i = 0; i < bArray.length; i++) {
+            sTemp = Integer.toHexString(0xFF & bArray[i]);
+            if (sTemp.length() < 2)
+                sb.append(0);
+            sb.append(sTemp.toUpperCase());
         }
-        return h;
-  }
+        return sb.toString();
+    }
 ```
 
 ## 参考
