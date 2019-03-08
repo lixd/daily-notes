@@ -941,6 +941,23 @@ Api中并没有watch，zkClient提供了自己的一套监听机制，剔除了�
         zkClient.delete("/super/c3");
         zkClient.delete("/super/c4");
         zkClient.delete("/super");
+  //订阅节点连接及状态的变化情况
+        zkClient.subscribeStateChanges(new IZkStateListener() {
+            @Override
+            public void handleStateChanged(Watcher.Event.KeeperState keeperState) throws Exception {
+                System.out.println("节点连接及状态变化：" + keeperState.name());
+            }
+
+            @Override
+            public void handleNewSession() throws Exception {
+                System.out.println("节点Session变化。。。");
+            }
+
+            @Override
+            public void handleSessionEstablishmentError(Throwable throwable) throws Exception {
+
+            }
+        });
     }
 
 ```
