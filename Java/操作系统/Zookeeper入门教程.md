@@ -614,5 +614,226 @@ public class ZooKeeperBase {
  在 ZooKeeper 中，引入了 Watcher 机制来实现这种分布式的通知功能。ZooKeeper 允许客户端向服务端注册一个 Watcher 监听，
  当服务器的一些特定事件触发了这个 Watcher，那么就会向指定客户端发送一个事件通知来实现分布式的通知功能。
  
+ 同样，其watcher是监听数据发送了某些变化，那就一定会有对应的事件类型, 
+ 和状态类型。
+ 事件类型：（znode节点相关的）
+*  EventType.NodeCreated 
+*  EventType.NodeDataChanged 
+*  EventType.NodeChildrenChanged 
+*  EventType.NodeDeleted 
+ 状态类型：（是跟客户端实例相关的）
+*  KeeperState.Oisconnected 
+*  KeeperState.SyncConnected 
+*  KeeperState.AuthFailed 
+*  KeeperState.Expired
+
+ZooKeeper中有很多个节点，客户端也也可以new多个watcher，会开一个新的线程分别监听不同的节点，当监听的节点发送变化后，客户端就可以收到消息。
+然后watch可以看成是一个动作，是一次性的，watch一次就只能收到一次监听，节点别修改两次也只能收到第一次的通知。
+两种持续监听方案：
+    1.收到变化后将Boolean值手动赋为true，表示下一次还要监听
+    2.再new一个watcher去监听
+    
+ 测试代码
+ ```java
+
+    @Test
+    public void testWatch() throws KeeperException, InterruptedException, IOException {
+        Watcher watcher = new Watcher() {
+            @Override
+            public void process(WatchedEvent event) {
+                Event.EventType type = event.getType();
+                Event.KeeperState state = event.getState();
+                String path = event.getPath();
+                switch (state) {
+                    case SyncConnected:
+                        System.out.println("state: SyncConnected");
+                        System.out.println("path: " + path);
+                        waitZooKeeperConnOne.countDown();
+                        break;
+                    case Disconnected:
+                        System.out.println("state: Disconnected");
+                        System.out.println("path: " + path);
+                        break;
+                    case AuthFailed:
+                        System.out.println("state: AuthFailed");
+                        System.out.println("path: " + path);
+                        break;
+                    case Expired:
+                        System.out.println("state: Expired");
+                        System.out.println("path: " + path);
+                        break;
+                    default:
+                        System.out.println("state: default");
+                }
+                System.out.println("------------------------");
+                switch (type) {
+                    case None:
+                        System.out.println("type: None");
+                        System.out.println("path: " + path);
+                        break;
+                    case NodeCreated:
+                        System.out.println("type: NodeCreated");
+                        System.out.println("path: " + path);
+                        break;
+                    case NodeDataChanged:
+                        System.out.println("type: NodeDataChanged");
+                        System.out.println("path: " + path);
+                        break;
+                    case DataWatchRemoved:
+                        System.out.println("type: DataWatchRemoved");
+                        System.out.println("path: " + path);
+                        break;
+                    case ChildWatchRemoved:
+                        System.out.println("type:child watch被移除");
+                        System.out.println("path: " + path);
+                        break;
+                    case NodeChildrenChanged:
+                        System.out.println("type: NodeChildrenChanged");
+                        System.out.println("path: " + path);
+                        break;
+                    case NodeDeleted:
+                        System.out.println("type: NodeDeleted");
+                        System.out.println("path: " + path);
+                        break;
+                    default:
+                        System.out.println("type: default");
+                }
+                System.out.println("------------------------");
+            }
+
+        };
+        String childPath = "/cloud/test5";
+        String childPath2 = "/cloud/test6";
+        String parentPath = "/cloud";
+        //创建时watch一次 1次
+        ZooKeeper z = new ZooKeeper(CONN_ADDR, SESSION_TIMEOUT, watcher);
+        waitZooKeeperConnOne.await();
+        //这里也watch一次 2次
+        z.exists(childPath, true);
+        z.create(childPath, "cloud".getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+        //watch一下父节点 即/cloud  3次
+        z.getChildren(parentPath, true);
+        z.create(childPath2, "cloud".getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+        //再watch一次子节点  4次
+        z.exists(childPath, true);
+        z.setData(childPath, "a".getBytes(), -1);
+        Thread.sleep(1000);
+    }
+```   
+    
+
+ZooKeeper 的 Watcher 具有以下几个特性。
+
+一次性 
+无论是服务端还是客户端，一旦一个 Watcher 被触发，ZooKeeper 都会将其从相应的存储中移除。因此，在 Watcher 的使用上，
+需要反复注册。这样的设计有效地减轻了服务端的压力。
+
+客户端串行执行 
+客户端 Watcher 回调的过程是一个串行同步的过程，这为我们保证了顺序，同时，需要注意的一点是，
+一定不能因为一个 Watcher 的处理逻辑影响了整个客户端的 Watcher 回调，所以，我觉得客户端 Watcher 
+的实现类要另开一个线程进行处理业务逻辑，以便给其他的 Watcher 调用让出时间。
+
+轻量 
+WatcherEvent 是 ZooKeeper 整个 Watcher 通知机制的最小通知单元，这个数据结构中只包含三部分内容：
+通知状态、事件类型和节点路径。也就是说，Watcher 通知非常简单，只会告诉客户端发生了事件，而不会说明事件的具体内容。
+例如针对 NodeDataChanged 事件，ZooKeeper 的Watcher 只会通知客户端指定数据节点的数据内容发生了变更，
+而对于原始数据以及变更后的新数据都无法从这个事件中直接获取到，而是需要客户端主动重新去获取数据——这也是 ZooKeeper 
+的 Watcher 机制的一个非常重要的特性。
+
+ ## ACL权限认证
  
+ 首先说明一下为什么需要ACL？
+ 简单来说 :在通常情况下,zookeeper允许未经授权的访问,因此在安全漏洞扫描中暴漏未授权访问漏洞。
+ 这在一些监控很严的系统中是不被允许的,所以需要ACL来控制权限.
  
+ 既然需要ACL来控制权限,那么Zookeeper的权限有哪些呢?
+ 权限包括以下几种:
+ 
+ CREATE: 能创建子节点
+ READ：能获取节点数据和列出其子节点
+ WRITE: 能设置节点数据
+ DELETE: 能删除子节点
+ ADMIN: 能设置权限
+ 说到权限,就要介绍一下zookeeper的认证方式:
+ 包括以下四种:
+ 
+ world：默认方式，相当于全世界都能访问
+ auth：代表已经认证通过的用户(cli中可以通过addauth digest user:pwd 来添加当前上下文中的授权用户)
+ digest：即用户名:密码这种方式认证，这也是业务系统中最常用的
+ ip：使用Ip地址认证
+
+```java
+   @Test
+    public void testAuth() throws KeeperException, InterruptedException, IOException {
+        /**
+         * 测试路径
+         */
+        final String Path = "/testAuth";
+        final String pathDel = "/testAuth/delNode";
+        /**
+         * 认证类型
+         */
+        final String authType = "digest";
+        /**
+         * 正确的key
+         */
+        final String rightAuth = "123456";
+        /**
+         * 错误的key
+         */
+        final String badAuth = "654321";
+        ZooKeeper z1 = new ZooKeeper(CONN_ADDR, SESSION_TIMEOUT, null);
+        
+        //添加认证信息 类型和key   以后执行操作时必须带上一个相同的key才行
+        z1.addAuthInfo(authType, rightAuth.getBytes());
+        //把所有的权限放入集合中，这样不管操作什么权限的节点都需要认证才行
+        List<ACL> acls = new ArrayList<>(ZooDefs.Ids.CREATOR_ALL_ACL);
+        try {
+            zooKeeper.create(Path, "xxx".getBytes(), acls, CreateMode.PERSISTENT);
+        } catch (Exception e) {
+            System.out.println("创建节点，抛出异常： " + e.getMessage());
+
+        }
+        ZooKeeper z2 = new ZooKeeper(CONN_ADDR, SESSION_TIMEOUT, null);
+        /**
+         * 未授权
+         */
+        try {
+            //未授权客户端操作时抛出异常
+            //NoAuthException: KeeperErrorCode = NoAuth for /testAuth
+            z2.getData(Path, false, new Stat());
+        } catch (Exception e) {
+            System.out.println("未授权：操作失败，抛出异常： " + e.getMessage());
+        }
+        /**
+         * 错误授权信息
+         */
+            ZooKeeper z3 = new ZooKeeper(CONN_ADDR, SESSION_TIMEOUT, null);
+        try {
+            //添加错误授权信息后再次执行
+            z3.addAuthInfo(authType, badAuth.getBytes());
+            //NoAuthException: KeeperErrorCode = NoAuth for /testAuth
+            z3.getData(Path, false, new Stat());
+        } catch (Exception e) {
+            System.out.println("错误授权信息：操作失败，抛出异常： " + e.getMessage());
+        }
+
+        /**
+         * 正确授权信息
+         */
+        ZooKeeper z4 = new ZooKeeper(CONN_ADDR, SESSION_TIMEOUT, null);
+        //添加正确授权信息后再次执行
+        z4.addAuthInfo(authType, rightAuth.getBytes());
+        byte[] data = z4.getData(Path, false, new Stat());
+        System.out.println("正确授权信息：再次操作成功获取到数据：" + new String(data));
+
+    }
+
+```
+
+## ZK实际使用场景
+我们希望ZooKeeper对分布式系统的配置文件进行管理，也即是多个服务器作为watcher，监听ZooKeeper节点，ZooKeeper节点发生
+变化(即配置文件变化)，watcher收到通知，然后实时更新配置文件。
+毕竟等服务器多起来时，不可能自己一台一台的去修改配置文件吧。
+
+给多个应用服务器注册watcher，然后去实时观察数据的变化，然后反馈给媒体服务器变更的数据，观察ZooKeeper节点。
