@@ -166,6 +166,28 @@ server.2 192.168.1.113:2888:3888
 
 `192.168.1.113`上的`myid`中写入一个数字`2`
 
+### 配置详解
+
+```shell
+tickTinte： 基本事件服务器之间或客户端与服务器之间维持心跣的时间间隔
+
+dataDiri：存储内存中数据库快照的位置，顾名思义就是Zookeeper保存数据的目录，默认情況下，Zookeeper将写数据的日志文件也保存在这个目录里，
+
+clientPorti：这个端口就是客户端连接Zookeeper服务器的端口，Zookeeper会监听这个雄口，接受客户端的访间请求。
+
+initLimit： 这个配置表示ZooKeeper最大能接受多少个心跳时间间隔，当超过后最大次数后还没收到客户端信息，表明客户端连接失败
+
+syncLiniiti ：这个配置表明Leader和Follower之间发送消息，请求和应答时间长度，最长不能超多多少个tickTinte
+
+server.A = B：C：D
+			A：表示这个是第几号服务器，myid中的数字就是这个
+			B：这个服务器的IP
+			C：与集群中的leader交换信息的端口
+			D：集群中的leader挂了，需要一个端口用来进行选举，选出一个新的leader
+```
+
+
+
 ## 3. 使用
 
 ### 启动
@@ -199,6 +221,23 @@ Mode: leader
 ```
 
 可以已经启动了，而且这是一个`leader`节点。那么其他两个节点就是`follower`了。
+
+**问题**
+
+```java
+Error contacting service. It is probably not running.
+```
+
+**解决**
+
+1.**可能是防火墙问题，关闭防火墙**
+
+```shell
+临时关闭: systemctl stop firewalld
+开机禁用(需要重启生效):systemctl disable firewalld
+```
+
+2.**myid配置错了，这个必须和配置文件对应上，必须放在配置的那个文件夹下**
 
 ###  操作
 
@@ -340,3 +379,240 @@ ZooKeeper -server host:port cmd args
 
 ```
 
+
+
+## 4.原生Api
+导包
+```xml
+
+        <!--zookeeper-->
+        <dependency>
+            <groupId>org.apache.zookeeper</groupId>
+            <artifactId>zookeeper</artifactId>
+            <version>3.5.4-beta</version>
+        </dependency>
+```
+
+```java
+package zookeeper;
+
+import org.apache.zookeeper.AsyncCallback;
+import org.apache.zookeeper.CreateMode;
+import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.WatchedEvent;
+import org.apache.zookeeper.Watcher;
+import org.apache.zookeeper.ZooDefs;
+import org.apache.zookeeper.ZooKeeper;
+import org.apache.zookeeper.data.Stat;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.IOException;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+
+/**
+ * @author illusory
+ */
+public class ZooKeeperBase {
+    /**
+     * ZooKeeper地址
+     */
+    static final String CONN_ADDR = "192.168.5.154:2181,192.168.5.155:2181,192.168.5.156:2181";
+    /**
+     * session超时时间ms
+     */
+    static final int SESSION_TIMEOUT = 5000;
+    /**
+     * wait for zk connect
+     */
+    static final CountDownLatch waitZooKeeperConnOne = new CountDownLatch(1);
+    private ZooKeeper zooKeeper;
+
+
+    @Before
+    public void before() throws IOException {
+        /**
+         * zk客户端
+         * 参数1 connectString 连接服务器列表，用逗号分隔
+         * 参数2 sessionTimeout 心跳检测时间周期 毫秒
+         * 参数3 watcher 事件处理通知器
+         * 参数4 canBeReadOnly 标识当前会话是否支持只读
+         * 参数5 6 sessionId sessionPassword通过这两个确定唯一一台客户端 目的是提供重复会话
+         */
+        zooKeeper = new ZooKeeper(CONN_ADDR, SESSION_TIMEOUT, new Watcher() {
+            @Override
+            public void process(WatchedEvent watchedEvent) {
+                //获取事件状态与类型
+                Event.KeeperState state = watchedEvent.getState();
+                Event.EventType type = watchedEvent.getType();
+                //如果是建立连接成功
+                if (Event.KeeperState.SyncConnected == state) {
+                    //刚连接成功什么都没有所以是None
+                    if (Event.EventType.None == type) {
+                        //连接成功则发送信号 让程序继续执行
+                        waitZooKeeperConnOne.countDown();
+                        System.out.println("ZK 连接成功");
+                    }
+                }
+            }
+        });
+    }
+
+    @Test
+    public void testCreate() throws IOException, InterruptedException, KeeperException {
+        waitZooKeeperConnOne.await();
+        System.out.println("zk start");
+        //创建简介
+        // 参数1 key
+        // 参数2 value  参数3 一般就是ZooDefs.Ids.OPEN_ACL_UNSAFE
+        // 参数4 为节点模式 有临时节点(本次会话有效，分布式锁就是基于临时节点)或者持久化节点
+        // 返回值就是path 节点已存在则报错NodeExistsException
+
+/**
+ * 同步方式
+ *
+ * 参数1 path 可以看成是key  原生Api不能递归创建 不能在没父节点的情况下创建子节点的，会抛出异常
+ *     框架封装也是通过if一层层判断的 如果父节点没有 就先给你创建出来 这样实现的递归创建
+ * 参数2 data 可以看成是value 要求是字节数组 也就是说不支持序列化
+ *      如果要序列化可以使用一些序列化框架 Hessian Kryo等
+ * 参数3 节点权限 使用ZooDefs.Ids.OPEN_ACL_UNSAFE开放权限即可
+ *      在权限没有太高要求的场景下 没必要关注
+ * 参数4  节点类型 创建节点的类型 提供了多种类型
+ *             CreateMode.PERSISTENT     持久节点
+ *             CreateMode.PERSISTENT_SEQUENTIAL  持久顺序节点
+ *             CreateMode.EPHEMERAL       临时节点
+ *             CreateMode.EPHEMERAL_SEQUENTIAL   临时顺序节点
+ *             CreateMode.CONTAINER
+ *             CreateMode.PERSISTENT_WITH_TTL
+ *             CreateMode.PERSISTENT_SEQUENTIAL_WITH_TTL
+ */
+//        String s = zooKeeper.create("/illusory", "test".getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+        //illusory
+//        System.out.println(s);
+        //原生Api不能递归创建 不能在没父节点的情况下创建子节点的
+        //框架封装也是同过if判断的 如果父节点没有 就先给你创建出来 这样实现的递归创建
+//        zooKeeper.create("/illusory/testz/zzz", "testzz".getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+//        System.out.println();
+/**
+ * 异步方式
+ * 在同步基础上多加两个参数
+ *
+ * 参数5 注册一个回调函数 要实现AsyncCallback.Create2Callback()重写processResult(int rx, String path, Object ctx, String name, Stat stat)方法
+ *   processResult参数1  int rx为服务端响应码 0表示调用成功 -4表示端口连接 -110表示指定节点存在 -112表示会话已过期
+ *                参数2 String path 节点调用时传入Api的数据节点路径
+ *                参数3 Object ctx 调用接口时传入的ctx值
+ *                参数4 String name 实际在服务器创建节点的名称
+ *                参数5 Stat stat 被创建的那个节点信息
+ *
+ */
+        zooKeeper.create("/illusory/testz/zzz/zzz/aa", "testzz".getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT
+                , (rc, path, ctx, name, stat) -> {
+                    System.out.println(stat.getAversion());
+                    System.out.println(rc);
+                    System.out.println(path);
+                    System.out.println(ctx);
+                }, "s");
+
+        System.out.println("继续执行");
+
+        Thread.sleep(1000);
+
+        byte[] data = zooKeeper.getData("/illusory", false, null);
+        System.out.println(new String(data));
+
+    }
+
+    @Test
+    public void testGet() throws KeeperException, InterruptedException {
+        waitZooKeeperConnOne.await();
+//        zooKeeper.create("/illusory","root".getBytes(),ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+//        zooKeeper.create("/illusory/aaa","aaa".getBytes(),ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+//        zooKeeper.create("/illusory/bbb","aaa".getBytes(),ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+//        zooKeeper.create("/illusory/ccc","aaa".getBytes(),ZooDefs.Ids.OPEN_ACL_UNSAFE, CreateMode.PERSISTENT);
+        //不支持递归 只能取下面的一层
+        List<String> children = zooKeeper.getChildren("/illusory", false);
+        for (String s : children) {
+            //拼接绝对路径
+            String realPath = "/illusory/" + s;
+            byte[] data = zooKeeper.getData(realPath, false, null);
+            System.out.println(new String(data));
+        }
+
+    }
+
+    @Test
+    public void testSet() throws KeeperException, InterruptedException {
+        waitZooKeeperConnOne.await();
+        zooKeeper.setData("/illusory/aaa", "new AAA".getBytes(), -1);
+        zooKeeper.setData("/illusory/bbb", "new BBB".getBytes(), -1);
+        zooKeeper.setData("/illusory/ccc", "new CCC".getBytes(), -1);
+        testGet();
+    }
+
+    @Test
+    public void testDelete() throws KeeperException, InterruptedException {
+        waitZooKeeperConnOne.await();
+        zooKeeper.delete("/illusory/aaa", -1);
+        testGet();
+    }
+
+    @Test
+    public void testExists() throws KeeperException, InterruptedException {
+        waitZooKeeperConnOne.await();
+        //判断节点是否存在 没有就是null 有的话会返回一长串12884901923,12884901933,1552027900801,1552028204414,1,0,0,0,7,0,12884901923
+        Stat exists = zooKeeper.exists("/illusory/bbb", null);
+        System.out.println(exists);
+    }
+
+
+}
+
+```
+
+## 5.ZooKeeper分布式锁
+
+**并发相关的锁只能限制当前服务器上只能有一个用户或者线程访问**，但是分布式环境下有多态服务器，并发相关的东西就不管用了，Nginx负载均衡将用户请求
+分到多台服务器上，然后每台服务器都可以用一个用户访问加锁的代码，这样又出现了并发问题。
+所以需要使用分布式锁，ZooKeeper可以通过依赖于临时节点实现分布式锁。具体如下：
+用户不管是访问的那个服务器，在访问并发相关代码时先去ZooKeeper上创建一个临时节点，ZooKeeper使用的ZAB算法保证了同时只能有一个请求能执行，当第一个用户
+创建了该节点后，后面的用户发现该节点已经被创建了就需要等待，等前一个用户执行完成后，退出，然后临时节点自动失效，下一个用户又创建一个临时节点继续去
+执行。这样就保证了同时只能有一个用户能够访问，不会出现并发问题，其中临时节点有效期为本次会话，退出后自动消失。
+
+
+例子：
+假设有两台服务器 一台8888 一台8889
+
+同时来了两个请求 一个访问8888，一个访问8889
+都要去修改数据库中的User表里的ID 为666的用户信息，例如都是把age属性+1 假设当前age为22
+
+没加锁之前：
+ 用户A查询到age为22 ++后变成23
+ 用户B也查询到是22  ++后也变成23
+ 其中这里两个++后应该变成24的，由于没加锁出现了数据异常
+ 
+ 加锁后：
+ 用户A先在ZooKeeper中创建临时节点 假设为user_666，创建之前会先get一下看有没有这个节点，若存在就等待,若不存在就创建
+ 此时用户B也来访问，也要创建user_666节点，一get发送已经有了，只能等待了。 
+ ZooKeeper保证了同一时间只能有一个请求被执行 即只会创建一个user_666节点，不会出现同时创建了俩个user_666节点的情况。
+ 同时ZooKeeper创建节点时若已经存在再次创建则会抛出异常。
+ 最终A和B只有一个人能成功创建节点并修改数据，
+ 这里假设是A先创建，那么A将age ++后变成23了 然后数据库持久化 8888中的age就是23了 8889中还是22
+ 然后服务器8888和8889之间执行进行数据同步 同步成功后A关闭会话，临时节点失效.
+ 现在用户B 创建临时节点user_666 接着去修改数据 此时获取到age=23 ++后变成了24 持久化后 再次进行8888 8889服务期间数据同步。
+ 这样就不会出现数据异常。
+ 
+ 问题： 1.为什么要用临时节点，创建持久化节点然后执行完后删除不行吗？
+        
+       答：临时节点性能高
+       
+       2.为什么要先get，在创建 直接创建不行吗，反正节点已存在时会抛异常。
+       答：get效率要高于create。数据存在内存中的，查询效率是非常高的。
+       
+       
+ ## 6.watch、ZK状态、事件类型
+ 在 ZooKeeper 中，引入了 Watcher 机制来实现这种分布式的通知功能。ZooKeeper 允许客户端向服务端注册一个 Watcher 监听，
+ 当服务器的一些特定事件触发了这个 Watcher，那么就会向指定客户端发送一个事件通知来实现分布式的通知功能。
+ 
+ 
+ 
