@@ -590,7 +590,7 @@ public class ZooKeeperBase {
  用户A查询到age为22 ++后变成23
  用户B也查询到是22  ++后也变成23
  其中这里两个++后应该变成24的，由于没加锁出现了数据异常
- 
+
  加锁后：
  用户A先在ZooKeeper中创建临时节点 假设为user_666，创建之前会先get一下看有没有这个节点，若存在就等待,若不存在就创建
  此时用户B也来访问，也要创建user_666节点，一get发送已经有了，只能等待了。 
@@ -601,19 +601,20 @@ public class ZooKeeperBase {
  然后服务器8888和8889之间执行进行数据同步 同步成功后A关闭会话，临时节点失效.
  现在用户B 创建临时节点user_666 接着去修改数据 此时获取到age=23 ++后变成了24 持久化后 再次进行8888 8889服务期间数据同步。
  这样就不会出现数据异常。
- 
+
  问题： 1.为什么要用临时节点，创建持久化节点然后执行完后删除不行吗？
-        
+​        
        答：临时节点性能高
        
        2.为什么要先get，在创建 直接创建不行吗，反正节点已存在时会抛异常。
        答：get效率要高于create。数据存在内存中的，查询效率是非常高的。
-       
-       
+
+
+​       
  ## 6.watch、ZK状态、事件类型
  在 ZooKeeper 中，引入了 Watcher 机制来实现这种分布式的通知功能。ZooKeeper 允许客户端向服务端注册一个 Watcher 监听，
  当服务器的一些特定事件触发了这个 Watcher，那么就会向指定客户端发送一个事件通知来实现分布式的通知功能。
- 
+
  同样，其watcher是监听数据发送了某些变化，那就一定会有对应的事件类型, 
  和状态类型。
  事件类型：（znode节点相关的）
@@ -630,9 +631,9 @@ public class ZooKeeperBase {
 ZooKeeper中有很多个节点，客户端也也可以new多个watcher，会开一个新的线程分别监听不同的节点，当监听的节点发送变化后，客户端就可以收到消息。
 然后watch可以看成是一个动作，是一次性的，watch一次就只能收到一次监听，节点别修改两次也只能收到第一次的通知。
 两种持续监听方案：
-    1.收到变化后将Boolean值手动赋为true，表示下一次还要监听
-    2.再new一个watcher去监听
-    
+​    1.收到变化后将Boolean值手动赋为true，表示下一次还要监听
+​    2.再new一个watcher去监听
+​    
  测试代码
  ```java
 
@@ -719,21 +720,21 @@ ZooKeeper中有很多个节点，客户端也也可以new多个watcher，会开�
         z.setData(childPath, "a".getBytes(), -1);
         Thread.sleep(1000);
     }
-```   
-    
+ ```
+
 
 ZooKeeper 的 Watcher 具有以下几个特性。
 
-一次性 
+**一次性 **
 无论是服务端还是客户端，一旦一个 Watcher 被触发，ZooKeeper 都会将其从相应的存储中移除。因此，在 Watcher 的使用上，
 需要反复注册。这样的设计有效地减轻了服务端的压力。
 
-客户端串行执行 
+**客户端串行执行** 
 客户端 Watcher 回调的过程是一个串行同步的过程，这为我们保证了顺序，同时，需要注意的一点是，
 一定不能因为一个 Watcher 的处理逻辑影响了整个客户端的 Watcher 回调，所以，我觉得客户端 Watcher 
 的实现类要另开一个线程进行处理业务逻辑，以便给其他的 Watcher 调用让出时间。
 
-轻量 
+**轻量 **
 WatcherEvent 是 ZooKeeper 整个 Watcher 通知机制的最小通知单元，这个数据结构中只包含三部分内容：
 通知状态、事件类型和节点路径。也就是说，Watcher 通知非常简单，只会告诉客户端发生了事件，而不会说明事件的具体内容。
 例如针对 NodeDataChanged 事件，ZooKeeper 的Watcher 只会通知客户端指定数据节点的数据内容发生了变更，
@@ -741,14 +742,14 @@ WatcherEvent 是 ZooKeeper 整个 Watcher 通知机制的最小通知单元，�
 的 Watcher 机制的一个非常重要的特性。
 
  ## ACL权限认证
- 
+
  首先说明一下为什么需要ACL？
  简单来说 :在通常情况下,zookeeper允许未经授权的访问,因此在安全漏洞扫描中暴漏未授权访问漏洞。
  这在一些监控很严的系统中是不被允许的,所以需要ACL来控制权限.
- 
+
  既然需要ACL来控制权限,那么Zookeeper的权限有哪些呢?
  权限包括以下几种:
- 
+
  CREATE: 能创建子节点
  READ：能获取节点数据和列出其子节点
  WRITE: 能设置节点数据
@@ -756,7 +757,7 @@ WatcherEvent 是 ZooKeeper 整个 Watcher 通知机制的最小通知单元，�
  ADMIN: 能设置权限
  说到权限,就要介绍一下zookeeper的认证方式:
  包括以下四种:
- 
+
  world：默认方式，相当于全世界都能访问
  auth：代表已经认证通过的用户(cli中可以通过addauth digest user:pwd 来添加当前上下文中的授权用户)
  digest：即用户名:密码这种方式认证，这也是业务系统中最常用的
@@ -837,3 +838,112 @@ WatcherEvent 是 ZooKeeper 整个 Watcher 通知机制的最小通知单元，�
 毕竟等服务器多起来时，不可能自己一台一台的去修改配置文件吧。
 
 给多个应用服务器注册watcher，然后去实时观察数据的变化，然后反馈给媒体服务器变更的数据，观察ZooKeeper节点。
+
+
+
+## 7. zkClient Api
+
+引入依赖
+
+```xml
+        <!--zkClient-->
+        <!-- https://mvnrepository.com/artifact/com.101tec/zkclient -->
+        <dependency>
+            <groupId>com.101tec</groupId>
+            <artifactId>zkclient</artifactId>
+            <version>0.11</version>
+        </dependency>
+```
+
+测试代码
+
+```java
+/**
+ * @author illusoryCloud
+ */
+public class zkCLientTest {
+    /**
+     * ZooKeeper地址
+     */
+//    static final String CONN_ADDR = "192.168.5.154:2181,192.168.5.155:2181,192.168.5.156:2181";
+    static final String CONN_ADDR = "192.168.1.111:2181,192.168.1.112:2181,192.168.1.113:2181";
+    /**
+     * session超时时间ms
+     */
+    static final int SESSION_TIMEOUT = 5000;
+    private ZkClient zkClient;
+
+    @Before
+    public void before() {
+        zkClient = new ZkClient(new ZkConnection(CONN_ADDR, SESSION_TIMEOUT));
+    }
+
+    @After
+    public void after() {
+        zkClient.close();
+    }
+
+    @Test
+    public void testOne() {
+        zkClient.createEphemeral("/test", true);
+        //可以递归创建 只能创建key 不能直接设置value
+        zkClient.createPersistent("/super/c1", true);
+        zkClient.writeData("/super/c1", "c1");
+        String o = zkClient.readData("/super/c1");
+        System.out.println(o);
+        zkClient.writeData("/super/c1", "新的内容");
+        System.out.println(zkClient.exists("/super/c1"));
+        System.out.println(zkClient.readData("/super/c1").toString());
+    }
+}
+```
+
+Api中并没有watch，zkClient提供了自己的一套监听机制，剔除了繁琐的watch操作。
+
+```java
+ @Test
+    public void testWatch() throws InterruptedException {
+        //监听/super节点的子节点增加或删除的变化
+        zkClient.subscribeChildChanges("/super", new IZkChildListener() {
+            @Override
+            public void handleChildChange(String parentPath, List<String> childs) throws Exception {
+                System.out.println("parent path: " + parentPath);
+                System.out.println("childs : " + childs);
+            }
+        });
+
+        zkClient.createEphemeral("/super/c2", "c2");
+        zkClient.createEphemeral("/super/c3", "c3");
+        zkClient.createEphemeral("/super/c4", "c4");
+
+        List<String> children = zkClient.getChildren("/super");
+        for (String s:children
+             ) {
+            System.out.println(zkClient.readData("/super/"+s).toString());
+        }
+        //监听/super节点的数据变化 数据变化和节点被删除都走这个
+        zkClient.subscribeDataChanges("/super", new IZkDataListener() {
+            @Override
+            public void handleDataChange(String path, Object o) throws Exception {
+                System.out.println("变更的节点为：" + path + "变更的内容为：" + o);
+            }
+
+            @Override
+            public void handleDataDeleted(String s) throws Exception {
+                System.out.println("删除的节点为：" + s);
+
+            }
+        });
+        Thread.sleep(1000);
+        zkClient.writeData("/super", "new super",-1);
+        zkClient.delete("/super/c1");
+        zkClient.delete("/super/c2");
+        zkClient.delete("/super/c3");
+        zkClient.delete("/super/c4");
+        zkClient.delete("/super");
+    }
+
+```
+
+
+
