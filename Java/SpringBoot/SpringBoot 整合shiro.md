@@ -273,11 +273,9 @@ public class AuthRealm extends AuthorizingRealm {
         User user = userService.findUserByName(username);
         System.out.println("认证：" + user.toString());
         Set<Role> roles = user.getRoles();
-        for (Role r : roles
-        ) {
+        for (Role r : roles ) {
             Set<Permission> permissions = r.getPermissions();
-            for (Permission p : permissions
-            ) {
+            for (Permission p : permissions) {
                 String permission = p.getPermission();
                 System.out.println("权限--》" + permission);
             }
