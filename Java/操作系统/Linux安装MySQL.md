@@ -143,7 +143,9 @@ pid-file=/usr/local/mysql/data/mysqld.pid
 # mysql -uroot -p 上面初始化时的密码
 ```
 
-如果出现错误 需要添加软连接 
+如果出现错误 需要添加软连接 或者输入全路径`/usr/local/mysql/bin/mysql -uroot -p`,
+
+配置软连接命令如下：
 
 ```xml
  # ln -s /usr/local/mysql/bin/mysql /usr/bin
@@ -169,7 +171,7 @@ pid-file=/usr/local/mysql/data/mysqld.pid
 # /etc/init.d/mysqld restart
  ```
 
-重启之后输入命令`mysql`即可进入mysql了，然后开始修改密码。
+重启之后输入命令`/usr/local/mysql/bin/mysql`即可进入mysql了，然后开始修改密码。
 
 ```mysql
 mysql> use mysql;
@@ -247,7 +249,7 @@ mysql> show global variables like 'port';
 mysql中执行命令出现以下错误：
 
 ```error
-ERROR 1820 (HY000): You must reset your password using ALTER USER statement before executing this statement.
+ERROR 1820 (HY000): You must reset your password using ALTER USER statement before executing this statement.	
 ```
 
 解决： 修改用户密码
