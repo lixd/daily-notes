@@ -265,8 +265,7 @@ ERROR 1820 (HY000): You must reset your password using ALTER USER statement befo
 
 ```mysql
 mysql> alter user 'root'@'localhost' identified by '你的密码'; 
-
-alter user 'root'@'localhost' identified by 'root'; 
+# 例如 alter user 'root'@'localhost' identified by 'root'; 
 ```
 
 ## 参考

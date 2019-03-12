@@ -62,13 +62,13 @@
 
 ## 2. 环境准备
 
-### 1. 所需环境
+### 2.1 所需环境
 
 先准备两台虚拟机，且安装好mysql。必须保证两台机器上的mysql中数据是一致的，不然主从复制时可能会出现问题。
 
 如果两台机器数据不一致，比如先有主机后加的从机，此时可以先复制主机数据到从机，在配置主从复制。
 
-### 2. 手动同步数据库
+### 2.2 手动同步数据库
 
 先在主机上执行以下SQL，锁定表中数据。
 
@@ -137,13 +137,17 @@ mysql>source /usr/local/mysql/data/backup/mysql_bak.2019-03-12.sql;
 
 ### 3.1 修改配置文件
 
+主机Master：192.168.5.153
+
+从机Slave：192.168.5.151
+
 在默认情况下，MySQL的配置文件是`/etc/my.cnf`,首先修改Mater主机的配置文件，
 
 ```linux
 [root@localhost bin]# vim /etc/my.cnf
 ```
 
-在``/etc/my.cnf`文件中的“[mysqld]”段添加如下内容：
+在`Master`的`/etc/my.cnf`文件中的“[mysqld]”段添加如下内容：
 
 ```shell
 #节点标识，主、从节点不能相同，必须全局唯一 一般填ip最后几位
@@ -160,7 +164,7 @@ replicate-wild-ignore-table=information_schema.%
 replicate-wild-do-table=test.%
 ```
 
-接着修改slave从机的配置文件
+接着修改`Slave`从机的配置文件
 
 ```shell
 #节点标识，主、从节点不能相同，必须全局唯一 一般填ip最后几位
@@ -177,17 +181,37 @@ replicate-wild-ignore-table=information_schema.%
 replicate-wild-do-table=test.%
 ```
 
-这里需要注意的是，不要在主库上使用binlog-do-db或binlog-ignore-db选项，也不要在从库上使用replicate-do-db或replicate-ignore-db选项，因为这样可能产生跨库更新失败的问题。推荐在从库使用replicate-wild-do-table和replicate-wild-ignore-table两个选项来解决复制过滤问题。
+从库可以使用通配符`"库名.%"`方式过滤主从同步时某个库的设置
+
+```shell
+replicate-wild-do-table=webdb.%      #只复制webdb库下的所有表`
+replicate-wild-ignore-table=mysql.%  #忽略mysql库下的所有表
+```
+
+特别注意: **生产库上一般不建议设置过滤规则, 如果非要设置, 强烈建议从库使用通配符方式过滤某个库**。
+
+**温馨提示：**在实际业务场景中，mysq主从同步时最好别过滤库，即最好进行基于整个数据库的同步配置。如果业务库比较多的情况下，可使用mysql多实例方式进行同步，一个业务库对应一个mysql实例，每个mysql实例做基于它的整个数据库的同步配置。使用过滤库或过滤表的方式进行主从同步配置，后续会带来一些比较麻烦的坑。
+
+```shell
+`replicate-wild-``do``-table= ``"库名.%"``replicate-wild-ignore-table= ``"库名.%"`
+```
+
+而不建议从库使用DB方式过滤某个库:
+
+```shell
+`replicate_do_db =``"库名"``replicate_ingore_db =``"库名"`
+```
 
 ### 3.2 创建复制用户
 
-首先在`mater`的MySQL库中创建复制用户，操作过程如下：
+首先在`Mater`的MySQL库中创建复制用户给`Slave`复制时使用，操作过程如下：
 
 ```mysql
 [root@localhost bin]# /etc/init.d/mysqld restart
 #@ 前面的那个是 用户名 后面的是主机地址 %表示所有 最后的root是密码
-mysql> grant replication slave on *.* to 'repl_user'@'%' identified by 'root';
+mysql> grant replication slave on *.* to 'repl_user'@'192.168.5.151' identified by 'root';
 Query OK, 0 rows affected (0.01 sec)
+
 mysql> show master status;
  +------------------+----------+--------------+------------------+
 | File             | Position | Binlog_Do_DB | Binlog_Ignore_DB |
@@ -196,14 +220,14 @@ mysql> show master status;
  +------------------+----------+--------------+------------------+
 ```
 
-然后在`slave`的MySQL库中将`mster`设为自己的主服务器，操作如下：
+然后在`Slave`的MySQL库中将`Mster`设为自己的主服务器，操作如下：
 
 ```mysql
 mysql> change master to master_host='192.168.5.153',master_user='repl_user',master_password='root',master_log_file='mysql-bin.000001',master_log_pos=686;
 ```
 注意`master_log_file`和`master_log_pos`两个选项，这两个选项的值刚好是在`master`上通过SQL语句`show master status`查询到的结果。
 
- 接着就可以在`slave`上启动slave服务了，可执行如下SQL命令：
+ 接着就可以在`Slave`上启动slave服务了，可执行如下SQL命令：
 
 ```mysql
 mysql> start slave;
@@ -282,7 +306,7 @@ Master_SSL_Verify_Server_Cert: No
 
 到这里主从复制已经ok了。
 
-## 4. 测试
+### 3.3 测试
 
 在master上创建一个表，注意前面配置的时只复制test数据库中的数据，所以需要先建一个test数据库。
 
@@ -333,6 +357,314 @@ mysql> show databases;
 ```
 
 证明主从复制已经成功了。
+
+
+
+## 4. 小结
+
+**Ｍysql主从数据完成同步的过程**
+1) 在Slave 服务器上执行sart slave命令开启主从复制开关，开始进行主从复制。
+2) 此时，Slave服务器的IO线程会通过在master上已经授权的复制用户权限请求连接master服务器，并请求从执行binlog日志文件的指定位置（日志文件名和位置就是在配置主从复制服务时执行change master命令指定的）之后开始发送binlog日志内容
+3) Master服务器接收到来自Slave服务器的IO线程的请求后，其上负责复制的IO线程会根据Slave服务器的IO线程请求的信息分批读取指定binlog日志文件指定位置之后的binlog日志信息，然后返回给Slave端的IO线程。返回的信息中除了binlog日志内容外，还有在Master服务器端记录的IO线程。返回的信息中除了binlog中的下一个指定更新位置。
+4) 当Slave服务器的IO线程获取到Master服务器上IO线程发送的日志内容、日志文件及位置点后，会将binlog日志内容依次写到Slave端自身的Relay Log（即中继日志）文件（Mysql-relay-bin.xxx）的最末端，并将新的binlog文件名和位置记录到master-info文件中，以便下一次读取master端新binlog日志时能告诉Master服务器从新binlog日志的指定文件及位置开始读取新的binlog日志内容
+5) Slave服务器端的SQL线程会实时检测本地Relay Log 中IO线程新增的日志内容，然后及时把Relay LOG 文件中的内容解析成sql语句，并在自身Slave服务器上按解析SQL语句的位置顺序执行应用这样sql语句，并在relay-log.info中记录当前应用中继日志的文件名和位置点.
+
+主从复制条件
+-  开启Binlog功能
+-  主库要建立账号
+-  从库要配置master.info (CHANGE MASTER to...相当于配置密码文件和Master的相关信息)
+-  start slave 开启复制功能
+
+主从复制时需要理解
+-  3个线程，主库IO，从库IO和SQL及作用
+-  master.info（从库）作用
+-  relay-log 作用
+-  异步复制
+-  binlog作用 (如果需要级联需要开启Binlog)
+
+主从复制时注意事项
+-  主从复制是异步逻辑的SQL语句级的复制
+-  复制时，主库有一个I/O线程，从库有两个线程，I/O和SQL线程
+-  实现主从复制的必要条件是主库要开启记录binlog功能
+-  作为复制的所有Mysql节点的server-id都不能相同
+-  binlog文件只记录对数据库有更改的SQL语句（来自主库内容的变更），不记录任何查询（select，show）语句
+
+**彻底解除主从复制关系**
+\-  stop slave;
+\-  reset slave; 或直接删除master.info和relay-log.info这两个文件；
+\-  修改my.cnf删除主从相关配置参数。
+
+## 5. 双主备份
+
+### 5.1 简介
+
+根据上面的主从环境部署，master和slave已经实现同步，即在master上写入新数据，自动同步到slave。而从库只能读不能写，一旦从库有写入数据，就会造成主从数据不一致！
+下面就说下Mysql主主复制环境，在slave上更新数据时，master也能自动同步过来。
+
+> 温馨提示：
+> 在做主主同步前，提醒下需要特别注意的一个问题：
+> 主主复制和主从复制有一些区别，因为多主中都可以对服务器有写权限，所以设计到自增长重复问题，例如：
+> 出现的问题（多主自增长ID重复）
+> 1）首先在A和B两个库上创建``test``表结构;
+> 2）停掉A，在B上对数据表``test``(存在自增长属性的ID字段)执行插入操作，返回插入ID为1;
+> 3）然后停掉B，在A上对数据表``test``(存在自增长属性的ID字段)执行插入操作，返回的插入ID也是1;
+> 4）然后 同时启动A,B，就会出现主键ID重复
+>
+> 解决方法：
+> 只要保证两台服务器上的数据库里插入的自增长数据不同就可以了
+> 如：A插入奇数ID，B插入偶数ID，当然如果服务器多的话，还可以自定义算法，只要不同就可以了
+> 在下面例子中，在两台主主服务器上加入参数，以实现奇偶插入！
+> 记住:在做主主同步时需要设置自增长的两个相关配置，如下：
+> auto_increment_offset       表示自增长字段从那个数开始，取值范围是1 .. 65535。这个就是序号。如果有n台mysql机器，则从第一台开始分为设1，2...n
+> auto_increment_increment    表示自增长字段每次递增的量，其默认值是1，取值范围是1 .. 65535。如果有n台mysql机器，这个值就设置为n。
+>
+> 在主主同步配置时，需要将两台服务器的：
+> auto_increment_increment     增长量都配置为2
+> auto_increment_offset        分别配置为1和2。这是序号，第一台从1开始，第二台就是2，以此类推!这样效果就是：master的数据``id``是1,3,5,7..., slave的数据``id``是2,4,6,8....
+> 这样才可以避免两台服务器同时做更新时自增长字段的值之间发生冲突。（针对的是有自增长属性的字段）
+
+### 5.2 修改配置文件
+
+`Master`的配置文件`my.cnf`
+
+```shell
+#主主备份新增
+log-slave-updates
+sync_binlog = 1
+binlog_checksum = none
+binlog_format = mixed
+#防止ID自增重复 offset=1
+auto-increment-increment = 2   
+auto-increment-offset = 1  
+slave-skip-errors = all    
+```
+
+`Slave`的配置文件`my.cnf`
+
+```shell
+#主主备份新增
+log-slave-updates
+sync_binlog = 1
+binlog_checksum = none
+binlog_format = mixed
+#防止ID自增重复 offset=2
+auto-increment-increment = 2   
+auto-increment-offset = 2 
+slave-skip-errors = all    
+```
+
+### 5.3 创建同步用户
+
+同时在主从服务器建立一个连接帐户，该帐户必须授予`REPLIATION SLAVE`权限。这里因为服务器A和服务器B互为主从，所以都要分别建立一个同步用户。
+
+`Master`
+
+其实前面主机上已经创建了一个账户了，这里可以不用再创建的，不过还是写上。
+
+```MYSQL
+mysql> grant replication slave on *.* to 'DoubleRel'@'192.168.5.151' identified by 'root';
+mysql> flush privileges;
+```
+
+`Slave`
+
+```mysql
+mysql> grant replication slave on *.* to 'DoubleRel'@'192.168.5.153' identified by 'root';
+
+mysql> flush privileges;
+```
+
+### 5.4 指定Master
+
+互相将对方作为`Master`
+
+`Master`
+
+注意：`master_log_file `,`master_log_pos`这两个刚好是在对面的机器上查询出来的，即`MAster`上查出来的`Position=150`，那么在`Slave`上执行的命令就是`master_log_pos=150`
+
+```mysql
+mysql> show master status;
++------------------+----------+--------------+------------------+-------------------+
+| File             | Position | Binlog_Do_DB | Binlog_Ignore_DB | Executed_Gtid_Set |
++------------------+----------+--------------+------------------+-------------------+
+| mysql-bin.000003 |     150  |              |                  |                   |
++------------------+----------+--------------+------------------+-------------------+
+
+mysql>change master to master_host='192.168.5.151',master_user='DoubleRel',master_password='root',master_log_file='mysql-bin.000002',master_log_pos=150;
+```
+
+`Slave`
+
+```mysql
+mysql>  show master status;
++------------------+----------+--------------+------------------+-------------------+
+| File             | Position | Binlog_Do_DB | Binlog_Ignore_DB | Executed_Gtid_Set |
++------------------+----------+--------------+------------------+-------------------+
+| mysql-bin.000003 |      150 |              |                  |                   |
++------------------+----------+--------------+------------------+-------------------+
+
+mysql>change master to master_host='192.168.5.153',master_user='DoubleRel',master_password='root',master_log_file='mysql-bin.000003',master_log_pos=150;
+```
+
+### 5.5 开启Slave
+
+`Master`
+
+```MYSQL
+mysql>  start slave;
+Query OK, 0 rows affected (0.02 sec)
+
+mysql> show slave status \G;
+#查看下面两项值均为Yes，即表示设置从服务器成功。
+Slave_IO_Running: Yes
+Slave_SQL_Running: Yes
+```
+
+`saster`
+
+```MYSQL
+mysql>  start slave;
+Query OK, 0 rows affected (0.02 sec)
+
+mysql> show slave status \G;
+#查看下面两项值均为Yes，即表示设置从服务器成功。
+Slave_IO_Running: Yes
+Slave_SQL_Running: Yes
+```
+
+### 5.6 测试
+
+现在`Master`中查询，只有`users`一张表
+
+```mysql
+mysql> show tables;
++----------------+
+| Tables_in_test |
++----------------+
+| users          |
++----------------+
+1 row in set (0.00 sec)
+
+```
+
+然后在`Slave`中创建一张表
+
+```MYSQL
+mysql> CREATE TABLE orders(
+    -> oid INT  PRIMARY KEY,
+    -> oname VARCHAR(20)
+    -> );
+Query OK, 0 rows affected (0.06 sec)
+```
+
+`Master`中再次查询
+
+```MYSQL
+mysql> show tables;
++----------------+
+| Tables_in_test |
++----------------+
+| orders         |
+| users          |
++----------------+
+2 rows in set (0.00 sec)
+```
+
+ok，已经有两张表了，接着在`Master`中添加一张表
+
+```MYSQL
+mysql> CREATE TABLE account(
+    -> aid INT  PRIMARY KEY,
+    -> aname VARCHAR(20)
+    -> );
+Query OK, 0 rows affected (0.04 sec)
+```
+
+然后在`Slave`中查询
+
+```MYSQL
+mysql> show tables;
++----------------+
+| Tables_in_test |
++----------------+
+| account        |
+| orders         |
+| users          |
++----------------+
+3 rows in set (0.00 sec)
+```
+
+三张表都在，测试成功，说明双主备份搭建成功了。
+
+## 6. 问题
+
+`show slave status \G;`查看状态时出现`Slave_IO_Running: Connecting`
+
+可能的原因：
+
+### 6.1 网络不通
+
+Master和Slave互相ping一下看能不能ping通
+
+### 6.2 账户密码错误：
+
+检测生成的用户和配置的密码是否一致，就是下面的这两个地方。@前面的时账号 后面的是允许访问的主机地址，最后的root则是密码。
+
+```mysql
+mysql> grant replication slave on *.* to 'DoubleRel'@'192.168.5.151' identified by 'root';
+
+mysql>change master to master_host='192.168.5.153',master_user='DoubleRel',master_password='root',master_log_file='mysql-bin.000003',master_log_pos=150;
+```
+
+### 6.3 防火墙
+
+可以先关闭防火墙在测试。
+
+```shell
+systemctl stop firewalld # 临时关闭防火墙
+systemctl disable firewalld # 禁止开机启动
+```
+
+### 6.4 配置文件问题
+
+检查配置文件`my.cnf`是否有错误,注意语法。
+
+### 6.5 连接服务器时语法
+
+还有就是设置Master时变量是否弄错，如下：
+
+```MYSQL
+mysql> show master status;
++------------------+----------+--------------+------------------+-------------------+
+| File             | Position | Binlog_Do_DB | Binlog_Ignore_DB | Executed_Gtid_Set |
++------------------+----------+--------------+------------------+-------------------+
+| mysql-bin.000003 |      150 |              |                  |                   |
++------------------+----------+--------------+------------------+-------------------+
+
+mysql>change master to master_host='192.168.5.153',master_user='DoubleRel',master_password='root',master_log_file='mysql-bin.000003',master_log_pos=150;
+```
+
+**`show master status`查询出来的结果是给对方用的，这里的`master_log_file`和`master_log_pos`是在对方的机器上查询出来的结果**
+
+### 6.6 主服务器mysql权限
+
+查看配置的账号能不能在本机上登录。
+
+```mysql
+mysql> select user,host from user;
++---------------+---------------+
+| user          | host          |
++---------------+---------------+
+| repl_user     | %             |
+| DoubleRel     | 192.168.5.151 |
+| mysql.session | localhost     |
+| mysql.sys     | localhost     |
+| root          | localhost     |
++---------------+---------------+
+5 rows in set (0.00 sec)
+# 看下能不能登录
+[root@localhost ~]# mysql -uDoubleRel -proot -h192.168.5.151
+```
 
 ## 参考
 
