@@ -46,7 +46,7 @@
 
 给mysql赋权的用户必须对当前目录具有读写权限，但是一般不用root账户，所以创建一个用户mysql。
 
-执行命令：创建用户组mysql`groupadd mysql``
+执行命令：创建用户组mysql`groupadd mysql`
 
 创建用户也叫mysql 
 
@@ -64,6 +64,10 @@
 ```xml
 //mysql是用户组名
 # chgrp -R mysql.
+
+#如果上面这个命令不行可以尝试下面这个
+# 将 /usr/local/mysql的所属组改为mysql
+[root@localhost mysql]# chgrp -R mysql /usr/local/mysql
 ```
 
 给用户赋权限  
@@ -71,6 +75,10 @@
 ```xml
 //这个mysql是用户名
 #  chown -R mysql. 
+
+#如果上面这个命令不行可以尝试下面这个
+# 将 /usr/local/mysql的拥有者改为mysql
+[root@localhost mysql]# chown -R mysql /usr/local/mysql
 ```
 
 ## 4. 数据库初始化
@@ -78,7 +86,7 @@
 安装数据库 : 
 
 ```xml
-// 这里会生成临时密码，后边有用
+// 这里会生成临时密码，后边有用 这里的目录不能错
 # bin/mysqld --initialize --user=mysql --basedir=/usr/local/mysql --datadir=/usr/local/mysql/data
 ```
 
@@ -179,6 +187,7 @@ mysql> use mysql;
 mysql> update user set authentication_string=passworD("你的密码") where user='root';
 flush privileges;
 mysql> quit
+
 ```
 
 完成后可以把配置文件中的跳过密码验证去掉。
@@ -256,6 +265,8 @@ ERROR 1820 (HY000): You must reset your password using ALTER USER statement befo
 
 ```mysql
 mysql> alter user 'root'@'localhost' identified by '你的密码'; 
+
+alter user 'root'@'localhost' identified by 'root'; 
 ```
 
 ## 参考
