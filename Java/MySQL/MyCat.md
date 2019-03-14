@@ -76,13 +76,23 @@ wrapper.java.command=/usr/local/java8/bin/java.exe
 #### 1. user标签 
 
 ```xml
+    <!--mycat服务端口8066-->
+	<property name="serverPort">8066</property>
+    <!--mycat管理端口9066-->
+    <property name="managerPort">9066</property> 
+     <property name="idleTimeout">300000</property> 
+    <property name="bindIp">0.0.0.0</property> 
+    <property name="frontWriteQueueSize">4096</property> 
+    <property name="processors">32</property> -->
+
+
 <user name="root">
     <property name="password"></property>
     <property name="schemas">TESTDB</property>
     <property name="readOnly">true</property>
 </user>
-<!--
-    user	用户配置节点
+<!-- 
+    --user	用户配置节点
     --name	登录的用户名，也就是连接Mycat的用户名
     --password	登录的密码，也就是连接Mycat的密码
     --schemas	数据库名，这里会和schema.xml中的配置关联，多个用逗号分开，例如需要这个用户需要管理两个#数据库db1,db2，则配置db1,dbs	
@@ -213,21 +223,26 @@ schema标签用来定义mycat实例中的逻辑库，mycat可以有多个逻辑�
 </schema>
 
 <!--name逻辑数据库名，与server.xml中的schema对应-->
-<!--checkSQLschema	数据库前缀相关设置，当该值为true时，例如我们执行语句select * from TESTDB.company 。mycat会把语句修改为 select * from company 去掉TESTDB。-->
 <!--sqlMaxLimit	当该值设置为某个数值时，每条执行的sql语句，如果没有加上limit语句，Mycat会自动加上对应的值。不写的话，默认返回所有的值。-->
 <!--需要注意的是，如果运行的schema为非拆分库的，那么该属性不会生效。需要自己sql语句加limit。-->
 ```
 
+`checkSQLschema`:数据库前缀相关设置，当该值为true时，例如我们执行语句
+`select * from TESTDB.company `。mycat会把语句修改为 `select * from company` 去掉TESTDB。为false时则会执行`select * from TESTDB.company`原语句。
+
 #### 2. table 标签
+
+`name `: 表名，如果需要定义多个逻辑表，多个table标签，要求逻辑库的表名和物理表名(MySQL中的表名)一致。
+
+`dataNode` :	表存储到哪些数据节点，多个节点用逗号分隔。节点为下文dataNode设置的name
+
+`rule`:分片规则名，具体规则参考rule.xml,SQL语句发送到mycat后，mycat应该讲当前的SQL发送到哪个物理数据库。
 
 ```xml
 <table name="travelrecord" dataNode="dn1,dn2,dn3" rule="auto-sharding-long" />
 <table name="company" primaryKey="ID" type="global" dataNode="dn1,dn2,dn3" />
-<!--name	表名，物理数据库中表名-->
-<!--dataNode	表存储到哪些节点，多个节点用逗号分隔。节点为下文dataNode设置的name-->
 <!--primaryKey	主键字段名，自动生成主键时需要设置-->
 <!--autoIncrement	是否自增-->
-<!--rule	分片规则名，具体规则下文rule详细介绍-->
 <!--type 该属性定义了逻辑表的类型，目前逻辑表只有全局表和普通表。全局表： global 普通表：无 
 #注：全局表查询任意节点，普通表查询所有节点效率低-->
 
@@ -257,7 +272,7 @@ childTable 标签用于定义 E-R 分片的子表。通过标签上的属性与�
 
 #### 3. dataNode标签
 
-datanode标签定义了mycat中的数据节点，也就是我们所说的数据分片。一个datanode标签就是一个独立的数据分片。
+datanode标签定义了mycat中的数据节点，也就是我们所说的数据分片。一个datanode标签就是一个独立的数据分片。定义具体的物理database信息。
 
 ```shell
 <dataNode name="dn1" dataHost="localhost1" database="db1" />
@@ -271,7 +286,7 @@ datanode标签定义了mycat中的数据节点，也就是我们所说的数据�
 
 #### 4. dataHost标签
 
-这个标签直接定义了具体数据库实例，读写分离配置和心跳语句。
+这个标签直接定义了具体数据库实例，物理MySQL真实安装的位置。读写分离配置和心跳语句。
 
 ```xml
 <dataHost name="localhost1" maxCon="1000" minCon="10" balance="0" writeType="0" dbType="mysql" dbDriver="native" switchType="1" slaveThreshold="100">
@@ -286,19 +301,19 @@ datanode标签定义了mycat中的数据节点，也就是我们所说的数据�
 <!--balance	负载均称类型-->
 
 <!--balance="0"：不开启读写分离机制，所有读操作都发送到当前可用的writeHost上
-balance="1"：全部的readHost与stand by writeHost参与select语句的负载均衡，简单的说，当双主双从模式（M1-S1，M2-S2 并且M1 M2互为主备），正常情况下，M2,S1,S2都参与select语句的负载均衡。
-balance="2"：所有读操作都随机的在writeHost、readHost上分发
-balance="3"：所有读请求随机的分发到writeHst对应的readHost执行，writeHost不负担读写压力。（1.4之后版本有）-->
+	balance="1"：全部的readHost与stand by writeHost参与select语句的负载均衡，简单的说，当双主双从模式（M1-S1，M2-S2 并且M1 M2互为主备），正常情况下，M2,S1,S2都参与select语句的负载均衡。
+	balance="2"：所有读操作都随机的在writeHost、readHost上分发
+	balance="3"：所有读请求随机的分发到writeHst对应的readHost执行，writeHost不负担读写压力。（1.4之后版本有）-->
 
 <!--writeType	负载均衡类型。-->
 
 <!--writeType="0", 所有写操作发送到配置的第一个 writeHost，第一个挂了切到还生存的第二个writeHost，重新启动后已切换后的为准，切换记录在配置文件中:dnindex.properties .
-writeType="1"，所有写操作都随机的发送到配置的 writeHost。1.5以后版本废弃不推荐。-->
+	writeType="1"，所有写操作都随机的发送到配置的 writeHost。1.5以后版本废弃不推荐。-->
 
 <!--switchType	-1不自动切换-->
 <!--1 默认值 自动切换
-2 基于MySql主从同步的状态决定是否切换心跳语句为 show slave status
-3 基于mysql galary cluster 的切换机制（适合集群）1.4.1 心跳语句为 show status like 'wsrep%'-->
+	2 基于MySql主从同步的状态决定是否切换心跳语句为 show slave status
+	3 基于mysql galary cluster 的切换机制（适合集群）1.4.1 心跳语句为 show status like 'wsrep%'-->
 
 <!--dbType	指定后端链接的数据库类型目前支持二进制的mysql协议，还有其他使用jdbc链接的数据库，例如：mongodb，oracle，spark等-->
 <!--dbDriver	指定连接后段数据库使用的driver，目前可选的值有native和JDBC。使用native的话，因为这个值执行的是二进制的mysql协议，所以可以使用mysql和maridb，其他类型的则需要使用JDBC驱动来支持。
@@ -408,7 +423,20 @@ Running Mycat-server...
 wrapper  | ERROR: Could not write pid file /usr/local/mycat/logs/mycat.pid: No such file or directory
 ```
 
-### 4.4 登录MySQL
+### 4.4 进入客户端
+
+连接8066端口，进入客户端，这里的用户密码是mycat中配置的用户密码。这里操作是操作的mycat，然后mycat在去操作mysql。
+
+```shell
+[root@localhost mycat]# mysql -uroot -p123456 -h192.168.1.111 -P8066
+mysql>  
+```
+
+访问成功后不能直接使用，因为MyCat只能访问MySQL的schema(database)，不能自动创建逻辑库对应的物理库，逻辑表对应的物理表。
+
+必须人工连接数据库，手动创建。可以在mycat命令行创建，不过只能创建schema.xml中配置的，不然会报错。‘
+
+### 4.8 管理接口
 
 Mycat 提供了类似数据库的管理监控方式，可以通过 MySQL 命令行登陆管理端口 9066 执行相应的 SQL 语句进行管理，可以可以通过 JDBC 的方式进行远程连接管理，使用 MySQL 命令行登陆示例如下
 
@@ -424,7 +452,243 @@ Mycat 提供了类似数据库的管理监控方式，可以通过 MySQL 命令�
 可以使用 show @@help 查询所有命令
 ```
 
+## 5. MyCat分片配置
 
+首先看一下`schema.xml` 前面说了这里面配置的是`mycat`的物理数据库和数据库表的配置。
+
+```xml
+<?xml version="1.0"?>
+<!DOCTYPE mycat:schema SYSTEM "schema.dtd">
+<mycat:schema xmlns:mycat="http://io.mycat/">
+    <!--逻辑库名字 即mycat命令行中的数据库名 TESTDB-->
+        <schema name="TESTDB" checkSQLschema="false" sqlMaxLimit="100">
+       <!--逻辑表名 mycat中的表名 一般与真实数据库中的表名相同-->
+        <!--3个dataNode数据节点，表示该表数据分成3份，分别放在dn1,dn2,dn3节点-->
+        <table name="t_user" dataNode="dn1,dn2,dn3" rule="auto-sharding-long" />
+   </schema>
+        <!--定义上面的dn1,dn2,dn3节点-->
+    	<!--dataHost主机名 真实数据库存放的主机 database真实数据库中的数据库名-->
+        <dataNode name="dn1" dataHost="localhost1" database="db1" />
+        <dataNode name="dn2" dataHost="localhost1" database="db2" />
+        <dataNode name="dn3" dataHost="localhost1" database="db3" />
+    	<!--定义上面的dataHost主机名，包括url和账号密码，这里是读写分开的-->
+        <dataHost name="localhost1" maxCon="1000" minCon="10" balance="0"
+                          writeType="0" dbType="mysql" dbDriver="native" switchType="1"  slaveThreshold="100">
+                <heartbeat>select user()</heartbeat>
+                <!-- can have multi write hosts -->
+                <writeHost host="hostM1" url="localhost:3306" user="root"
+                                   password="root">
+                        <!-- can have multi read hosts -->
+                        <readHost host="hostS2" url="192.168.1.111:3306" user="root" password="root" />
+                </writeHost>
+                <writeHost host="hostS1" url="localhost:3316" user="root"
+                                   password="123456" />
+                <!-- <writeHost host="hostM2" url="localhost:3316" user="root" password="123456"/> -->
+        </dataHost>
+      
+</mycat:schema>
+
+```
+
+在物理数据库`MySQL`新建三面配置的3个数据库`db1`、`db2`、`db3`.
+
+然后在`myca`t中的`TESTDB`中新建一张表，就是上面配置的`t_user`
+
+```mysql
+mysql> use TESTDB;
+Reading table information for completion of table and column names
+You can turn off this feature to get a quicker startup with -A
+
+Database changed
+mysql> CREATE TABLE t_user( id INT NOT NULL, uname VARCHAR(32), upwd VARCHAR(32), age INT(3), PRIMARY KEY (id));
+Query OK, 0 rows affected (0.23 sec)
+
+mysql> 
+
+```
+
+创建好后去物理数据库中查看
+
+```mysql
+mysql> show tables from db1;
++---------------+
+| Tables_in_db1 |
++---------------+
+| t_user        |
++---------------+
+1 row in set (0.00 sec)
+
+mysql> show tables from db2;
++---------------+
+| Tables_in_db2 |
++---------------+
+| t_user        |
++---------------+
+1 row in set (0.00 sec)
+
+mysql> show tables from db3;
++---------------+
+| Tables_in_db3 |
++---------------+
+| t_user        |
++---------------+
+1 row in set (0.00 sec)
+
+mysql> 
+
+```
+
+可以看到3个数据库中都创建了`t_user`表。
+
+接着插入数据,插入11条数据，mycat中需要严格按照规范些SQL，所以不能偷懒了。
+
+```mysql
+INSERT INTO t_user(id,uname,upwd,age) VALUES(1,'a','a',20);
+INSERT INTO t_user(id,uname,upwd,age) VALUES(2,'a','a',20);
+INSERT INTO t_user(id,uname,upwd,age) VALUES(3,'a','a',20);
+INSERT INTO t_user(id,uname,upwd,age) VALUES(4,'a','a',20);
+INSERT INTO t_user(id,uname,upwd,age) VALUES(5,'a','a',20);
+INSERT INTO t_user(id,uname,upwd,age) VALUES(6,'a','a',20);
+INSERT INTO t_user(id,uname,upwd,age) VALUES(7,'a','a',20);
+INSERT INTO t_user(id,uname,upwd,age) VALUES(8,'a','a',20);
+INSERT INTO t_user(id,uname,upwd,age) VALUES(9,'a','a',20);
+INSERT INTO t_user(id,uname,upwd,age) VALUES(10,'a','a',20);
+INSERT INTO t_user(id,uname,upwd,age) VALUES(11,'a','a',20);
+```
+
+插入完成后在mycat中查一下
+
+```mysql
+mysql> select * from t_user;
++----+-------+------+------+
+| id | uname | upwd | age  |
++----+-------+------+------+
+|  1 | a     | a    |   20 |
+|  2 | a     | a    |   20 |
+|  3 | a     | a    |   20 |
+|  4 | a     | a    |   20 |
+|  5 | a     | a    |   20 |
+|  6 | a     | a    |   20 |
+|  7 | a     | a    |   20 |
+|  8 | a     | a    |   20 |
+|  9 | a     | a    |   20 |
+| 10 | a     | a    |   20 |
+| 11 | a     | a    |   20 |
++----+-------+------+------+
+11 rows in set (0.86 sec)
+
+```
+
+可以看到11条数据都查到了，接着去物理MySQL中查看一下。
+
+```mysql
+mysql> select * from db1.t_user;
++----+-------+------+------+
+| id | uname | upwd | age  |
++----+-------+------+------+
+|  1 | a     | a    |   20 |
+|  2 | a     | a    |   20 |
+|  3 | a     | a    |   20 |
+|  4 | a     | a    |   20 |
+|  5 | a     | a    |   20 |
+|  6 | a     | a    |   20 |
+|  7 | a     | a    |   20 |
+|  8 | a     | a    |   20 |
+|  9 | a     | a    |   20 |
+| 10 | a     | a    |   20 |
+| 11 | a     | a    |   20 |
++----+-------+------+------+
+
+11 rows in set (0.00 sec)
+mysql> select * from db2.t_user;
+Empty set (0.00 sec)
+
+mysql> select * from db3.t_user;
+Empty set (0.00 sec)
+
+```
+
+奇怪了，11条数据都分在了db1中，db2和db3都是空的，难道是数据量太小了才没分到吗?
+
+这里就用到了前面说的rule.xml了，数据分在那一片中就在这里面配置
+
+其中当前的schema.xml中写的是
+
+```xml
+ <table name="t_user" dataNode="dn1,dn2,dn3" rule="auto-sharding-long" />
+```
+
+需要注意的是：`rule="auto-sharding-long" `,于是去rule.xml中找一下这个规则是怎么样的
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mycat:rule SYSTEM "rule.dtd">
+<mycat:rule xmlns:mycat="http://io.mycat/">
+    <!--这就是上面使用到的规则-->
+    <tableRule name="auto-sharding-long">
+                <rule>
+                        <columns>id</columns>
+                    	<!--这个规则的算法是 rang-long-->
+                        <algorithm>rang-long</algorithm>
+                </rule>
+        </tableRule>
+    <!--rang-long算法在这里-->
+  <function name="rang-long"
+                class="io.mycat.route.function.AutoPartitionByLong">
+      			<!--具体信息在autopartition-long.txt这个文件中-->
+                <property name="mapFile">autopartition-long.txt</property>
+        </function>
+</mycat:rule>
+
+```
+
+autopartition-long.txt如下：
+
+```txt
+# range start-end ,data node index
+# K=1000,M=10000.
+0-500M=0
+500M-1000M=1
+1000M-1500M=2
+```
+
+这个意思是ID 0到500万的分在0号，500万到1000万的分到1号，1000万到1500万的分到2号。
+
+测试一下
+
+```mysql
+# 插入一个ID刚好超过500万的看看是不是分到db2
+mysql> INSERT INTO t_user(id,uname,upwd,age) VALUES(5000001,'a','a',20);
+Query OK, 1 row affected (0.01 sec)
+# 插入一个ID刚好超过1000万的看看是不是分到db2
+mysql> INSERT INTO t_user(id,uname,upwd,age) VALUES(10000001,'a','a',20);
+Query OK, 1 row affected (0.01 sec)
+```
+
+最后在物理MySQL上查看
+
+```mysql
+mysql> select * from db2.t_user;
++---------+-------+------+------+
+| id      | uname | upwd | age  |
++---------+-------+------+------+
+| 5000001 | a     | a    |   20 |
++---------+-------+------+------+
+1 row in set (0.00 sec)
+
+mysql> select * from db3.t_user;
++----------+-------+------+------+
+| id       | uname | upwd | age  |
++----------+-------+------+------+
+| 10000001 | a     | a    |   20 |
++----------+-------+------+------+
+1 row in set (0.00 sec)
+
+```
+
+果然是这样的。
+
+mycat中定义了许多分片规则，可以根据需要自行配置。
 
 ### 问题
 
