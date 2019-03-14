@@ -1,4 +1,4 @@
-# MyCat
+# *MyCat
 
 ## 1. 简介
 
@@ -298,8 +298,8 @@ datanode标签定义了mycat中的数据节点，也就是我们所说的数据�
 <!--name	唯一标示dataHost标签，供上层使用-->
 <!--maxCon	指定每个读写实例连接池的最大连接。-->
 <!--minCon	指定每个读写实例连接池的最小连接，初始化连接池的大小-->
-<!--balance	负载均称类型-->
 
+<!--balance	负载均称类型-->
 <!--balance="0"：不开启读写分离机制，所有读操作都发送到当前可用的writeHost上
 	balance="1"：全部的readHost与stand by writeHost参与select语句的负载均衡，简单的说，当双主双从模式（M1-S1，M2-S2 并且M1 M2互为主备），正常情况下，M2,S1,S2都参与select语句的负载均衡。
 	balance="2"：所有读操作都随机的在writeHost、readHost上分发
@@ -472,6 +472,7 @@ Mycat 提供了类似数据库的管理监控方式，可以通过 MySQL 命令�
         <dataNode name="dn2" dataHost="localhost1" database="db2" />
         <dataNode name="dn3" dataHost="localhost1" database="db3" />
     	<!--定义上面的dataHost主机名，包括url和账号密码，这里是读写分开的-->
+    	<!--主从复制中 master为write slave则是read-->
         <dataHost name="localhost1" maxCon="1000" minCon="10" balance="0"
                           writeType="0" dbType="mysql" dbDriver="native" switchType="1"  slaveThreshold="100">
                 <heartbeat>select user()</heartbeat>
@@ -689,6 +690,156 @@ mysql> select * from db3.t_user;
 果然是这样的。
 
 mycat中定义了许多分片规则，可以根据需要自行配置。
+
+## 6. Mycat读写分离配置
+
+### 6.1 环境准备
+
+首先需要搭建MySQL主从复制，或者双主互备。
+
+Master：192.168.1.111
+
+Slave：192.168.1.112
+
+### 6.2 mycat配置
+
+mycat的schema.xml配置文件中
+
+```xml
+<?xml version="1.0"?>
+<!DOCTYPE mycat:schema SYSTEM "schema.dtd">
+<mycat:schema xmlns:mycat="http://io.mycat/">
+  		<!--省略其他信息-->
+    
+    	<!--主从复制中 master为write slave则是read-->
+        <dataHost name="localhost1" maxCon="1000" minCon="10" balance="0"
+                          writeType="0" dbType="mysql" dbDriver="native" switchType="1"  slaveThreshold="100">
+                <heartbeat>select user()</heartbeat>
+                <!-- 这里配置master 用于写数据 -->
+<writeHost host="hostM1" url="192.168.1.111:3306" user="root" password="root">
+                <!-- 这里配置slave 用于查询 -->
+	<readHost host="hostS2" url="192.168.1.112:3306" user="root" password="root" />
+</writeHost>
+         
+        </dataHost>
+      
+</mycat:schema>
+
+```
+
+### 6.3 测试
+
+配置好后先去mycat中添加一些数据，添加后如果在master和slave中都可以查询到则说明读写分离是oK的，
+
+只有写入master后数据才会同步到slave，写入slave会报错，就算写入到slave后也不会同步到master中。
+
+```mysql
+INSERT INTO t_user(id,uname,upwd,age) VALUES(1,'a','a',20);
+INSERT INTO t_user(id,uname,upwd,age) VALUES(2,'a','a',20);
+```
+
+去master查询
+
+```mysql
+mysql> select * from db1.t_user;
++----+-------+------+------+
+| id | uname | upwd | age  |
++----+-------+------+------+
+|  1 | a     | a    |   20 |
+|  2 | a     | a    |   20 |
++----+-------+------+------+
+```
+
+slave中
+
+```mysql
+mysql> select * from db1.t_user;
++----+-------+------+------+
+| id | uname | upwd | age  |
++----+-------+------+------+
+|  1 | a     | a    |   20 |
+|  2 | a     | a    |   20 |
++----+-------+------+------+
+```
+
+说明读写分离配置ok的。
+
+## 7. MyCat配置数据库集群
+
+### 7.1 简介
+
+**所有的集群配置都必须配置多主多从，同时多个master直接必须互为主从，不然数据不会完全同步**。
+
+Master1:192.168.1.111
+
+Slave1:192.168.1.112
+
+Master2:192.168.1.113
+
+Slave2:192.168.1.114
+
+其中Master1与Slave为主从，Master2与Slave2位主从，同时Master1与Master互为主从，即Master1中的数据会同步到Master2中，同时Master2中的数据也会向Master1中同步，然后在同步到各种的Slave中。
+
+具体schema.xml配置文件如下，主要就是配置多个writeHost.
+
+当Master1宕机后会自动切换到Master2.
+
+```xml
+<?xml version="1.0"?>
+<!DOCTYPE mycat:schema SYSTEM "schema.dtd">
+<mycat:schema xmlns:mycat="http://io.mycat/">
+  		<!--省略其他信息-->
+      <dataHost name="localhost1" maxCon="1000" minCon="10" balance="1"
+                          writeType="0" dbType="mysql" dbDriver="native" switchType="1"  slaveThreshold="100">
+
+    	<!--主从复制中 master为write slave则是read-->
+        <dataHost name="localhost1" maxCon="1000" minCon="10" balance="0"
+                          writeType="0" dbType="mysql" dbDriver="native" switchType="1"  slaveThreshold="100">
+                <heartbeat>select user()</heartbeat>
+                <!-- 这里配置master1 用于写数据 -->
+<writeHost host="hostM1" url="192.168.1.111:3306" user="root" password="root">
+                <!-- 这里配置slave1 用于查询 -->
+	<readHost host="hostS1" url="192.168.1.112:3306" user="root" password="root" />
+</writeHost>
+                         <!-- 这里配置master2 用于写数据 -->
+<writeHost host="hostM2" url="192.168.1.113:3306" user="root" password="root">
+                <!-- 这里配置slave2 用于查询 -->
+	<readHost host="hostS2" url="192.168.1.114:3306" user="root" password="root" />
+</writeHost>
+        </dataHost>
+      
+</mycat:schema>
+```
+
+### 7.2 配置信息详解
+
+其中需要注意的是
+
+```xml
+<dataHost name="localhost1" maxCon="1000" minCon="10" balance="1"   writeType="0"  dbType="mysql" dbDriver="native" switchType="1"  slaveThreshold="100">
+```
+
+#### 1. balance
+
+* **balance="0"**：不开启读写分离机制，所有读操作都发送到当前可用的writeHost上
+* **balance="1"**：全部的readHost与stand by writeHost参与select语句的负载均衡，简单的说，当双主双从模式（M1-S1，M2-S2 并且M1 M2互为主备），正常情况下，M2,S1,S2都参与select语句的负载均衡。
+* **balance="2"**：所有读操作都随机的在writeHost、readHost上分发
+* **balance="3"**：所有读请求随机的分发到writeHst对应的readHost执行，writeHost不负担读写压力。（1.4之后版本有
+
+#### 2. writeType
+
+* **writeType="0"** ： 所有写操作发送到配置的第一个 writeHost，第一个挂了切到还生存的第二个writeHost，重新启动后以切换后的为准，切换记录在配置文件中:`mycat/conf/dnindex.properties` .
+* **writeType="1"**：所有写操作都随机的发送到配置的 writeHost。1.5以后版本废弃不推荐。
+
+#### 3. switchType	
+
+* **switchType="1"** ： 默认值 自动切换
+* **switchType="2"** ： 基于MySql主从同步的状态决定是否切换心跳语句为 show slave status
+* **switchType="3" **： 基于mysql galary cluster 的切换机制（适合集群）1.4.1 心跳语句为 show status like 'wsrep%'
+
+#### 4. dbType	
+
+指定后端链接的数据库类型目前支持二进制的mysql协议，还有其他使用jdbc链接的数据库，例如：mongodb，oracle，spark等
 
 ### 问题
 
