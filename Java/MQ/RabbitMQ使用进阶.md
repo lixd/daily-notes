@@ -38,7 +38,7 @@
 
 假设P1和C1注册了相同的Broker，Exchange和Queue。P1发送的消息最终会被C1消费。基本的通信流程大概如下所示：
 
-> 1）、1生产消息，发送给服务器端的。
+> 1）、  P1生产消息，发送给服务器端的。
 >
 > 2）、  ExchangeExchange收到消息，根据ROUTINKEY，将消息转发给匹配的Queue1。
 >
