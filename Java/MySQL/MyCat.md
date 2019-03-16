@@ -878,15 +878,7 @@ logs目录不存在导致的，创建目录后再次启动就好了。
 [root@localhost ~]# yum install -y xinetd
 ```
 
-#### 2. 修改配置文件
-
-检查配置文件`/etc/xinetd.conf`末尾是否有`includedir /etc/xinetd.d`，没有就加上。
-
-#### 3. 创建文件夹
-
-检查目录`/etc/xinetd.d`是否存在,不存在则创建。
-
-#### 4. 增加Mycat存活状态检测服务
+#### 2. 增加Mycat存活状态检测服务
 
 ```shell
 [root@localhost etc]# vim /etc/xinetd.d/mycat_status
@@ -895,30 +887,22 @@ logs目录不存在导致的，创建目录后再次启动就好了。
 添加以下内容：注意需要将中文去掉
 
 ```shell
-
 service mycat_status
 {
-    flags=REUSE
-    #使用标记的socket_type为stream，需要设置wait为no
-    #封包处理方式 stream为TCP数据包
-    socket_type=stream
-    #服务监听端口
-    port=49001
-    #表示不需要等待
-    wait=no
-    #执行此服务进程的用户
-    user=root
-    #需要启动的服务脚本
-    server=/usr/local/bin/mycat_status
-    #登录失败记录的内容
-    log_on_failure+=USERID
-    #要启动服务 将此参数设置为no
-    disable=no
+    flags = REUSE
+    protocol = tcp
+    socket_type = stream
+    port = 49001
+    wait = no
+    user = root
+    server = /usr/local/bin/mycat_status
+    log_on_failure += USERID
+    disable = no
 }
 
 ```
 
-#### 5. 添加脚本
+#### 3. 添加脚本
 
 ```shell
 [root@localhost etc]# vim /usr/local/bin/mycat_status
@@ -941,13 +925,13 @@ fi
 
 内容很简单,就是简单的执行一下`/usr/local/mycat/bin/mycat status|grep 'not running'|wc -l`命令，结果不为0就说明mycat没运行。
 
-#### 6. 给脚本赋权限
+#### 4. 给脚本赋权限
 
 ```shell
 [root@localhost etc]#  chmod 755 /usr/local/bin/mycat_status
 ```
 
-#### 7.添加服务
+#### 5.添加服务
 
 在`/etc/services`中加入`mycat_status`服务。
 
@@ -969,5 +953,166 @@ mycat_status    49001/tcp               #mycat_status
 [root@localhost etc]# systemctl  restart  xinetd.service 
 ```
 
+#### 6. 测试
+
+查看一下服务在运行没有
+
+```shell
+[root@localhost xinetd.d]# netstat -antup|grep 49001
+tcp6      0     0 :::49001       :::*          LISTEN     37157/xinetd  
+```
+
+ok
+
 ### 8.2 安装Haproxy
+
+#### 1. 下载
+
+官网:`http://www.haproxy.org/#down`,这里下载的是`haproxy-1.9.4.tar.gz`
+
+然后将压缩包上传到服务器，这里放在`/usr/software`目录
+
+#### 2. 环境准备
+
+Haproxy由c语言编写的，所以需要安装一下依赖。
+
+```shell
+yum install -y gcc gcc-c++ pcre pcre-devel zlib zlib-devel openssl openssl-devel 
+```
+
+#### 3. 解压编译
+
+解压
+
+```shell
+[root@localhost software]# tar -zxvf haproxy-1.9.4.tar.gz 
+```
+
+编译
+
+```shell
+[root@localhost software]# cd haproxy-1.9.4/
+[root@localhost software]# make TARGET=linux2628 ARCH=x86_64 USE_PCRE=1 USE_OPENSSL=1 USE_zLIB=1 PREFIX=/usr/local/haproxy
+```
+
+TARGET是指定内核版本，高于2.6.28的建议设置为linux2628，使用`uname -r`查看，ARCH指定系统架构
+
+#### 4. 安装
+
+先创建安装文件夹
+
+```shell
+[root@localhost software]# mkdir /usr/local/haproxy
+```
+
+执行安装
+
+```shell
+[root@localhost software]# make install PREFIX=/usr/local/haproxy
+```
+
+#### 5. 配置文件
+
+创建配置文件目录
+
+```shell
+[root@localhost software]# mkdir -p /usr/local/haproxy/conf
+[root@localhost software]# mkdir -p /etc/haproxy/
+```
+
+添加配置文件
+
+```shell
+[root@localhost software]# vim /usr/local/haproxy/conf/haproxy.cfg
+```
+
+内容如下：
+
+```shell
+global                                      # 全局参数的设置
+    log         127.0.0.1 local2             
+    # log语法：log <address_1>[max_level_1] # 全局的日志配置，使用log关键字，指定使用127.0.0.1上的syslog服务中的local0日志设备，记录日志等级为info的日志
+    chroot      /var/lib/haproxy                 #改变当前工作目录
+    pidfile     /var/run/haproxy.pid          #当前进程id文件
+    maxconn     4000                                #最大连接数
+    user        haproxy                                #所属用户
+    group     haproxy                                #所属组
+    daemon                                               #以守护进程方式运行haproxy
+    stats socket /var/lib/haproxy/stats
+defaults
+ #默认的模式mode { tcp|http|health }，tcp是4层，http是7层，health只会返回OK
+    mode                    http  
+  
+    log                        global               #应用全局的日志配置
+     # 启用日志记录HTTP请求，默认haproxy日志记录是不记录HTTP请求日志
+    option                  httplog     
+      # 启用该项，日志中将不会记录空连接。所谓空连接就是在上游的负载均衡器                      
+    option                  dontlognull         
+                                                                 
+    option http-server-close                   #每次请求完毕后主动关闭http通道
+    option forwardfor       except 127.0.0.0/8   
+    #如果服务器上的应用程序想记录发起请求的客户端的IP地址，需要在HAProxy上 配置此选项， 这样 HAProxy会把客户端的IP信息发送给服务器，在HTTP请求中添加"X-Forwarded-For"字段。 启用  X-Forwarded-For，在requests头部插入客户端IP发送给后端的server，使后端server获取到客户端的真实IP。 
+    option                  redispatch                      # 当使用了cookie时，haproxy将会将其请求的后端服务器的serverID插入到cookie中，以保证会话的SESSION持久性；而此时，如果后端的服务器宕掉了， 但是客户端的cookie是不会刷新的，如果设置此参数，将会将客户的请求强制定向到另外一个后端server上，以保证服务的正常。
+    retries                 3                             
+    # 定义连接后端服务器的失败重连次数，连接失败次数超过此值后将会将对应后端
+                                                                  服务器标记为不可用
+    timeout http-request    10s             #http请求超时时间
+    timeout queue           1m                 #一个请求在队列里的超时时间
+    timeout connect         10s                #连接超时
+    timeout client          1m                   #客户端超时
+    timeout server          1m                   #服务器端超时
+    timeout http-keep-alive 10s           #设置http-keep-alive的超时时间
+    timeout check           10s                 #检测超时
+    maxconn                 3000                 #每个进程可用的最大连接数
+frontend  main *:80                             #监听地址为80
+    acl url_static       path_beg       -i /static /images /javascript /stylesheets
+    acl url_static       path_end       -i .jpg .gif .png .css .js
+    use_backend static          if url_static
+    default_backend             my_webserver     #定义一个名为my_app前端部分。此处将对于的请求转发给后端
+backend static                                                
+#使用了静态动态分离（如果url_path匹配 .jpg .gif .png .css .js静态文件则访问此后端）
+    balance     roundrobin                              
+    #负载均衡算法（#banlance roundrobin 轮询，balance source 保存session值，支持static-rr，leastconn，first，uri等参数）
+    server      static 127.0.0.1:80 check             
+    #静态文件部署在本机（也可以部署在其他机器或者squid缓存服务器）
+backend my_webserver                                  
+#定义一个名为my_webserver后端部分。PS：此处my_webserver只是一个自定义名字而已，但是需要与frontend里面配置项default_backend 值相一致
+    balance     roundrobin                               #负载均衡算法
+    server  web01 172.31.2.33:80  check inter 2000 fall 3 weight 30       
+    #定义的多个后端
+    server  web02 172.31.2.34:80  check inter 2000 fall 3 weight 30   
+    #定义的多个后端
+    server  web03 172.31.2.35:80  check inter 2000 fall 3 weight 30     
+    #定义的多个后端
+```
+
+
+
+创建软链接
+
+```shell
+[root@localhost haproxy-1.9.4]# ln -s /usr/local/haproxy/conf/haproxy.cfg /etc/haproxy/haproxy.cfg
+```
+
+#### 6. 复制错误页面
+
+```shell
+cp -r /usr/software/haproxy-1.9.4/examples/errorfiles /usr/local/haproxy
+ln -s /usr/local/haproxy/errorfiles /etc/haproxy/errorfiles
+```
+
+#### 7. 拷贝开机启动文件
+
+```shell
+cp -r /usr/software/haproxy-1.9.4/examples/haproxy.init /etc/rc.d/init.d/haproxy
+chmod +x /etc/rc.d/init.d/haproxy
+ln -s /usr/local/haproxy/sbin/haproxy /usr/sbin
+```
+
+#### 8. 设置开机启动
+
+```shell
+chkconfig --add haproxy
+chkconfig haproxy on
+```
 
