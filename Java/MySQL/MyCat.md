@@ -892,17 +892,18 @@ logs目录不存在导致的，创建目录后再次启动就好了。
 [root@localhost etc]# vim /etc/xinetd.d/mycat_status
 ```
 
-添加以下内容：
+添加以下内容：注意需要将中文去掉
 
 ```shell
+
 service mycat_status
 {
-    flags=true
+    flags=REUSE
     #使用标记的socket_type为stream，需要设置wait为no
     #封包处理方式 stream为TCP数据包
     socket_type=stream
     #服务监听端口
-    port=48700
+    port=49001
     #表示不需要等待
     wait=no
     #执行此服务进程的用户
@@ -910,9 +911,63 @@ service mycat_status
     #需要启动的服务脚本
     server=/usr/local/bin/mycat_status
     #登录失败记录的内容
-    log_on_failur+=USERID
+    log_on_failure+=USERID
     #要启动服务 将此参数设置为no
     disable=no
 }
+
 ```
+
+#### 5. 添加脚本
+
+```shell
+[root@localhost etc]# vim /usr/local/bin/mycat_status
+```
+
+脚本如下：
+
+```shell
+
+#!/bin/bash
+Mycat=`/usr/local/mycat/bin/mycat status|grep 'not running'|wc -l`
+errorCode=0
+if [ $Mycat = $errorCode ]
+then
+/bin/echo -e "HTTP/1.1 200 OK \r\n"
+else
+/bin/echo -e "HTTP/1.1 503 Service Unavailbable\r\n"
+fi  
+```
+
+内容很简单,就是简单的执行一下`/usr/local/mycat/bin/mycat status|grep 'not running'|wc -l`命令，结果不为0就说明mycat没运行。
+
+#### 6. 给脚本赋权限
+
+```shell
+[root@localhost etc]#  chmod 755 /usr/local/bin/mycat_status
+```
+
+#### 7.添加服务
+
+在`/etc/services`中加入`mycat_status`服务。
+
+```shell
+[root@localhost etc]# vim /etc/services 
+```
+
+在文件末尾添加如下内容：
+
+`Shift+G`跳转到文件末尾
+
+```shell
+mycat_status    49001/tcp               #mycat_status
+```
+
+保存后重启xinetd服务
+
+```shell
+[root@localhost etc]# systemctl  restart  xinetd.service 
+```
+
+### 8.2 安装Haproxy
 
