@@ -1,4 +1,4 @@
-# *MyCat
+# MyCat
 
 ## 1. 简介
 
@@ -235,6 +235,8 @@ schema标签用来定义mycat实例中的逻辑库，mycat可以有多个逻辑�
 `dataNode` :	表存储到哪些数据节点，多个节点用逗号分隔。节点为下文dataNode设置的name
 
 `rule`:分片规则名，具体规则参考rule.xml,SQL语句发送到mycat后，mycat应该讲当前的SQL发送到哪个物理数据库。
+
+
 
 ```xml
 <table name="travelrecord" dataNode="dn1,dn2,dn3" rule="auto-sharding-long" />
@@ -829,15 +831,19 @@ Slave2:192.168.1.114
 * **writeType="0"** ： 所有写操作发送到配置的第一个 writeHost，第一个挂了切到还生存的第二个writeHost，重新启动后以切换后的为准，切换记录在配置文件中:`mycat/conf/dnindex.properties` .
 * **writeType="1"**：所有写操作都随机的发送到配置的 writeHost。1.5以后版本废弃不推荐。
 
-#### 3. switchType	
+#### 3. switchType
 
 * **switchType="1"** ： 默认值 自动切换
-* **switchType="2"** ： 基于MySql主从同步的状态决定是否切换心跳语句为 show slave status
-* **switchType="3" **： 基于mysql galary cluster 的切换机制（适合集群）1.4.1 心跳语句为 show status like 'wsrep%'
+* **switchType="2"** ： 基于MySql主从同步的状态决定是否切换心跳语句为 `show slave status`
+* **switchType="3" **： 基于mysql galary cluster 的切换机制（适合集群）1.4.1 心跳语句为`show status like 'wsrep%'`
 
 #### 4. dbType	
 
 指定后端链接的数据库类型目前支持二进制的mysql协议，还有其他使用jdbc链接的数据库，例如：mongodb，oracle，spark等
+
+#### 5. IO延迟问题
+
+主从模型中，数据同步可能需要一定的时间，导致主从数据不一致，也就是IO延迟问题。通过将`switchType`设置为2或者3，在切换主从时先判断`show slave status`,如果主从没有出现IO延迟问题时才把请求切换到从，否则直接定位到主。
 
 ### 问题
 
@@ -857,3 +863,56 @@ wrapper  | ERROR: Could not write pid file /usr/local/mycat/logs/mycat.pid: No s
 ```
 
 logs目录不存在导致的，创建目录后再次启动就好了。
+
+## 8. 数据库集群与高可用
+
+使用：Haproxy+Keepalived+Mycat+MySQL实现高可用集群。
+
+### 8.1 安装步骤
+
+#### 1. 安装xinetd
+
+使用xinetd来检查mycat状态。
+
+```shell
+[root@localhost ~]# yum install -y xinetd
+```
+
+#### 2. 修改配置文件
+
+检查配置文件`/etc/xinetd.conf`末尾是否有`includedir /etc/xinetd.d`，没有就加上。
+
+#### 3. 创建文件夹
+
+检查目录`/etc/xinetd.d`是否存在,不存在则创建。
+
+#### 4. 增加Mycat存活状态检测服务
+
+```shell
+[root@localhost etc]# vim /etc/xinetd.d/mycat_status
+```
+
+添加以下内容：
+
+```shell
+service mycat_status
+{
+    flags=true
+    #使用标记的socket_type为stream，需要设置wait为no
+    #封包处理方式 stream为TCP数据包
+    socket_type=stream
+    #服务监听端口
+    port=48700
+    #表示不需要等待
+    wait=no
+    #执行此服务进程的用户
+    user=root
+    #需要启动的服务脚本
+    server=/usr/local/bin/mycat_status
+    #登录失败记录的内容
+    log_on_failur+=USERID
+    #要启动服务 将此参数设置为no
+    disable=no
+}
+```
+
