@@ -868,7 +868,7 @@ logs目录不存在导致的，创建目录后再次启动就好了。
 
 使用：Haproxy+Keepalived+Mycat+MySQL实现高可用集群。
 
-### 8.1 安装步骤
+### 8.1 安装xinetd
 
 #### 1. 安装xinetd
 
@@ -1011,7 +1011,7 @@ TARGET是指定内核版本，高于2.6.28的建议设置为linux2628，使用`u
 [root@localhost software]# make install PREFIX=/usr/local/haproxy
 ```
 
-#### 5. 配置文件
+### 8.3 Haproxy配置
 
 创建配置文件目录
 
@@ -1037,7 +1037,7 @@ global                                      # 全局参数的设置
     maxconn     4000                                #最大连接数
     user        haproxy                                #所属用户
     group     haproxy                                #所属组
-    daemon                                               #以守护进程方式运行haproxy
+    daemon                                   #以守护进程方式运行haproxy
     stats socket /var/lib/haproxy/stats
 defaults
  #默认的模式mode { tcp|http|health }，tcp是4层，http是7层，health只会返回OK
@@ -1052,10 +1052,10 @@ defaults
     option http-server-close                   #每次请求完毕后主动关闭http通道
     option forwardfor       except 127.0.0.0/8   
     #如果服务器上的应用程序想记录发起请求的客户端的IP地址，需要在HAProxy上 配置此选项， 这样 HAProxy会把客户端的IP信息发送给服务器，在HTTP请求中添加"X-Forwarded-For"字段。 启用  X-Forwarded-For，在requests头部插入客户端IP发送给后端的server，使后端server获取到客户端的真实IP。 
-    option                  redispatch                      # 当使用了cookie时，haproxy将会将其请求的后端服务器的serverID插入到cookie中，以保证会话的SESSION持久性；而此时，如果后端的服务器宕掉了， 但是客户端的cookie是不会刷新的，如果设置此参数，将会将客户的请求强制定向到另外一个后端server上，以保证服务的正常。
+    option                  redispatch                     
+    # 当使用了cookie时，haproxy将会将其请求的后端服务器的serverID插入到cookie中，以保证会话的SESSION持久性；而此时，如果后端的服务器宕掉了， 但是客户端的cookie是不会刷新的，如果设置此参数，将会将客户的请求强制定向到另外一个后端server上，以保证服务的正常。
     retries                 3                             
-    # 定义连接后端服务器的失败重连次数，连接失败次数超过此值后将会将对应后端
-                                                                  服务器标记为不可用
+    # 定义连接后端服务器的失败重连次数，连接失败次数超过此值后将会将对应后端 服务器标记为不可用
     timeout http-request    10s             #http请求超时时间
     timeout queue           1m                 #一个请求在队列里的超时时间
     timeout connect         10s                #连接超时
@@ -1094,14 +1094,14 @@ backend my_webserver
 [root@localhost haproxy-1.9.4]# ln -s /usr/local/haproxy/conf/haproxy.cfg /etc/haproxy/haproxy.cfg
 ```
 
-#### 6. 复制错误页面
+#### 1. 复制错误页面
 
 ```shell
 cp -r /usr/software/haproxy-1.9.4/examples/errorfiles /usr/local/haproxy
 ln -s /usr/local/haproxy/errorfiles /etc/haproxy/errorfiles
 ```
 
-#### 7. 拷贝开机启动文件
+#### 2. 拷贝开机启动文件
 
 ```shell
 cp -r /usr/software/haproxy-1.9.4/examples/haproxy.init /etc/rc.d/init.d/haproxy
@@ -1109,10 +1109,93 @@ chmod +x /etc/rc.d/init.d/haproxy
 ln -s /usr/local/haproxy/sbin/haproxy /usr/sbin
 ```
 
-#### 8. 设置开机启动
+#### 3. 设置开机启动
 
 ```shell
 chkconfig --add haproxy
 chkconfig haproxy on
 ```
+
+#### 4. 添加系统用户
+
+```shell
+groupadd haproxy
+useradd -g haproxy haproxy
+```
+
+#### 5. 创建chroot运行路径
+
+```shell
+mkdir /usr/share/haproxy
+```
+
+### 8.4 开启日志记录
+
+使用rsyslog来记录日志。
+
+```shell
+[root@localhost ~]# yum install -y rsyslog
+```
+
+修改配置文件
+
+```shell
+vim /etc/rsyslog.conf
+```
+
+内容如下：默认就有不过加了注释的 去掉`#`号就可以了
+
+```shell
+$ModLoad imudp
+$UDPServerRun 514
+```
+
+可以看到配置文件中有一句`$IncludeConfig /etc/rsyslog.d/*.conf`，引入外部配置文件，所以需要在创建一个日志配置文件。
+
+```shell
+cd /etc/rsyslog.d/
+vim /etc/rsyslog.d/haproxy.log
+```
+
+内容如下：
+
+```	shell
+local0.* /var/log/haproxy.log
+
+&~
+```
+
+保存后重启rsyslog服务
+
+```shell
+systemctl  restart  rsyslog.service
+```
+
+### 8.5 配置IP转发规则
+
+```shell
+vim /etc/sysctl.conf
+```
+
+添加内容：
+
+```shell
+net.ipv4.ip_forward = 1
+```
+
+是配置生效
+
+```shell
+sysctl -p
+```
+
+### 8.6 启动Haproxy
+
+```shell
+[root@localhost etc]# systemctl start  haproxy.service
+```
+
+### 8.7 测试
+
+浏览器访问`192.168.1.111：48800/admin-status`查看Haproxy提供的web应用，账号密码都是root，参考`/usr/local/haproxy/conf/haproxy.cfg`配置文件
 
