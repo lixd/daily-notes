@@ -1199,3 +1199,54 @@ sysctl -p
 
 浏览器访问`192.168.1.111：48800/admin-status`查看Haproxy提供的web应用，账号密码都是root，参考`/usr/local/haproxy/conf/haproxy.cfg`配置文件
 
+### 8.8 Keepalive
+
+#### 1. 下载
+
+官网：`http://www.keepalived.org/download.html`这里下载的是`keepalived-2.0.13.tar.gz`,上传到服务器，这里是放在了`/usr/software`目录下
+
+#### 2. 环境准备
+
+```shell
+yum install -y curl gcc openssl-devel libnl3-devel net-snmp-devel
+```
+
+#### 3. 解压安装
+
+```shell
+[root@localhost software]# tar -zxf keepalived-2.0.13.tar.gz 
+[root@localhost software]# cd keepalived-2.0.13/
+[root@localhost keepalived-2.0.13]# ./configure  --prefix=/usr/local/keepalived
+[root@localhost keepalived-2.0.13]# make && make install
+```
+
+#### 4. 将keepalived安装成linux系统服务
+
+因为前面没有使用keepalived的默认安装路径`/usr/local`所以做一下工作复制配置文件到默认路径
+
+```shell
+mkdir /etc/keepalived
+#复制到默认位置
+cp /usr/local/keepalived/etc/keepalived/keepalived.conf /etc/keepalived/
+
+cp /usr/local/keepalived/etc/sysconfig.keepalived /etc/sysconfig/
+ln -s /usr/local/keepalived/sbin/keepalived /usr/sbin
+ln -s /usr/local/keepalived/sbin/keepalived /sbin
+```
+
+添加开机自启
+
+```shell
+chkconfig keepalived on
+```
+
+#### 5. 启动
+
+```shell
+/usr/local/keepalived/sbin/keepalived -f /usr/local/keepalived/etc/keepalived/keepalived.conf
+```
+
+
+
+
+
