@@ -271,3 +271,286 @@ public class DubboServiceImpl implements DubboService {
 到这里就一个简单的provider就ok了
 
 ## 7 Admin
+可视化管理工具
+
+## 8.assembly打包插件
+
+pom.xml中添加插件
+```xml
+  <plugin>
+                <!--坐标-->
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-assembly-plugin</artifactId>
+                <!-- 配置执行器 -->
+                <executions>
+                    <execution>
+                        <id>make-assembly</id>
+                        <!-- 绑定到package生命周期阶段上 -->
+                        <phase>package</phase>
+                        <goals>
+                            <!-- 只运行一次 -->
+                            <goal>single</goal>
+                        </goals>
+                        <configuration>
+                            <finalName>${project.name}</finalName>
+                            <!--主类入口等-->
+                            <archive>
+                                <manifest>
+                                    <addClasspath>true</addClasspath>
+                                    <!-- 你的主类名 -->
+                                    <mainClass>com.illusory.dubboconsumer.DubboConsumerApplication
+                                    </mainClass>
+                                </manifest>
+                            </archive>
+                            <!--配置描述文件路径-->
+                            <descriptors>
+                                <descriptor>src/assembly/assembly.xml</descriptor>
+                            </descriptors>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+```
+
+配置文件src/assembly/assembly.xml
+```xml
+<?xml version='1.0' encoding='UTF-8'?>
+<assembly xmlns="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.0"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/plugins/maven-assembly-plugin/assembly/1.1.0
+                    http://maven.apache.org/xsd/assembly-1.1.0.xsd">
+    <id>demo</id>
+    <!--指定打包类型-->
+    <formats>
+        <format>jar</format>
+    </formats>
+    <!--定是否包含打包层目录-->
+    <includeBaseDirectory>false</includeBaseDirectory>
+    <!--指定要包含的文件集-->
+    <fileSets>
+        <!--指定要包含的目录-->
+        <fileSet>
+            <directory>${project.build.directory}/classes</directory>
+            <!--指定当前要包含的目录的目的地。-->
+            <outputDirectory>/</outputDirectory>
+
+        </fileSet>
+    </fileSets>
+</assembly>
+```
+
+## SpringBoot+Dubbo
+
+SpringBoot整合Dubbo
+
+### 1. 添加依赖
+pom.xml
+具体可以参考：https://github.com/apache/incubator-dubbo-spring-boot-project
+```xml
+<properties>
+    <spring-boot.version>2.1.1.RELEASE</spring-boot.version>
+    <dubbo.version>2.7.0</dubbo.version>
+</properties>
+    
+<dependencyManagement>
+    <dependencies>
+        <!-- Spring Boot -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-dependencies</artifactId>
+            <version>${spring-boot.version}</version>
+            <type>pom</type>
+            <scope>import</scope>
+        </dependency>
+
+        <!-- Aapche Dubbo  -->
+        <dependency>
+            <groupId>org.apache.dubbo</groupId>
+            <artifactId>dubbo-dependencies-bom</artifactId>
+            <version>${dubbo.version}</version>
+            <type>pom</type>
+            <scope>import</scope>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.dubbo</groupId>
+            <artifactId>dubbo</artifactId>
+            <version>${dubbo.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.springframework</groupId>
+                    <artifactId>spring</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>javax.servlet</groupId>
+                    <artifactId>servlet-api</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>log4j</groupId>
+                    <artifactId>log4j</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+    </dependencies>
+</dependencyManagement>
+
+<dependencies>
+    <!-- Dubbo Spring Boot Starter -->
+    <dependency>
+        <groupId>org.apache.dubbo</groupId>
+        <artifactId>dubbo-spring-boot-starter</artifactId>
+        <version>2.7.0</version>
+    </dependency>
+    
+    <dependency>
+        <groupId>org.apache.dubbo</groupId>
+        <artifactId>dubbo</artifactId>
+    </dependency>
+</dependencies>
+
+```
+
+### 2. Provider
+首先，由服务提供方为服务消费方暴露接口 :
+```java
+public interface DubboService {
+    String sayHello(String name);
+}
+```
+接口实现类
+```java
+
+@Service(version = "1.0.0")
+public class DubboServiceImpl implements DubboService {
+    @Value("${dubbo.application.name}")
+    private String serviceName;
+
+    @Override
+    public String sayHello(String name) {
+        return String.format("[%s] : Hello, %s", serviceName, name);
+    }
+}
+```
+springboot配置文件
+application.yml
+```yaml
+spring:
+  # 项目名
+  application:
+    name: dubbo-provider-demo
+dubbo:
+  # dubbo应用名
+  application:
+    name: dubbo-provider
+    # 用于配置提供服务的协议信息，协议由提供方指定，消费方被动接受
+  protocol:
+    name: dubbo
+    port: 12345
+  scan:
+    # 配置dubbo组件扫描
+    base-packages: com.illusory.dubboservice
+    # ZooKeeper注册中心
+  registry:
+    address: zookeeper://192.168.5.111:2181
+
+```
+### Consumer
+
+添加依赖
+```xml
+ <properties>
+        <spring-boot.version>2.1.1.RELEASE</spring-boot.version>
+        <dubbo.version>2.7.0</dubbo.version>
+    </properties>
+            <!--provider暴露出来的接口-->
+            <dependency>
+                <groupId>com.illusory</groupId>
+                <artifactId>dubbo-service</artifactId>
+                <version>0.0.1-SNAPSHOT</version>
+            </dependency>
+     <!-- Dubbo Spring Boot Starter -->
+            <dependency>
+                <groupId>org.apache.dubbo</groupId>
+                <artifactId>dubbo-spring-boot-starter</artifactId>
+                <version>2.7.0</version>
+            </dependency>
+    
+            <dependency>
+                <groupId>org.apache.dubbo</groupId>
+                <artifactId>dubbo</artifactId>
+            </dependency>
+              <!--只是对版本进行管理，不会实际引入jar-->
+                <dependencyManagement>
+                    <dependencies>
+                        <!-- Spring Boot -->
+                        <dependency>
+                            <groupId>org.springframework.boot</groupId>
+                            <artifactId>spring-boot-dependencies</artifactId>
+                            <version>${spring-boot.version}</version>
+                            <type>pom</type>
+                            <scope>import</scope>
+                        </dependency>
+            
+                        <!-- Aapche Dubbo  -->
+                        <dependency>
+                            <groupId>org.apache.dubbo</groupId>
+                            <artifactId>dubbo-dependencies-bom</artifactId>
+                            <version>${dubbo.version}</version>
+                            <type>pom</type>
+                            <scope>import</scope>
+                        </dependency>
+            
+                        <dependency>
+                            <groupId>org.apache.dubbo</groupId>
+                            <artifactId>dubbo</artifactId>
+                            <version>${dubbo.version}</version>
+                            <exclusions>
+                                <exclusion>
+                                    <groupId>org.springframework</groupId>
+                                    <artifactId>spring</artifactId>
+                                </exclusion>
+                                <exclusion>
+                                    <groupId>javax.servlet</groupId>
+                                    <artifactId>servlet-api</artifactId>
+                                </exclusion>
+                                <exclusion>
+                                    <groupId>log4j</groupId>
+                                    <artifactId>log4j</artifactId>
+                                </exclusion>
+                            </exclusions>
+                        </dependency>
+                    </dependencies>
+                </dependencyManagement>
+```
+
+springboot配置文件 application.yml
+```yaml
+spring:
+  application:
+    name: dubbo-comsumer-demo
+
+
+```
+测试类
+消费者通过@Reference注入DubboService 
+```java
+public class TestDubbo {
+    @Reference
+    /**
+     *   从ZooKeeper注册中心获取DubboService
+     */
+    private DubboService dubboServer;
+
+    @Test
+    public void test() {
+        String s = dubboServer.sayHello("illusory");
+        System.out.println(s);
+    }
+}
+```
+
+java.lang.NoClassDefFoundError: org/apache/curator/retry/ExponentialBackoffRetry
+
+java.lang.NoClassDefFoundError: org/apache/zookeeper/Watcher
+
+java.lang.NoClassDefFoundError: org/apache/curator/framework/recipes/cache/TreeCacheListener
+
