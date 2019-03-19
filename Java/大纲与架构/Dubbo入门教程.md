@@ -543,7 +543,7 @@ java.lang.NoClassDefFoundError: org/apache/zookeeper/Watcher
 
 java.lang.NoClassDefFoundError: org/apache/curator/framework/recipes/cache/TreeCacheListener
 
-
+Caused by: org.apache.dubbo.remoting.RemotingException: Failed to bind NettyServer on /192.168.5.191:12345, cause: Address already in use: bind
 
 
 
