@@ -27,19 +27,18 @@ CREATE [OR REPLACE] [ALGORITHM = {UNDEFINED | MERGE | TEMPTABLE}]
     VIEW view_name [(column_list)]
     AS select_statement
    [WITH [CASCADED | LOCAL] CHECK OPTION]
+   
 ```
 
-* OR REPLACE：表示替换已有视图
-
-* ALGORITHM：表示视图选择算法，默认算法是UNDEFINED(未定义的)：MySQL自动选择要使用的算法 ；merge合并；temptable临时表
-
-* select_statement：表示select语句
-
-* [WITH [CASCADED | LOCAL] CHECK OPTION]：表示视图在更新时保证在视图的权限范围之内
-
-　　cascade是默认值，表示更新视图的时候，要满足视图和表的相关条件
-
-　　local表示更新视图的时候，要满足该视图定义的一个条件即可
+* **OR REPLACE**：表示替换已有视图
+* **ALGORITHM**：表示视图选择算法
+  * **UNDEFINED(默认算法)**：由MySQL自动选择要使用的算法 ；
+  * **merge合并算法** :系统先将视图对应的`select`语句与外部查询视图的`select`语句进行合并，然后再执行。此算法比较高效，且在未定义算法的时候，经常会默认选择此算法。；
+  * **temptable临时表算法**: 系统先执行视图的`select`语句，后执行外部查询语句。
+* **select_statement**：表示select语句
+* **[WITH [CASCADED | LOCAL] CHECK OPTION]**：表示视图在更新时保证在视图的权限范围之内
+  * **cascade**: 是默认值，表示更新视图的时候，要满足视图和表的相关条件
+  * **local**: 表示更新视图的时候，要满足该视图定义的一个条件即可
 
 TIPS：**推荐使用`WHIT [CASCADED|LOCAL] CHECK OPTION`选项，可以保证数据的安全性 **.
 
@@ -69,6 +68,13 @@ AS
 	SELECT a.`name` AS '员工',b.`name`AS '领导' FROM t_emplyee a LEFT JOIN t_emplyee b 
 ON a.`bossId`=b.`id` ORDER BY b.`id` ASC
 ```
+
+其中，`select`语句可以是普通查询，也可以是连接查询、联合查询、子查询等。
+
+此外，视图根据数据的来源，可以分为单表视图和多表视图：
+
+- 单表视图：基表只有一个；
+- 多表视图：基表至少两个。
 
 我们也可以认为：**创建视图，就是给一条select语句起别名，或者说是封装select语句**。
 
@@ -103,9 +109,34 @@ alter view tb1 as select * from student where gender='女';
 drop view tb1;
 ```
 
+## 3. 视图数据操作
+
+### 新增数据
+
+在这里，新增数据就是指通过视图直接对基表进行数据的新增操作。
+
+- **限制 1**：多表视图不能进行新增数据。
+
+- **限制 2**：可以向单表视图新增数据，但视图中包含的字段必须有基表中所有不能为空的字段。
+
+### 删除数据
+
+与新增数据类似，
+
+- 多表视图不能删除数据；
+- 单表视图可以删除数据。
+
+### 更新数据
+
+理论上，无论多表视图还是单表视图，都可以进行数据的更新。
+
+此外，更新视图数据并不总是成功的，这是因为有**更新限制**的存在。那么何为更新限制呢？
+
+- 更新限制：`with check option`，如果创建视图的时候，设置了某个字段的限制，那么对视图进行更新操作的时候，系统就会进行验证，要保证更新之后，数据依然可以被查出来，否则不让更新。
 
 
-## 3. 视图意义
+
+## 4. 总结
 
 * 视图可以节省 SQL 语句，将一条复杂的查询语句用视图来进行封装，以后可以直接对视图进行操作；
 * 数据安全，视图操作主要是针对查询的，如果对视图结构进行处理，例如删除，并不会影响基表的数据；
