@@ -126,6 +126,20 @@ SHOW VARIABLES -- 显示系统变量信息
     ANALYZE [LOCAL | NO_WRITE_TO_BINLOG] TABLE tbl_name [, tbl_name] ...
 ```
 
+### TRUNCATE
+
+```mysql
+/* TRUNCATE */ ------------------
+TRUNCATE [TABLE] tbl_name
+清空数据
+删除重建表
+区别：
+1，truncate 是删除表再创建，delete 是逐条删除
+2，truncate 重置auto_increment的值。而delete不会
+3，truncate 不知道删除了几条，而delete知道。
+4，当被用于带分区的表时，truncate 会保留分区
+```
+
 ### 数据操作
 
 ```mysql
@@ -473,3 +487,111 @@ h. DISTINCT, ALL 选项
 select info.id, info.name, info.stu_num, extra_info.hobby, extra_info.sex from info, extra_info where info.stu_num = extra_info.stu_id;
 ```
 
+### 索引
+
+```mysql
+-- 显示索引信息
+SHOW INDEX FROM table_name;
+-- 普通索引
+-- 创建索引
+CREATE INDEX indexName ON mytable(username(length)); 
+ALTER table tableName ADD INDEX indexName(columnName)
+CREATE TABLE mytable(  
+-- 创建表的时候直接指定
+ID INT NOT NULL,   
+username VARCHAR(16) NOT NULL,  
+INDEX [indexName] (username(length))  
+);  
+-- 删除索引
+DROP INDEX [indexName] ON mytable; 
+
+-- 唯一索引
+CREATE UNIQUE INDEX indexName ON mytable(username(length)) 
+ALTER table mytable ADD UNIQUE [indexName] (username(length))
+CREATE TABLE mytable(  
+ -- 创建表的时候直接指定
+ID INT NOT NULL,   
+username VARCHAR(16) NOT NULL,  
+UNIQUE [indexName] (username(length))  
+); 
+
+-- 什么样的字段适合创建索引
+1、表的主键、外键必须有索引；
+2、数据量超过300的表应该有索引；
+3、经常与其他表进行连接的表，在连接字段上应该建立索引；
+4、经常出现在Where子句中的字段，加快判断速度，特别是大表的字段，应该建立索引，建立索引，一般用在select ……where f1 and f2 ，我们在f1或者f2上建立索引是没用的。只有两个都有索引才能有用
+5、经常用到排序的列上，因为索引已经排序。
+6、经常用在范围内搜索的列上创建索引，因为索引已经排序了，其指定的范围是连续的
+7、经常用到搜索的列上，可以加快搜索的速度
+-- 什么场景不适合创建索引
+第一，对于那些在查询中很少使用或者参考的列不应该创建索引。
+第二，对于那 些只有很少数据值的列也不应该增加索引。
+第三，对于那些定义为text, image和bit数据类型的列不应该增加索引。
+第四，当修改性能远远大于检索性能时，不应该创建索 引。
+第五，不会出现在where条件中的字段不该建立索引。
+```
+
+### 备份与还原
+
+```mysql
+/* 备份与还原 */ ------------------
+备份，将数据的结构与表内数据保存起来。
+利用 mysqldump 指令完成。
+-- 导出
+mysqldump [options] db_name [tables]
+mysqldump [options] ---database DB1 [DB2 DB3...]
+mysqldump [options] --all--database
+1. 导出一张表
+　　mysqldump -u用户名 -p密码 库名 表名 > 文件名(D:/a.sql)
+2. 导出多张表
+　　mysqldump -u用户名 -p密码 库名 表1 表2 表3 > 文件名(D:/a.sql)
+3. 导出所有表
+　　mysqldump -u用户名 -p密码 库名 > 文件名(D:/a.sql)
+4. 导出一个库
+　　mysqldump -u用户名 -p密码 --lock-all-tables --database 库名 > 文件名(D:/a.sql)
+可以-w携带WHERE条件
+-- 导入
+1. 在登录mysql的情况下：
+　　source  备份文件
+2. 在不登录的情况下
+　　mysql -u用户名 -p密码 库名 < 备份文件
+　　
+-- 原理
+mysqldump命令将数据库中的数据备份成一个文本文件。表的结构和表中的数据将存储在生成的文本文件中。　mysqldump命令的工作原理很简单。它先查出需要备份的表的结构，再在文本文件中生成一个CREATE语句。然后，将表中的所有记录转换成一条INSERT语句。然后通过这些语句，就能够创建表并插入数据。
+```
+
+### 视图
+
+```mysql
+什么是视图：
+    视图是一个虚拟表，其内容由查询定义。同真实的表一样，视图包含一系列带有名称的列和行数据。但是，视图并不在数据库中以存储的数据值集形式存在。行和列数据来自由定义视图的查询所引用的表，并且在引用视图时动态生成。
+    视图具有表结构文件，但不存在数据文件。
+    对其中所引用的基础表来说，视图的作用类似于筛选。定义视图的筛选可以来自当前或其它数据库的一个或多个表，或者其它视图。通过视图进行查询没有任何限制，通过它们进行数据修改时的限制也很少。
+    视图是存储在数据库中的查询的sql语句，它主要出于两种原因：安全原因，视图可以隐藏一些数据，如：社会保险基金表，可以用视图只显示姓名，地址，而不显示社会保险号和工资数等，另一原因是可使复杂的查询易于理解和使用。
+-- 创建视图
+CREATE [OR REPLACE] [ALGORITHM = {UNDEFINED | MERGE | TEMPTABLE}] VIEW view_name [(column_list)] AS select_statement
+    - 视图名必须唯一，同时不能与表重名。
+    - 视图可以使用select语句查询到的列名，也可以自己指定相应的列名。
+    - 可以指定视图执行的算法，通过ALGORITHM指定。
+    - column_list如果存在，则数目必须等于SELECT语句检索的列数
+-- 查看结构
+    SHOW CREATE VIEW view_name
+-- 删除视图
+    - 删除视图后，数据依然存在。
+    - 可同时删除多个视图。
+    DROP VIEW [IF EXISTS] view_name ...
+-- 修改视图结构
+    - 一般不修改视图，因为不是所有的更新视图都会映射到表上。
+    ALTER VIEW view_name [(column_list)] AS select_statement
+-- 视图作用
+    1. 简化业务逻辑
+    2. 对客户端隐藏真实的表结构
+-- 视图算法(ALGORITHM)
+    MERGE       合并
+        将视图的查询语句，与外部查询需要先合并再执行！
+    TEMPTABLE   临时表
+        将视图执行完毕后，形成临时表，再做外层查询！
+    UNDEFINED   未定义(默认)，指的是MySQL自主去选择相应的算法。
+```
+
+### 事务(transaction)
