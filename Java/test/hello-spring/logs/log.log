@@ -1,0 +1,16 @@
+2019-03-23 12:27:25,195 INFO [org.springframework.context.support.ClassPathXmlApplicationContext] - Refreshing org.springframework.context.support.ClassPathXmlApplicationContext@cac736f: startup date [Sat Mar 23 12:27:25 GMT+08:00 2019]; root of context hierarchy
+2019-03-23 12:27:25,227 INFO [org.springframework.beans.factory.xml.XmlBeanDefinitionReader] - Loading XML bean definitions from class path resource [spring-context.xml]
+2019-03-23 12:27:25,324 INFO [com.illusory.hello.spring.service.MyTest] - info 
+2019-03-23 12:27:25,324 WARN [com.illusory.hello.spring.service.MyTest] - warn
+2019-03-23 12:27:25,324 ERROR [com.illusory.hello.spring.service.MyTest] - error
+2019-03-23 12:27:25,325 INFO [com.illusory.hello.spring.service.MyTest] - message is test
+2019-03-23 12:27:25,325 INFO [com.illusory.hello.spring.service.MyTest] - message is test snapshot
+2019-03-23 12:27:25,325 INFO [com.illusory.hello.spring.service.MyTest] - message is test snapshot release
+2019-03-23 12:33:00,812 INFO [org.springframework.context.support.ClassPathXmlApplicationContext] - Refreshing org.springframework.context.support.ClassPathXmlApplicationContext@cac736f: startup date [Sat Mar 23 12:33:00 GMT+08:00 2019]; root of context hierarchy
+2019-03-23 12:33:00,854 INFO [org.springframework.beans.factory.xml.XmlBeanDefinitionReader] - Loading XML bean definitions from class path resource [spring-context.xml]
+2019-03-23 12:33:00,977 INFO [com.illusory.hello.spring.service.MyTest] - info 
+2019-03-23 12:33:00,977 WARN [com.illusory.hello.spring.service.MyTest] - warn
+2019-03-23 12:33:00,977 ERROR [com.illusory.hello.spring.service.MyTest] - error
+2019-03-23 12:33:00,978 INFO [com.illusory.hello.spring.service.MyTest] - message is test
+2019-03-23 12:33:00,978 INFO [com.illusory.hello.spring.service.MyTest] - message is test snapshot
+2019-03-23 12:33:00,978 INFO [com.illusory.hello.spring.service.MyTest] - message is test snapshot release

@@ -1,0 +1,877 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ChangeListManager">
+    <list default="true" id="50419a79-fbb8-466e-ae14-373a896562ef" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/../hello-boostrap/.idea/codeStyles/Project.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../hello-boostrap/.idea/encodings.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../hello-boostrap/.idea/hello-boostrap.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../hello-boostrap/.idea/inspectionProfiles/Project_Default.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../hello-boostrap/.idea/misc.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../hello-boostrap/.idea/modules.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../hello-boostrap/.idea/vcs.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../hello-boostrap/.idea/workspace.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../hello-boostrap/assets/plugins/bootstrap/css/bootstrap-theme.css" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../hello-boostrap/assets/plugins/bootstrap/css/bootstrap-theme.css.map" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../hello-boostrap/assets/plugins/bootstrap/css/bootstrap-theme.min.css" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../hello-boostrap/assets/plugins/bootstrap/css/bootstrap-theme.min.css.map" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../hello-boostrap/assets/plugins/bootstrap/css/bootstrap.css" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../hello-boostrap/assets/plugins/bootstrap/css/bootstrap.css.map" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../hello-boostrap/assets/plugins/bootstrap/css/bootstrap.min.css" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../hello-boostrap/assets/plugins/bootstrap/css/bootstrap.min.css.map" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../hello-boostrap/assets/plugins/bootstrap/fonts/glyphicons-halflings-regular.eot" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../hello-boostrap/assets/plugins/bootstrap/fonts/glyphicons-halflings-regular.svg" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../hello-boostrap/assets/plugins/bootstrap/fonts/glyphicons-halflings-regular.ttf" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../hello-boostrap/assets/plugins/bootstrap/fonts/glyphicons-halflings-regular.woff" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../hello-boostrap/assets/plugins/bootstrap/fonts/glyphicons-halflings-regular.woff2" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../hello-boostrap/assets/plugins/bootstrap/js/bootstrap.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../hello-boostrap/assets/plugins/bootstrap/js/bootstrap.min.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../hello-boostrap/assets/plugins/bootstrap/js/npm.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../hello-boostrap/assets/plugins/jquery-3.3.1.min.js" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../hello-boostrap/index.html" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/codeStyles/Project.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/compiler.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/encodings.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/hello-spring.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__commons_logging_commons_logging_1_2.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__junit_junit_4_12.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__log4j_log4j_1_2_17.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_hamcrest_hamcrest_core_1_3.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_slf4j_slf4j_api_1_7_25.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_slf4j_slf4j_log4j12_1_7_25.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_springframework_spring_aop_4_3_17_RELEASE.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_springframework_spring_beans_4_3_17_RELEASE.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_springframework_spring_context_4_3_17_RELEASE.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_springframework_spring_core_4_3_17_RELEASE.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/libraries/Maven__org_springframework_spring_expression_4_3_17_RELEASE.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/modules.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/vcs.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/pom.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/maim/java/com/illusory/hello/spring/service/MyTest.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/maim/java/com/illusory/hello/spring/service/UserService.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/maim/java/com/illusory/hello/spring/service/impl/UserServiceImpl.java" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/maim/resources/log4j.properties" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/maim/resources/spring-context.xml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/src/test/java/com/illusory/hello/spring/service/test/UserServiceTest.java" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../微服务/单体地狱/01.md" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../微服务/单体地狱/test/login-demo/.idea/artifacts/login_demo_war.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../微服务/单体地狱/test/login-demo/.idea/artifacts/login_demo_war_exploded.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../微服务/单体地狱/test/login-demo/.idea/compiler.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../微服务/单体地狱/test/login-demo/.idea/encodings.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../微服务/单体地狱/test/login-demo/.idea/inspectionProfiles/Project_Default.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../微服务/单体地狱/test/login-demo/.idea/libraries/Maven__javax_servlet_javax_servlet_api_4_0_1.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../微服务/单体地狱/test/login-demo/.idea/login-demo.iml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../微服务/单体地狱/test/login-demo/.idea/misc.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../微服务/单体地狱/test/login-demo/.idea/modules.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../微服务/单体地狱/test/login-demo/.idea/vcs.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../微服务/单体地狱/test/login-demo/.idea/workspace.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../微服务/单体地狱/test/login-demo/pom.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../微服务/单体地狱/test/login-demo/src/main/java/com/illusory/login/demo/dao/UserDao.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../微服务/单体地狱/test/login-demo/src/main/java/com/illusory/login/demo/dao/impl/UserDaoImpl.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../微服务/单体地狱/test/login-demo/src/main/java/com/illusory/login/demo/entity/User.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../微服务/单体地狱/test/login-demo/src/main/java/com/illusory/login/demo/service/UserService.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../微服务/单体地狱/test/login-demo/src/main/java/com/illusory/login/demo/service/impl/UserServiceImpl.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../微服务/单体地狱/test/login-demo/src/main/java/com/illusory/login/demo/web/controller/LoginController.java" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../微服务/单体地狱/test/login-demo/src/main/webapp/WEB-INF/web.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../微服务/单体地狱/test/login-demo/src/main/webapp/fail.jsp" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../微服务/单体地狱/test/login-demo/src/main/webapp/index.jsp" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../微服务/单体地狱/test/login-demo/src/main/webapp/success.jsp" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../微服务/单体地狱/test/login-demo/target/classes/com/illusory/login/demo/dao/UserDao.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../微服务/单体地狱/test/login-demo/target/classes/com/illusory/login/demo/dao/impl/UserDaoImpl.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../微服务/单体地狱/test/login-demo/target/classes/com/illusory/login/demo/entity/User.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../微服务/单体地狱/test/login-demo/target/classes/com/illusory/login/demo/service/UserService.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../微服务/单体地狱/test/login-demo/target/classes/com/illusory/login/demo/service/impl/UserServiceImpl.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../微服务/单体地狱/test/login-demo/target/classes/com/illusory/login/demo/web/controller/LoginController.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../微服务/单体地狱/test/login-demo/target/login-demo-1.0.0-SNAPSHOT/META-INF/MANIFEST.MF" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../微服务/单体地狱/test/login-demo/target/login-demo-1.0.0-SNAPSHOT/WEB-INF/classes/com/illusory/login/demo/dao/UserDao.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../微服务/单体地狱/test/login-demo/target/login-demo-1.0.0-SNAPSHOT/WEB-INF/classes/com/illusory/login/demo/dao/impl/UserDaoImpl.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../微服务/单体地狱/test/login-demo/target/login-demo-1.0.0-SNAPSHOT/WEB-INF/classes/com/illusory/login/demo/entity/User.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../微服务/单体地狱/test/login-demo/target/login-demo-1.0.0-SNAPSHOT/WEB-INF/classes/com/illusory/login/demo/service/UserService.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../微服务/单体地狱/test/login-demo/target/login-demo-1.0.0-SNAPSHOT/WEB-INF/classes/com/illusory/login/demo/service/impl/UserServiceImpl.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../微服务/单体地狱/test/login-demo/target/login-demo-1.0.0-SNAPSHOT/WEB-INF/classes/com/illusory/login/demo/web/controller/LoginController.class" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../微服务/单体地狱/test/login-demo/target/login-demo-1.0.0-SNAPSHOT/WEB-INF/web.xml" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../微服务/单体地狱/test/login-demo/target/login-demo-1.0.0-SNAPSHOT/fail.jsp" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../微服务/单体地狱/test/login-demo/target/login-demo-1.0.0-SNAPSHOT/index.jsp" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../../微服务/单体地狱/test/login-demo/target/login-demo-1.0.0-SNAPSHOT/success.jsp" beforeDir="false" />
+    </list>
+    <ignored path="$PROJECT_DIR$/target/" />
+    <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="DatabaseView">
+    <option name="SHOW_INTERMEDIATE" value="true" />
+    <option name="GROUP_DATA_SOURCES" value="true" />
+    <option name="GROUP_SCHEMA" value="true" />
+    <option name="GROUP_CONTENTS" value="false" />
+    <option name="SORT_POSITIONED" value="false" />
+    <option name="SHOW_EMPTY_GROUPS" value="false" />
+    <option name="AUTO_SCROLL_FROM_SOURCE" value="false" />
+    <option name="HIDDEN_KINDS">
+      <set />
+    </option>
+    <expand />
+    <select />
+  </component>
+  <component name="FileEditorManager">
+    <leaf>
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/pom.xml">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="570">
+              <caret line="30" column="21" lean-forward="true" selection-start-line="18" selection-start-column="8" selection-end-line="30" selection-end-column="21" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/test/java/com/illusory/hello/spring/service/test/UserServiceTest.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="379">
+              <caret line="71" column="25" selection-start-line="71" selection-start-column="25" selection-end-line="71" selection-end-column="25" />
+              <folding>
+                <element signature="imports" expanded="true" />
+                <element signature="e#758#759#0" expanded="true" />
+                <element signature="e#793#794#0" expanded="true" />
+                <element signature="e#898#899#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/../../微服务/单体地狱/05.Log4j.md">
+          <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
+            <state split_layout="FIRST">
+              <first_editor relative-caret-position="226">
+                <caret line="39" column="27" lean-forward="true" selection-start-line="39" selection-start-column="27" selection-end-line="39" selection-end-column="27" />
+              </first_editor>
+              <second_editor />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/logs/log.log">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="152">
+              <caret line="8" lean-forward="true" selection-start-line="8" selection-end-line="8" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/maim/java/com/illusory/hello/spring/service/UserService.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="152">
+              <caret line="8" column="24" selection-start-line="8" selection-start-column="24" selection-end-line="8" selection-end-column="24" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/maim/java/com/illusory/hello/spring/service/impl/UserServiceImpl.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="209">
+              <caret line="11" column="36" selection-start-line="11" selection-start-column="36" selection-end-line="11" selection-end-column="36" />
+              <folding>
+                <element signature="e#257#258#0" expanded="true" />
+                <element signature="e#293#294#0" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/maim/resources/spring-context.xml">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="114">
+              <caret line="6" column="25" selection-start-line="6" selection-start-column="14" selection-end-line="6" selection-end-column="25" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/maim/java/com/illusory/hello/spring/service/MyTest.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="379">
+              <caret line="38" column="79" selection-start-line="38" selection-start-column="79" selection-end-line="38" selection-end-column="79" />
+              <folding>
+                <element signature="imports" expanded="true" />
+              </folding>
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="file://$PROJECT_DIR$/src/maim/resources/log4j.properties">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="209">
+              <caret line="11" column="16" lean-forward="true" selection-start-line="11" selection-start-column="16" selection-end-line="11" selection-end-column="16" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="false">
+        <entry file="jar://$PROJECT_DIR$/../../../../../Common/MyRepository/org/slf4j/slf4j-api/1.7.25/slf4j-api-1.7.25.jar!/org/slf4j/LoggerFactory.class">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="114">
+              <caret line="23" column="19" selection-start-line="23" selection-start-column="19" selection-end-line="23" selection-end-column="19" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+    </leaf>
+  </component>
+  <component name="FileTemplateManagerImpl">
+    <option name="RECENT_TEMPLATES">
+      <list>
+        <option value="Interface" />
+        <option value="Class" />
+      </list>
+    </option>
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/../../.." />
+  </component>
+  <component name="IdeDocumentHistory">
+    <option name="CHANGED_PATHS">
+      <list>
+        <option value="$PROJECT_DIR$/src/maim/java/com/illusory/hello/spring/service/UserService.java" />
+        <option value="$PROJECT_DIR$/src/maim/java/com/illusory/hello/spring/service/impl/UserServiceImpl.java" />
+        <option value="$PROJECT_DIR$/src/maim/resources/spring-context.xml" />
+        <option value="$PROJECT_DIR$/../../微服务/单体地狱/04.测试JUnit.md" />
+        <option value="$PROJECT_DIR$/src/test/java/com/illusory/hello/spring/service/test/UserServiceTest.java" />
+        <option value="$PROJECT_DIR$/../../微服务/单体地狱/05.Log4j.md" />
+        <option value="$PROJECT_DIR$/pom.xml" />
+        <option value="$PROJECT_DIR$/src/maim/java/com/illusory/hello/spring/service/MyTest.java" />
+        <option value="$PROJECT_DIR$/src/maim/resources/log4j.properties" />
+      </list>
+    </option>
+  </component>
+  <component name="MavenImportPreferences">
+    <option name="generalSettings">
+      <MavenGeneralSettings>
+        <option name="localRepository" value="D:\lillusory\Common\MyRepository" />
+        <option name="mavenHome" value="$APPLICATION_HOME_DIR$/plugins/maven/lib/maven3" />
+        <option name="userSettingsFile" value="D:\lillusory\Common\apache-maven-3.6.0\conf\settings.xml" />
+      </MavenGeneralSettings>
+    </option>
+    <option name="importingSettings">
+      <MavenImportingSettings>
+        <option name="importAutomatically" value="true" />
+      </MavenImportingSettings>
+    </option>
+  </component>
+  <component name="MavenProjectNavigator">
+    <treeState>
+      <expand>
+        <path>
+          <item name="" type="16c1761:MavenProjectsStructure$RootNode" />
+          <item name="hello-spring" type="9519ce18:MavenProjectsStructure$ProjectNode" />
+        </path>
+        <path>
+          <item name="" type="16c1761:MavenProjectsStructure$RootNode" />
+          <item name="hello-spring" type="9519ce18:MavenProjectsStructure$ProjectNode" />
+          <item name="Dependencies" type="f4be9f2a:MavenProjectsStructure$DependenciesNode" />
+        </path>
+      </expand>
+      <select />
+    </treeState>
+  </component>
+  <component name="MavenRunner">
+    <option name="skipTests" value="true" />
+  </component>
+  <component name="ProjectFrameBounds" extendedState="6">
+    <option name="x" value="10" />
+    <option name="width" value="1346" />
+    <option name="height" value="735" />
+  </component>
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true">
+    <ConfirmationsSetting value="2" id="Add" />
+  </component>
+  <component name="ProjectView">
+    <navigator proportions="" version="1">
+      <foldersAlwaysOnTop value="true" />
+    </navigator>
+    <panes>
+      <pane id="PackagesPane" />
+      <pane id="ProjectPane">
+        <subPane>
+          <expand>
+            <path>
+              <item name="hello-spring" type="b2602c69:ProjectViewProjectNode" />
+              <item name="hello-spring" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="hello-spring" type="b2602c69:ProjectViewProjectNode" />
+              <item name="hello-spring" type="462c0819:PsiDirectoryNode" />
+              <item name="logs" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="hello-spring" type="b2602c69:ProjectViewProjectNode" />
+              <item name="hello-spring" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="hello-spring" type="b2602c69:ProjectViewProjectNode" />
+              <item name="hello-spring" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+              <item name="maim" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="hello-spring" type="b2602c69:ProjectViewProjectNode" />
+              <item name="hello-spring" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+              <item name="maim" type="462c0819:PsiDirectoryNode" />
+              <item name="java" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="hello-spring" type="b2602c69:ProjectViewProjectNode" />
+              <item name="hello-spring" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+              <item name="maim" type="462c0819:PsiDirectoryNode" />
+              <item name="java" type="462c0819:PsiDirectoryNode" />
+              <item name="service" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="hello-spring" type="b2602c69:ProjectViewProjectNode" />
+              <item name="hello-spring" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+              <item name="maim" type="462c0819:PsiDirectoryNode" />
+              <item name="resources" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="hello-spring" type="b2602c69:ProjectViewProjectNode" />
+              <item name="hello-spring" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+              <item name="test" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="hello-spring" type="b2602c69:ProjectViewProjectNode" />
+              <item name="hello-spring" type="462c0819:PsiDirectoryNode" />
+              <item name="src" type="462c0819:PsiDirectoryNode" />
+              <item name="test" type="462c0819:PsiDirectoryNode" />
+              <item name="java" type="462c0819:PsiDirectoryNode" />
+            </path>
+          </expand>
+          <select />
+        </subPane>
+      </pane>
+      <pane id="Scope" />
+    </panes>
+  </component>
+  <component name="PropertiesComponent">
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="android.sdk.path" value="$PROJECT_DIR$/../../../../SDK" />
+    <property name="aspect.path.notification.shown" value="true" />
+    <property name="com.android.tools.idea.instantapp.provision.ProvisionBeforeRunTaskProvider.myTimeStamp" value="1553317040664" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../../../../../MyProject/web" />
+    <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
+    <property name="nodejs_npm_path_reset_for_default_project" value="true" />
+    <property name="project.structure.last.edited" value="Modules" />
+    <property name="project.structure.proportion" value="0.15" />
+    <property name="project.structure.side.proportion" value="0.2" />
+    <property name="settings.editor.selected.configurable" value="MavenSettings" />
+  </component>
+  <component name="RunDashboard">
+    <option name="ruleStates">
+      <list>
+        <RuleState>
+          <option name="name" value="ConfigurationTypeDashboardGroupingRule" />
+        </RuleState>
+        <RuleState>
+          <option name="name" value="StatusDashboardGroupingRule" />
+        </RuleState>
+      </list>
+    </option>
+  </component>
+  <component name="RunManager" selected="Application.MyTest">
+    <configuration default="true" type="AndroidJUnit">
+      <option name="TEST_OBJECT" value="class" />
+      <option name="WORKING_DIRECTORY" value="$MODULE_DIR$" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration default="true" type="Applet">
+      <option name="POLICY_FILE" value="$APPLICATION_HOME_DIR$/bin/appletviewer.policy" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="MyTest" type="Application" factoryName="Application" temporary="true" nameIsGenerated="true">
+      <option name="MAIN_CLASS_NAME" value="com.illusory.hello.spring.service.MyTest" />
+      <module name="hello-spring" />
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.illusory.hello.spring.service.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration default="true" type="Application" factoryName="Application">
+      <option name="WORKING_DIRECTORY" value="$PROJECT_DIR$" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="UserServiceTest.testAssert" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="hello-spring" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.illusory.hello.spring.service.test.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="com.illusory.hello.spring.service.test" />
+      <option name="MAIN_CLASS_NAME" value="com.illusory.hello.spring.service.test.UserServiceTest" />
+      <option name="METHOD_NAME" value="testAssert" />
+      <option name="TEST_OBJECT" value="method" />
+      <option name="WORKING_DIRECTORY" value="%MODULE_WORKING_DIR%" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration name="UserServiceTest.testSayHi" type="JUnit" factoryName="JUnit" temporary="true" nameIsGenerated="true">
+      <module name="hello-spring" />
+      <extension name="coverage">
+        <pattern>
+          <option name="PATTERN" value="com.illusory.hello.spring.service.test.*" />
+          <option name="ENABLED" value="true" />
+        </pattern>
+      </extension>
+      <option name="PACKAGE_NAME" value="com.illusory.hello.spring.service.test" />
+      <option name="MAIN_CLASS_NAME" value="com.illusory.hello.spring.service.test.UserServiceTest" />
+      <option name="METHOD_NAME" value="testSayHi" />
+      <option name="TEST_OBJECT" value="method" />
+      <option name="WORKING_DIRECTORY" value="%MODULE_WORKING_DIR%" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration default="true" type="JUnit" factoryName="JUnit">
+      <option name="TEST_OBJECT" value="class" />
+      <option name="WORKING_DIRECTORY" value="%MODULE_WORKING_DIR%" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration default="true" type="TestNG">
+      <option name="TEST_OBJECT" value="CLASS" />
+      <option name="WORKING_DIRECTORY" value="%MODULE_WORKING_DIR%" />
+      <properties />
+      <listeners />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <configuration default="true" type="#org.jetbrains.idea.devkit.run.PluginConfigurationType">
+      <module name="" />
+      <option name="VM_PARAMETERS" value="-Xmx512m -Xms256m -XX:MaxPermSize=250m -ea" />
+      <option name="PROGRAM_PARAMETERS" />
+      <predefined_log_file enabled="true" id="idea.log" />
+      <method v="2">
+        <option name="Make" enabled="true" />
+      </method>
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="Application.MyTest" />
+        <item itemvalue="JUnit.UserServiceTest.testAssert" />
+        <item itemvalue="JUnit.UserServiceTest.testSayHi" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SvnConfiguration">
+    <configuration />
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="50419a79-fbb8-466e-ae14-373a896562ef" name="Default Changelist" comment="" />
+      <created>1553309244425</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1553309244425</updated>
+      <workItem from="1553309245970" duration="6025000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TestHistory">
+    <history-entry file="UserServiceTest_testSayHi - 2019.03.23 at 11h 34m 21s.xml">
+      <configuration name="UserServiceTest.testSayHi" configurationId="JUnit" />
+    </history-entry>
+    <history-entry file="UserServiceTest_testSayHi - 2019.03.23 at 11h 34m 48s.xml">
+      <configuration name="UserServiceTest.testSayHi" configurationId="JUnit" />
+    </history-entry>
+    <history-entry file="UserServiceTest_testAssert - 2019.03.23 at 11h 44m 01s.xml">
+      <configuration name="UserServiceTest.testAssert" configurationId="JUnit" />
+    </history-entry>
+  </component>
+  <component name="TimeTrackingManager">
+    <option name="totallyTimeSpent" value="6025000" />
+  </component>
+  <component name="ToolWindowManager">
+    <frame x="-8" y="-8" width="1936" height="1056" extended-state="6" />
+    <layout>
+      <window_info id="Designer" />
+      <window_info id="Image Layers" />
+      <window_info id="Capture Tool" />
+      <window_info id="UI Designer" />
+      <window_info id="Favorites" side_tool="true" />
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.25" />
+      <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
+      <window_info anchor="bottom" id="FindBugs-IDEA" />
+      <window_info anchor="bottom" id="Spring" />
+      <window_info anchor="bottom" id="Terminal" />
+      <window_info anchor="bottom" id="Docker" show_stripe_button="false" />
+      <window_info anchor="bottom" id="Event Log" side_tool="true" />
+      <window_info anchor="bottom" id="Messages" weight="0.32936078" />
+      <window_info anchor="bottom" id="Database Changes" />
+      <window_info anchor="bottom" id="Version Control" />
+      <window_info anchor="bottom" id="MyBatis Sql Log" />
+      <window_info anchor="bottom" id="Message" order="0" />
+      <window_info anchor="bottom" id="Find" order="1" />
+      <window_info anchor="bottom" id="Run" order="2" weight="0.32936078" />
+      <window_info anchor="bottom" id="Debug" order="3" weight="0.3997833" />
+      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
+      <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
+      <window_info anchor="bottom" id="TODO" order="6" />
+      <window_info anchor="right" id="Maven" weight="0.32995737" />
+      <window_info anchor="right" id="Palette" />
+      <window_info anchor="right" id="Capture Analysis" />
+      <window_info anchor="right" id="Key Promoter X" />
+      <window_info anchor="right" id="Database" weight="0.32995737" />
+      <window_info anchor="right" id="Palette&#9;" />
+      <window_info anchor="right" id="Theme Preview" />
+      <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
+      <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
+      <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
+    </layout>
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="1" />
+  </component>
+  <component name="editorHistoryManager">
+    <entry file="uml://MAVEN/com.illusory:hello-spring:1.0.0-SNAPSHOT">
+      <provider selected="true" editor-type-id="UmlEditorProvider">
+        <state>
+          <ID>MAVEN</ID>
+          <OriginalElement>com.illusory:hello-spring:1.0.0-SNAPSHOT</OriginalElement>
+          <nodes>
+            <node x="152.14583333333331" y="400.0">com.illusory:hello-spring:1.0.0-SNAPSHOT</node>
+            <node x="145.14583333333331" y="320.0">org.springframework:spring-context:jar:4.3.17.RELEASE</node>
+            <node x="123.24999999999999" y="240.0">org.springframework:spring-context:jar:4.3.17.RELEASE/org.springframework:spring-aop:jar:4.3.17.RELEASE</node>
+            <node x="158.0" y="160.0">org.springframework:spring-context:jar:4.3.17.RELEASE/org.springframework:spring-beans:jar:4.3.17.RELEASE</node>
+            <node x="131.6875" y="80.0">org.springframework:spring-context:jar:4.3.17.RELEASE/org.springframework:spring-core:jar:4.3.17.RELEASE</node>
+            <node x="112.1875" y="0.0">org.springframework:spring-context:jar:4.3.17.RELEASE/org.springframework:spring-core:jar:4.3.17.RELEASE/commons-logging:commons-logging:jar:1.2</node>
+            <node x="0.0" y="160.0">org.springframework:spring-context:jar:4.3.17.RELEASE/org.springframework:spring-expression:jar:4.3.17.RELEASE</node>
+          </nodes>
+          <notes />
+          <edges>
+            <edge source="org.springframework:spring-context:jar:4.3.17.RELEASE" target="org.springframework:spring-context:jar:4.3.17.RELEASE/org.springframework:spring-aop:jar:4.3.17.RELEASE">
+              <point x="-14.5" y="-15.0" />
+              <point x="188.64583333333331" y="295.0" />
+              <point x="171.75" y="295.0" />
+              <point x="0.0" y="15.0" />
+            </edge>
+            <edge source="org.springframework:spring-context:jar:4.3.17.RELEASE/org.springframework:spring-expression:jar:4.3.17.RELEASE" target="org.springframework:spring-context:jar:4.3.17.RELEASE/org.springframework:spring-core:jar:4.3.17.RELEASE">
+              <point x="0.0" y="-15.0" />
+              <point x="68.5" y="130.0" />
+              <point x="144.1875" y="130.0" />
+              <point x="-37.5" y="15.0" />
+            </edge>
+            <edge source="org.springframework:spring-context:jar:4.3.17.RELEASE" target="org.springframework:spring-context:jar:4.3.17.RELEASE/org.springframework:spring-core:jar:4.3.17.RELEASE">
+              <point x="43.49999999999999" y="-15.0" />
+              <point x="246.64583333333331" y="295.0" />
+              <point x="277.5" y="295.0" />
+              <point x="277.5" y="140.0" />
+              <point x="219.1875" y="140.0" />
+              <point x="37.5" y="15.0" />
+            </edge>
+            <edge source="org.springframework:spring-context:jar:4.3.17.RELEASE/org.springframework:spring-aop:jar:4.3.17.RELEASE" target="org.springframework:spring-context:jar:4.3.17.RELEASE/org.springframework:spring-beans:jar:4.3.17.RELEASE">
+              <point x="24.25" y="-15.0" />
+              <point x="196.0" y="215.0" />
+              <point x="185.25" y="215.0" />
+              <point x="-27.25" y="15.0" />
+            </edge>
+            <edge source="com.illusory:hello-spring:1.0.0-SNAPSHOT" target="org.springframework:spring-context:jar:4.3.17.RELEASE">
+              <point x="0.0" y="-15.0" />
+              <point x="0.0" y="15.0" />
+            </edge>
+            <edge source="org.springframework:spring-context:jar:4.3.17.RELEASE/org.springframework:spring-aop:jar:4.3.17.RELEASE" target="org.springframework:spring-context:jar:4.3.17.RELEASE/org.springframework:spring-core:jar:4.3.17.RELEASE">
+              <point x="-24.25" y="-15.0" />
+              <point x="147.5" y="140.0" />
+              <point x="169.1875" y="140.0" />
+              <point x="-12.5" y="15.0" />
+            </edge>
+            <edge source="org.springframework:spring-context:jar:4.3.17.RELEASE/org.springframework:spring-beans:jar:4.3.17.RELEASE" target="org.springframework:spring-context:jar:4.3.17.RELEASE/org.springframework:spring-core:jar:4.3.17.RELEASE">
+              <point x="0.0" y="-15.0" />
+              <point x="212.5" y="140.0" />
+              <point x="194.1875" y="140.0" />
+              <point x="12.5" y="15.0" />
+            </edge>
+            <edge source="org.springframework:spring-context:jar:4.3.17.RELEASE" target="org.springframework:spring-context:jar:4.3.17.RELEASE/org.springframework:spring-expression:jar:4.3.17.RELEASE">
+              <point x="-43.5" y="-15.0" />
+              <point x="159.64583333333331" y="295.0" />
+              <point x="68.5" y="295.0" />
+              <point x="0.0" y="15.0" />
+            </edge>
+            <edge source="org.springframework:spring-context:jar:4.3.17.RELEASE/org.springframework:spring-core:jar:4.3.17.RELEASE" target="org.springframework:spring-context:jar:4.3.17.RELEASE/org.springframework:spring-core:jar:4.3.17.RELEASE/commons-logging:commons-logging:jar:1.2">
+              <point x="0.0" y="-15.0" />
+              <point x="0.0" y="15.0" />
+            </edge>
+            <edge source="org.springframework:spring-context:jar:4.3.17.RELEASE" target="org.springframework:spring-context:jar:4.3.17.RELEASE/org.springframework:spring-beans:jar:4.3.17.RELEASE">
+              <point x="14.5" y="-15.0" />
+              <point x="217.64583333333331" y="295.0" />
+              <point x="239.75" y="295.0" />
+              <point x="27.249999999999996" y="15.0" />
+            </edge>
+          </edges>
+          <settings layout="Hierarchic Group" zoom="1.0" x="-15.0" y="19.5" />
+          <SelectedNodes>
+            <node>org.springframework:spring-context:jar:4.3.17.RELEASE/org.springframework:spring-expression:jar:4.3.17.RELEASE</node>
+          </SelectedNodes>
+          <Categories />
+          <VISIBILITY>All</VISIBILITY>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/maim/java/com/illusory/hello/spring/service/UserService.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="152">
+          <caret line="8" column="24" selection-start-line="8" selection-start-column="24" selection-end-line="8" selection-end-column="24" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/maim/java/com/illusory/hello/spring/service/impl/UserServiceImpl.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="209">
+          <caret line="11" column="36" selection-start-line="11" selection-start-column="36" selection-end-line="11" selection-end-column="36" />
+          <folding>
+            <element signature="e#257#258#0" expanded="true" />
+            <element signature="e#293#294#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/maim/resources/spring-context.xml">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="114">
+          <caret line="6" column="25" selection-start-line="6" selection-start-column="14" selection-end-line="6" selection-end-column="25" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/test/java/com/illusory/hello/spring/service/test/UserServiceTest.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="379">
+          <caret line="71" column="25" selection-start-line="71" selection-start-column="25" selection-end-line="71" selection-end-column="25" />
+          <folding>
+            <element signature="imports" expanded="true" />
+            <element signature="e#758#759#0" expanded="true" />
+            <element signature="e#793#794#0" expanded="true" />
+            <element signature="e#898#899#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../../微服务/单体地狱/04.测试JUnit.md">
+      <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
+        <state split_layout="FIRST">
+          <first_editor relative-caret-position="570">
+            <caret line="30" column="11" selection-start-line="30" selection-start-column="11" selection-end-line="30" selection-end-column="11" />
+          </first_editor>
+          <second_editor />
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar://$PROJECT_DIR$/../../../../../Common/MyRepository/org/slf4j/slf4j-api/1.7.25/slf4j-api-1.7.25.jar!/org/slf4j/LoggerFactory.class">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="114">
+          <caret line="23" column="19" selection-start-line="23" selection-start-column="19" selection-end-line="23" selection-end-column="19" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/logs/log.log">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="152">
+          <caret line="8" lean-forward="true" selection-start-line="8" selection-end-line="8" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/maim/java/com/illusory/hello/spring/service/MyTest.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="379">
+          <caret line="38" column="79" selection-start-line="38" selection-start-column="79" selection-end-line="38" selection-end-column="79" />
+          <folding>
+            <element signature="imports" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/../../微服务/单体地狱/05.Log4j.md">
+      <provider selected="true" editor-type-id="split-provider[text-editor;markdown-preview-editor]">
+        <state split_layout="FIRST">
+          <first_editor relative-caret-position="226">
+            <caret line="39" column="27" lean-forward="true" selection-start-line="39" selection-start-column="27" selection-end-line="39" selection-end-column="27" />
+          </first_editor>
+          <second_editor />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/maim/resources/log4j.properties">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="209">
+          <caret line="11" column="16" lean-forward="true" selection-start-line="11" selection-start-column="16" selection-end-line="11" selection-end-column="16" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/pom.xml">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="570">
+          <caret line="30" column="21" lean-forward="true" selection-start-line="18" selection-start-column="8" selection-end-line="30" selection-end-column="21" />
+        </state>
+      </provider>
+    </entry>
+  </component>
+  <component name="ideajad">
+    <property name="annotate" value="false" />
+    <property name="annotateFully" value="false" />
+    <property name="braces" value="false" />
+    <property name="clear" value="false" />
+    <property name="confirmNavigationTriggeredDecompile" value="true" />
+    <property name="dead" value="true" />
+    <property name="defaultInitializers" value="false" />
+    <property name="dissassemblerOnly" value="false" />
+    <property name="fieldsFirst" value="true" />
+    <property name="fileExtension" value="java" />
+    <property name="fullyQualifiedNames" value="false" />
+    <property name="indentation" value="4" />
+    <property name="intRadix" value="10" />
+    <property name="lineNumbersAsComments" value="true" />
+    <property name="longRadix" value="10" />
+    <property name="maxStringLength" value="64" />
+    <property name="nocast" value="false" />
+    <property name="noclass" value="false" />
+    <property name="nocode" value="false" />
+    <property name="noconv" value="false" />
+    <property name="noctor" value="false" />
+    <property name="nodos" value="false" />
+    <property name="nofd" value="false" />
+    <property name="noinner" value="false" />
+    <property name="nolvt" value="false" />
+    <property name="nonlb" value="false" />
+    <property name="outputDirectory" value="" />
+    <property name="packFields" value="3" />
+    <property name="packImports" value="7" />
+    <property name="prefixNumericalClasses" value="_cls" />
+    <property name="prefixNumericalFields" value="_fld" />
+    <property name="prefixNumericalLocals" value="_lcl" />
+    <property name="prefixNumericalMethods" value="_mth" />
+    <property name="prefixNumericalParameters" value="_prm" />
+    <property name="prefixUnusedExceptions" value="_ex" />
+    <property name="readonly" value="false" />
+    <property name="safe" value="false" />
+    <property name="sort" value="false" />
+    <property name="spaceAfterKeyword" value="false" />
+    <property name="splitStringsAtNewline" value="false" />
+    <property name="useTabs" value="false" />
+  </component>
+  <component name="masterDetails">
+    <states>
+      <state key="ArtifactsStructureConfigurable.UI">
+        <settings>
+          <artifact-editor />
+          <splitter-proportions>
+            <option name="proportions">
+              <list>
+                <option value="0.2" />
+              </list>
+            </option>
+          </splitter-proportions>
+        </settings>
+      </state>
+      <state key="FacetStructureConfigurable.UI">
+        <settings>
+          <last-edited>Spring</last-edited>
+          <splitter-proportions>
+            <option name="proportions">
+              <list>
+                <option value="0.2" />
+              </list>
+            </option>
+          </splitter-proportions>
+        </settings>
+      </state>
+      <state key="GlobalLibrariesConfigurable.UI">
+        <settings>
+          <last-edited>Bundled Protobuf Distribution</last-edited>
+          <splitter-proportions>
+            <option name="proportions">
+              <list>
+                <option value="0.2" />
+              </list>
+            </option>
+          </splitter-proportions>
+        </settings>
+      </state>
+      <state key="JdkListConfigurable.UI">
+        <settings>
+          <last-edited>1.8</last-edited>
+          <splitter-proportions>
+            <option name="proportions">
+              <list>
+                <option value="0.2" />
+              </list>
+            </option>
+          </splitter-proportions>
+        </settings>
+      </state>
+      <state key="ModuleStructureConfigurable.UI">
+        <settings>
+          <last-edited>hello-spring</last-edited>
+          <splitter-proportions>
+            <option name="proportions">
+              <list>
+                <option value="0.2" />
+                <option value="0.6" />
+              </list>
+            </option>
+          </splitter-proportions>
+        </settings>
+      </state>
+      <state key="ProjectJDKs.UI">
+        <settings>
+          <last-edited>1.8</last-edited>
+          <splitter-proportions>
+            <option name="proportions">
+              <list>
+                <option value="0.2" />
+              </list>
+            </option>
+          </splitter-proportions>
+        </settings>
+      </state>
+      <state key="ProjectLibrariesConfigurable.UI">
+        <settings>
+          <last-edited>Maven: commons-logging:commons-logging:1.2</last-edited>
+          <splitter-proportions>
+            <option name="proportions">
+              <list>
+                <option value="0.2" />
+              </list>
+            </option>
+          </splitter-proportions>
+        </settings>
+      </state>
+    </states>
+  </component>
+</project>
