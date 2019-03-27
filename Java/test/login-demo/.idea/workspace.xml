@@ -6,6 +6,7 @@
     </artifacts-to-build>
   </component>
   <component name="ChangeListManager">
+<<<<<<< HEAD:Java/test/login-demo/.idea/workspace.xml
     <list default="true" id="53c3c499-6483-45dd-bc0a-b677e6fe3ee3" name="Default Changelist" comment="">
       <change afterPath="$PROJECT_DIR$/../hello-boostrap/.idea/codeStyles/Project.xml" afterDir="false" />
       <change afterPath="$PROJECT_DIR$/../hello-boostrap/.idea/encodings.xml" afterDir="false" />
@@ -55,6 +56,9 @@
       <change beforePath="$PROJECT_DIR$/../../微服务/单体地狱/test/login-demo/target/login-demo-1.0.0-SNAPSHOT/index.jsp" beforeDir="false" />
       <change beforePath="$PROJECT_DIR$/../../微服务/单体地狱/test/login-demo/target/login-demo-1.0.0-SNAPSHOT/success.jsp" beforeDir="false" />
     </list>
+=======
+    <list default="true" id="53c3c499-6483-45dd-bc0a-b677e6fe3ee3" name="Default Changelist" comment="" />
+>>>>>>> a5498b41c6959ec4669a1ebbc7d9bddcf72f45c0:Java/微服务/单体地狱/test/login-demo/.idea/workspace.xml
     <ignored path="$PROJECT_DIR$/target/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -67,8 +71,13 @@
       <file pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/pom.xml">
           <provider selected="true" editor-type-id="text-editor">
+<<<<<<< HEAD:Java/test/login-demo/.idea/workspace.xml
             <state relative-caret-position="380">
               <caret line="20" column="21" selection-start-line="20" selection-start-column="21" selection-end-line="20" selection-end-column="21" />
+=======
+            <state relative-caret-position="266">
+              <caret line="14" column="18" selection-start-line="14" selection-start-column="18" selection-end-line="14" selection-end-column="18" />
+>>>>>>> a5498b41c6959ec4669a1ebbc7d9bddcf72f45c0:Java/微服务/单体地狱/test/login-demo/.idea/workspace.xml
             </state>
           </provider>
         </entry>
@@ -106,8 +115,13 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/main/webapp/WEB-INF/web.xml">
           <provider selected="true" editor-type-id="text-editor">
+<<<<<<< HEAD:Java/test/login-demo/.idea/workspace.xml
             <state relative-caret-position="114">
               <caret line="6" column="43" selection-start-line="6" selection-start-column="43" selection-end-line="6" selection-end-column="43" />
+=======
+            <state relative-caret-position="323">
+              <caret line="17" lean-forward="true" selection-start-line="17" selection-end-line="17" />
+>>>>>>> a5498b41c6959ec4669a1ebbc7d9bddcf72f45c0:Java/微服务/单体地狱/test/login-demo/.idea/workspace.xml
             </state>
           </provider>
         </entry>
@@ -242,7 +256,6 @@
       <foldersAlwaysOnTop value="true" />
     </navigator>
     <panes>
-      <pane id="PackagesPane" />
       <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
@@ -305,13 +318,18 @@
           <select />
         </subPane>
       </pane>
+      <pane id="PackagesPane" />
     </panes>
   </component>
   <component name="PropertiesComponent">
     <property name="WebServerToolWindowFactoryState" value="false" />
     <property name="aspect.path.notification.shown" value="true" />
     <property name="com.android.tools.idea.instantapp.provision.ProvisionBeforeRunTaskProvider.myTimeStamp" value="1553271786405" />
+<<<<<<< HEAD:Java/test/login-demo/.idea/workspace.xml
     <property name="last_opened_file_path" value="$PROJECT_DIR$/../hello-boostrap" />
+=======
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../../../../../../MyProjects/web/i-shop" />
+>>>>>>> a5498b41c6959ec4669a1ebbc7d9bddcf72f45c0:Java/微服务/单体地狱/test/login-demo/.idea/workspace.xml
     <property name="nodejs_interpreter_path.stuck_in_default_project" value="undefined stuck path" />
     <property name="nodejs_npm_path_reset_for_default_project" value="true" />
     <property name="project.structure.last.edited" value="Modules" />
@@ -419,13 +437,21 @@
       <updated>1553267314465</updated>
       <workItem from="1553267316121" duration="704000" />
       <workItem from="1553268096744" duration="3700000" />
+<<<<<<< HEAD:Java/test/login-demo/.idea/workspace.xml
       <workItem from="1553303143222" duration="18000" />
       <workItem from="1553303194609" duration="514000" />
+=======
+      <workItem from="1553336824255" duration="124000" />
+>>>>>>> a5498b41c6959ec4669a1ebbc7d9bddcf72f45c0:Java/微服务/单体地狱/test/login-demo/.idea/workspace.xml
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
+<<<<<<< HEAD:Java/test/login-demo/.idea/workspace.xml
     <option name="totallyTimeSpent" value="4936000" />
+=======
+    <option name="totallyTimeSpent" value="4528000" />
+>>>>>>> a5498b41c6959ec4669a1ebbc7d9bddcf72f45c0:Java/微服务/单体地狱/test/login-demo/.idea/workspace.xml
   </component>
   <component name="TodoView">
     <todo-panel id="selected-file">
@@ -437,10 +463,16 @@
     </todo-panel>
   </component>
   <component name="ToolWindowManager">
+<<<<<<< HEAD:Java/test/login-demo/.idea/workspace.xml
     <frame x="-8" y="-8" width="1936" height="1056" extended-state="6" />
     <editor active="true" />
     <layout>
       <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.20106667" />
+=======
+    <frame x="-8" y="-8" width="1382" height="744" extended-state="6" />
+    <layout>
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.19969743" />
+>>>>>>> a5498b41c6959ec4669a1ebbc7d9bddcf72f45c0:Java/微服务/单体地狱/test/login-demo/.idea/workspace.xml
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Designer" order="2" />
       <window_info id="Image Layers" order="3" />
@@ -448,7 +480,10 @@
       <window_info id="UI Designer" order="5" />
       <window_info id="Favorites" order="6" side_tool="true" />
       <window_info id="Web" order="7" side_tool="true" />
+<<<<<<< HEAD:Java/test/login-demo/.idea/workspace.xml
       <window_info anchor="bottom" id="MyBatis Sql Log" />
+=======
+>>>>>>> a5498b41c6959ec4669a1ebbc7d9bddcf72f45c0:Java/微服务/单体地狱/test/login-demo/.idea/workspace.xml
       <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Find" order="1" />
       <window_info anchor="bottom" id="Run" order="2" weight="0.62080175" />
@@ -463,8 +498,12 @@
       <window_info anchor="bottom" id="Database Changes" order="11" />
       <window_info anchor="bottom" id="Version Control" order="12" />
       <window_info anchor="bottom" id="Application Servers" order="13" weight="0.3295082" />
+<<<<<<< HEAD:Java/test/login-demo/.idea/workspace.xml
       <window_info anchor="bottom" id="Messages" order="14" weight="0.32936078" />
       <window_info anchor="bottom" id="FindBugs-IDEA" order="15" />
+=======
+      <window_info anchor="bottom" id="Messages" order="14" weight="0.3295082" />
+>>>>>>> a5498b41c6959ec4669a1ebbc7d9bddcf72f45c0:Java/微服务/单体地狱/test/login-demo/.idea/workspace.xml
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
@@ -482,7 +521,17 @@
   </component>
   <component name="editorHistoryManager">
     <entry file="file://$PROJECT_DIR$/src/main/java/com/illusory/login/demo/dao/testt.java" />
+<<<<<<< HEAD:Java/test/login-demo/.idea/workspace.xml
     <entry file="jar://$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.4/lombok-1.18.4.jar!/lombok/ToString.class" />
+=======
+    <entry file="jar://$MAVEN_REPOSITORY$/org/projectlombok/lombok/1.18.4/lombok-1.18.4.jar!/lombok/ToString.class">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="152">
+          <caret line="14" column="18" selection-start-line="14" selection-start-column="18" selection-end-line="14" selection-end-column="18" />
+        </state>
+      </provider>
+    </entry>
+>>>>>>> a5498b41c6959ec4669a1ebbc7d9bddcf72f45c0:Java/微服务/单体地狱/test/login-demo/.idea/workspace.xml
     <entry file="file://$PROJECT_DIR$/src/main/java/com/illusory/login/demo/dao/UserDao.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="209">
@@ -490,8 +539,20 @@
         </state>
       </provider>
     </entry>
+<<<<<<< HEAD:Java/test/login-demo/.idea/workspace.xml
     <entry file="file://$PROJECT_DIR$/src/main/java/com/illusory/login/demo/entity/User.java">
       <provider selected="true" editor-type-id="text-editor">
+=======
+    <entry file="file://$PROJECT_DIR$/pom.xml">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="266">
+          <caret line="14" column="18" selection-start-line="14" selection-start-column="18" selection-end-line="14" selection-end-column="18" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/main/java/com/illusory/login/demo/entity/User.java">
+      <provider selected="true" editor-type-id="text-editor">
+>>>>>>> a5498b41c6959ec4669a1ebbc7d9bddcf72f45c0:Java/微服务/单体地狱/test/login-demo/.idea/workspace.xml
         <state relative-caret-position="380">
           <caret line="20" column="18" selection-start-line="20" selection-start-column="18" selection-end-line="20" selection-end-column="18" />
         </state>
@@ -557,8 +618,13 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/main/webapp/WEB-INF/web.xml">
       <provider selected="true" editor-type-id="text-editor">
+<<<<<<< HEAD:Java/test/login-demo/.idea/workspace.xml
         <state relative-caret-position="114">
           <caret line="6" column="43" selection-start-line="6" selection-start-column="43" selection-end-line="6" selection-end-column="43" />
+=======
+        <state relative-caret-position="323">
+          <caret line="17" lean-forward="true" selection-start-line="17" selection-end-line="17" />
+>>>>>>> a5498b41c6959ec4669a1ebbc7d9bddcf72f45c0:Java/微服务/单体地狱/test/login-demo/.idea/workspace.xml
         </state>
       </provider>
     </entry>
