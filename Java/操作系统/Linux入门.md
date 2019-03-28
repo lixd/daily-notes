@@ -76,3 +76,72 @@ cent os 默认只开启22端口，其他被防火墙拦截。
 
 文件传输
 
+
+
+## yum
+
+1.安装yum包：
+
+```
+$ yum install PACKAGE_NAME
+```
+
+2.取出yum包装：
+
+```
+$ yum remove PACKAGE_NAME
+```
+
+3.重新安装一个yum包：
+
+```
+$ yum reinstall PACKAGE_NAME
+```
+
+4.搜索yum包：
+
+```
+$ yum search PACKAGE_NAME
+```
+
+5.显示yum包的信息：
+
+```
+$ yum info PACKAGE_NAME
+```
+
+6.更新安装的yum包：
+
+```
+$ yum update
+```
+
+7.更新具体的yum包：
+
+```
+$ yum update PACKAGE_NAME
+```
+
+8.显示yum历史：
+
+```
+$ yum history
+```
+
+9.显示已启用的yum存储库的列表：
+
+```
+$ yum repolist
+```
+
+10.找出哪个yum包提供了一个特定的文件（例如：/usr/bin/nc)）：
+
+```
+$ yum whatprovides "*bin/nc"
+```
+
+11.清除yum缓存：
+
+```
+$ yum clean all
+```
