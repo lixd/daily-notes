@@ -64,8 +64,6 @@ volumes:
   mysql-data:
 ```
 
-
-
 ### 安装
 
 在`docker-compose.yml`所在目录
@@ -74,35 +72,5 @@ volumes:
 $ docker-compose up
 ```
 
-## 2. Tomcat
+**注意**：连接MySQL8配置文件中的驱动要换成`com.mysql.cj.jdbc.Driver`
 
-创建一个放配置文件的目录`/usr/local/docker/tomcat`
-
-`docker-compose.yml`配置文件
-
-```yml
-Docker Compose 实战 Tomcat
-version: '3.1'
-services:
-  tomcat:
-    restart: always
-    image: tomcat
-    container_name: tomcat
-    ports:
-      - 8080:8080
-    volumes:
-      - /usr/local/docker/tomcat/webapps/test:/usr/local/tomcat/webapps/test
-    environment:
-      TZ: Asia/Shanghai
-```
-
-
-
-```text
-  <!-- 配置需要指定生成的数据库和表，% 代表所有表 -->
-        <table catalog="myshop" tableName="%">
-            <!-- mysql 配置 -->
-            <generatedKey column="id" sqlStatement="Mysql" identity="true"/>
-            <property name="ignoreQualifiersAtRuntime" value="true"/> 
-        </table>
-```

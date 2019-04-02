@@ -154,6 +154,8 @@ $ sudo sh get-docker.sh --mirror Aliyun
 
 在`/etc/docker/daemon.json`中新增以下内容（如果文件不存在请新建该文件）：
 
+推荐使用阿里云docker镜像
+
 ```json
 {
   "registry-mirrors": [
