@@ -16,12 +16,12 @@ git clone git@github.com:apache/incubator-dubbo-admin.git
 
 ## 打包运行
 
-```text
+```bash
 # 打包
 mvn clean package
 
 # 运行
-mvn --projects dubbo-admin-backend spring-boot:run
+mvn --projects dubbo-admin-server spring-boot:run
 ```
 
 ## 浏览

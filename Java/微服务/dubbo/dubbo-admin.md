@@ -30,7 +30,7 @@ mvn clean package
 ### 运行
 
 ```BASH
-mvn --projects dubbo-admin-backend spring-boot:run
+mvn --projects dubbo-admin-server spring-boot:run
 ```
 
 ### 浏览
