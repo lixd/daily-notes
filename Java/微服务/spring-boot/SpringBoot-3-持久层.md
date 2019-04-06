@@ -92,12 +92,13 @@ pom.xml如下：
 ## 2. 创建数据库
 
 ```sql
-CREATE DATABASE dao;
-USE dao;
+CREATE DATABASE hello;
+USE hello;
 CREATE TABLE users(
-uid INT(5) PRIMARY KEY AUTO_INCREMENT,
+uid INT(5)  AUTO_INCREMENT,
 uname VARCHAR(20),
-uage INT(3)
+uage INT(3),
+PRIMARY KEY(uid)
 );
 INSERT INTO users VALUES(NULL,'zhangsan',11),(NULL,'lisi',22),(NULL,'wangwu',33);
 #简单创建一张表
@@ -321,14 +322,14 @@ public class UserController {
 
 application.properties
 
-```
+```properties
 spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
 spring.datasource.username=root
 spring.datasource.password=root
 spring.datasource.url=jdbc:mysql://localhost:3306/dao?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC
 #?useUnicode=true&characterEncoding=UTF-8&serverTimezone=UTC 设置编码和时区 不让会报异常java.sql.SQLException
 spring.datasource.type=com.alibaba.druid.pool.DruidDataSource
-mybatis.type-aliases-package=com.illusory.demodao.pojo
+    mybatis.type-aliases-package=com.illusory.demodao.pojo
 mybatis.mapper-locations=classpath:mapper/*.xml
 ```
 
@@ -372,17 +373,20 @@ mapper.xml头文件
 </mapper>
 ```
 
-        <resources>
-            <resource>
-                <directory>src/main/java</directory>
-                <excludes>
-                    <exclude>**/*.java</exclude>
-                </excludes>
-            </resource>
-            <resource>
-                <directory>src/main/resources</directory>
-                <includes>
-                    <include>**/*.*</include>
-                </includes>
-            </resource>
-        </resources>
+```xml
+    <resources>
+        <resource>
+            <directory>src/main/java</directory>
+            <excludes>
+                <exclude>**/*.java</exclude>
+            </excludes>
+        </resource>
+        <resource>
+            <directory>src/main/resources</directory>
+            <includes>
+                <include>**/*.*</include>
+            </includes>
+        </resource>
+    </resources>
+```
+

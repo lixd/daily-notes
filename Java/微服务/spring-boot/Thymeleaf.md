@@ -72,7 +72,7 @@ spring:
 ### 获取变量值
 
 ```html
-<p th:text="'Hello！, ' + ${name} + '!'" >name</p>
+<p th:text="'Hello！ ' + ${name} + '!'" >name</p>
 ```
 
 可以看出获取变量值用 `$` 符号,对于javaBean的话使用 `变量名.属性名` 方式获取,这点和 `EL` 表达式一样.

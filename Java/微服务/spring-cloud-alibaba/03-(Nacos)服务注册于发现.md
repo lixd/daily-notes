@@ -1,15 +1,3 @@
-## 启动服务
-
-```bash
-cd distribution/target/nacos-server-0.7.0/nacos/bin
-
-# Linux
-./startup.sh -m standalone
-
-# Windows
-startup.cmd
-```
-
 # 服务注册与发现
 
 ## 概述
