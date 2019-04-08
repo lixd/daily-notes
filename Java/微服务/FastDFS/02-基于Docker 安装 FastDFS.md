@@ -2,24 +2,19 @@
 
 ## 环境准备
 
-### 使用的系统软件
+- libfastcommon.tar.gz
+- fastdfs-5.11.tar.gz
+- nginx-1.13.6.tar.gz
+- fastdfs-nginx-module_v1.16.tar.gz、
 
-| 名称                 | 说明                          |
-| -------------------- | ----------------------------- |
-| centos               | 7.x                           |
-| libfatscommon        | FastDFS分离出的一些公用函数包 |
-| FastDFS              | FastDFS本体                   |
-| fastdfs-nginx-module | FastDFS和nginx的关联模块      |
-| nginx                | nginx1.15.4                   |
+## 创建工作目录
 
-### 创建工作目录
-
-在 Linux 服务器上创建 `/usr/local/docker/fastdfs/environment` 目录
+在 Linux 服务器上创建 `/usr/local/docker/fastdfs/environmen` 目录
 
 说明：
 
 - `/usr/local/docker/fastdfs`：用于存放 `docker-compose.yml` 配置文件及 FastDFS 的数据卷
-- `/usr/local/docker/fastdfs/environmen`：用于存放 `Dockerfile` 镜像配置文件及 FastDFS 所需环境
+- `/usr/local/docker/fastdfs/environment`：用于存放 `Dockerfile` 镜像配置文件及 FastDFS 所需环境
 
 ## docker-compose.yml
 
@@ -43,15 +38,20 @@ MAINTAINER topsale@vip.qq.com
 
 # 更新数据源
 WORKDIR /etc/yum
-RUN echo 'deb http://mirrors.aliyun.com/ubuntu/ xenial main restricted universe multiverse' > sources.list
-RUN echo 'deb http://mirrors.aliyun.com/ubuntu/ xenial-security main restricted universe multiverse' >> sources.list
-RUN echo 'deb http://mirrors.aliyun.com/ubuntu/ xenial-updates main restricted universe multiverse' >> sources.list
-RUN echo 'deb http://mirrors.aliyun.com/ubuntu/ xenial-backports main restricted universe multiverse' >> sources.list
-RUN yum update
+RUN yum update -y
 
 # 安装依赖
-RUN yum install make gcc libpcre3-dev zlib1g-dev --assume-yes
+#RUN yum install make gcc libpcre3-dev zlib1g-dev -y
+RUN yum install git gcc gcc-c++ make automake autoconf libtool pcre pcre-devel zlib zlib-devel openssl-devel wget vim -y
+FROM centos
+MAINTAINER illusory
 
+# 更新数据源
+WORKDIR /etc/yum
+RUN yum update -y
+
+# 安装依赖
+RUN yum install git gcc gcc-c++ make automake autoconf libtool pcre pcre-devel zlib zlib-devel openssl-devel wget vim -y
 # 复制工具包
 ADD fastdfs-5.11.tar.gz /usr/local/src
 ADD fastdfs-nginx-module_v1.16.tar.gz /usr/local/src
@@ -98,6 +98,7 @@ ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 WORKDIR /
 EXPOSE 8888
 CMD ["/bin/bash"]
+
 ```
 
 ## entrypoint.sh
@@ -106,10 +107,10 @@ CMD ["/bin/bash"]
 #!/bin/sh
 /etc/init.d/fdfs_trackerd start
 /etc/init.d/fdfs_storaged start
-/usr/local/nginx/sbin/nginx -g 'daemon off;'=
+/usr/local/nginx/sbin/nginx -g 'daemon off;'
 ```
 
-注：Shell 创建后是无法直接使用的，需要赋予执行的权限，使用 `chmod +x entrypoint.sh` 命令
+**注**：Shell 创建后是无法直接使用的，需要赋予执行的权限，使用 `chmod +x entrypoint.sh` 命令
 
 ## 各种配置文件说明
 
@@ -117,7 +118,7 @@ CMD ["/bin/bash"]
 
 FastDFS 跟踪器配置，容器中路径为：/etc/fdfs，修改为：
 
-```shell
+```bash
 base_path=/fastdfs/tracker
 ```
 
@@ -125,7 +126,7 @@ base_path=/fastdfs/tracker
 
 FastDFS 存储配置，容器中路径为：/etc/fdfs，修改为：
 
-```shell
+```bash
 base_path=/fastdfs/storage
 store_path0=/fastdfs/storage
 tracker_server=192.168.5.155:22122
@@ -136,7 +137,7 @@ http.server_port=8888
 
 FastDFS 客户端配置，容器中路径为：/etc/fdfs，修改为：
 
-```shell
+```bash
 base_path=/fastdfs/tracker
 tracker_server=192.168.5.155:22122
 ```
@@ -145,7 +146,7 @@ tracker_server=192.168.5.155:22122
 
 fastdfs-nginx-module 配置文件，容器中路径为：/usr/local/src/fastdfs-nginx-module/src，修改为：
 
-```shell
+```bash
 # 修改前
 CORE_INCS="$CORE_INCS /usr/local/include/fastdfs /usr/local/include/fastcommon/"
 CORE_LIBS="$CORE_LIBS -L/usr/local/lib -lfastcommon -lfdfsclient"
@@ -159,7 +160,7 @@ CORE_LIBS="$CORE_LIBS -L/usr/lib -lfastcommon -lfdfsclient"
 
 fastdfs-nginx-module 配置文件，容器中路径为：/usr/local/src/fastdfs-nginx-module/src，修改为：
 
-```shell
+```bash
 connect_timeout=10
 tracker_server=192.168.5.155:22122
 url_have_group_name = true
@@ -170,7 +171,7 @@ store_path0=/fastdfs/storage
 
 Nginx 配置文件，容器中路径为：/usr/local/src/nginx-1.13.6/conf，修改为：
 
-```shell
+```bash
 user  root;
 worker_processes  1;
 
@@ -205,5 +206,37 @@ http {
 ## 启动容器
 
 ```bash
-docker-compose up -d
+docker-compose up 
 ```
+
+## 测试上传
+
+### 交互式进入容器
+
+```bash
+docker exec -it fastdfs /bin/bash
+```
+
+### 测试文件上传
+
+```bash
+# /usr/bin/fdfs_upload_file 上传文件脚本
+# /etc/fdfs/client.conf 配置文件
+# /usr/local/src/fastdfs-5.11/INSTALL 这个是用来测试上传的文件 随便选的一个 不重要
+/usr/bin/fdfs_upload_file /etc/fdfs/client.conf /usr/local/src/fastdfs-5.11/INSTALL
+# 上传后服务器会返回一个文件地址 如下
+group1/M00/00/00/wKgFm1yqrzGARGUCAAAeSwu9TgM6327661
+```
+
+### 服务器反馈上传地址
+
+```bash
+group1/M00/00/00/wKgFm1yqrzGARGUCAAAeSwu9TgM6327661
+```
+
+## 测试 Nginx 访问
+
+```text
+http://192.168.5.155:8888/group1/M00/00/00/wKgFm1yqrzGARGUCAAAeSwu9TgM6327661
+```
+
