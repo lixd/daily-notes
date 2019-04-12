@@ -84,3 +84,4 @@ protected Object getSingleton(String beanName, boolean allowEarlyReference) {
 简单来说就是对象通过构造函数初始化之后就暴露到容器中，这样就不会存在循环初始化对象的情况了。
 
 知道了这个原理时候，肯定就知道为啥**Spring不能解决“A的构造方法中依赖了B的实例对象，同时B的构造方法中依赖了A的实例对象**”这类问题了！因为加入singletonFactories三级缓存的前提是执行了构造器，所以构造器的循环依赖没法解决。
+
