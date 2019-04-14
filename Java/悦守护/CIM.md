@@ -147,6 +147,7 @@ msg_content varchar(1024),
 6个报文
 **切记,一条消息的发送,包含上半场msg:R/A/N与下半场ack:R/A/N的6个报文**。
 其中R-->Request  A-->ACK  N-->Notify
+
 ```java
 1.msg:R-->ClientA 发送消息给IM-Server  
 2.msg:A-->IM-Server收到消息给ClientA一个提醒。
