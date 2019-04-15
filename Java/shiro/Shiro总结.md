@@ -109,7 +109,7 @@ Princirpals/Credentials的常见组合：账号+密码。在shiro中使用Userna
 * 1.把用户输入的账号密码封装成Token给Subject
 * 2.Subject把Token给SecurityManager
 * 3.SecurityManager调用Authenticator认证器
-* 4.Authenticator根据配置的AuthenticationStrategy策略去调用Realms获取相对应的数据
+* 4.Authenticator根据配置的w策略去调用Realms获取相对应的数据
 * 5.最后返回认证结果
 
 代码如下：
@@ -596,8 +596,6 @@ Shiro中权限检测方式有三种：
         return simpleAuthorizationInfo;
     }
 ```
-
-
 
 ## 8.凭证匹配器
 
