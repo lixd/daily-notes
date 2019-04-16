@@ -1,21 +1,25 @@
-# Mybatis总结
+# Mybatis SQL 执行流程分析
 
-## 1. 工作流程
+## 1. Mybatis工作流程
 
-1.读取mybatis全局配置文件-->将定义好的mybatis全局配置文件进行读取，并包装成为一个InputStream对象
-2.解析配置文件--->由SqlSessionFactoryBuilder类的bulid方法驱动，对包装好的XML文件进行解析。很容易看到，其具体的解析任务是交给XMLConfigBuilder对象完成.
-3.创建SqlSessionFactory对象
-4.创建SqlSession的对象 
-5.SqlSession执行CRUD操作
+### 1.1 概述
+
+> 1.读取mybatis全局配置文件：将定义好的mybatis全局配置文件进行读取，并包装成为一个InputStream对象
+> 2.解析配置文件：由SqlSessionFactoryBuilder类的bulid方法驱动，对包装好的XML文件进行解析。很容易看到，其具体的解析任务是交给XMLConfigBuilder对象完成.
+> 3.创建SqlSessionFactory对象
+> 4.创建SqlSession的对象 
+> 5.执行SQL操作
 
 Mybatis底层自定义了Executor执行器接口操作数据库，Executor接口有两个实现，一个是基本执行器`BaseExecutor`、一个是缓存执行器`CachingExecutor`。
-Mybatis底层封装了 Mapped Statement对象，它包装了mybatis配置信息及sql映射信息等。mapper.xml文件中一个sql对应一个Mapped Statement对象，
-sql的id即是Mapped statement的id。
+Mybatis底层封装了 Mapped Statement对象，它包装了mybatis配置信息及sql映射信息等。mapper.xml文件中一个sql对应一个Mapped Statement对象，sql的id即是Mapped statement的id。
+
 Mapped Statement对sql执行输入参数进行定义，包括HashMap、基本类型、pojo，Executor通过 Mapped Statement在执行sql前将输入的java对象映射至sql中，
 输入参数映射就是jdbc编程中对preparedStatement设置参数。
 Mapped Statement对sql执行输出结果进行定义，包括HashMap、基本类型、pojo，Executor通过 Mapped Statement在执行sql后将输出结果映射至java对象中，
 输出结果映射过程相当于jdbc编程中对结果的解析处理过程。
-具体代码如下:
+
+### 1.2 实例代码
+
 ```java
     @Test
     public void testMybaits() throws IOException {
@@ -26,7 +30,7 @@ Mapped Statement对sql执行输出结果进行定义，包括HashMap、基本类
         SqlSessionFactory sqlSessionFactory = new SqlSessionFactoryBuilder().build(resourceAsStream);
         // 3. 用SqlSessionFactory创建SqlSession
         SqlSession sqlSession = sqlSessionFactory.openSession();
-         // 直接操作
+         // 直接执行SQL操作或者获取mapper对象都在操作
          User user = sqlSession.selectOne("com.illusory.i.shiro.mapper.UserMapper.findUserByName", "张三");
          System.out.println(user);
         // 4. SqlSession获取mapper
@@ -36,19 +40,23 @@ Mapped Statement对sql执行输出结果进行定义，包括HashMap、基本类
     }
 ```
 ## 2.原理分析
-Mybatis的原理及其工作流程
-### 1. 读取mybatis全局配置文件
-       
-       将定义好的mybatis全局配置文件进行读取，并包装称为一个InputStream对象。
+
+### 2.1 读取mybatis全局配置文件
+
+> 将定义好的mybatis全局配置文件进行读取，并包装称为一个InputStream对象。
+
 ```java
         // 1. mybatis核心配置文件 以流的形式加载进来
         String resources = "mybatis-config.xml";
         InputStream resourceAsStream = Resources.getResourceAsStream(resources);
 ```
-Resources.class是Mybatis提供的一个加载资源文件的工具类。
-Resources.getResourceAsStream(String resource)如下：
+`Resources.class`是 Mybatis 提供的一个加载资源文件的工具类。
+
+* getResourceAsStream(String resource)
+
 ```java
-  /*
+//Resources类
+/*
    * Returns a resource on the classpath as a Stream object
    *
    * @param resource The resource to find
@@ -59,7 +67,8 @@ Resources.getResourceAsStream(String resource)如下：
     return getResourceAsStream(null, resource);
   }
 ```
-getResourceAsStream();
+* getResourceAsStream()
+
 ```java
   /*
    * Returns a resource on the classpath as a Stream object
@@ -77,10 +86,13 @@ getResourceAsStream();
     return in;
   }
 ```
-获取到自身的ClassLoader对象，然后交给ClassLoader(lang包下的)来加载:
-ClassLoaderWrapper.getResourceAsStream()
+>  获取到自身的 ClassLoader 对象，然后交给 ClassLoade r(lang包下的)来加载:
+
+* getResourceAsStream()
+
 ```java
-  /*
+//ClassLoaderWrapper 
+/*
    * Get a resource from the classpath, starting with a specific class loader
    *
    * @param resource    - the resource to find
@@ -118,18 +130,21 @@ ClassLoaderWrapper.getResourceAsStream()
       return null;
     }
 ```
-值的注意的是，它返回了一个InputStream对象。
+> 值的注意的是，它返回了一个InputStream对象。
 
 
 ### 2. 解析配置文件
-由SqlSessionFactoryBuilder类的bulid方法驱动，对包装好的XML文件进行解析。很容易看到，其具体的解析任务是交给XMLConfigBuilder对象完成.
-SqlSessionFactoryBuilder.build()方法如下：
+> 由SqlSessionFactoryBuilder类的bulid方法驱动，对包装好的XML文件进行解析。很容易看到，其具体的解析任务是交给XMLConfigBuilder对象完成.
+
+* SqlSessionFactory.build()
+
 ```java
   public SqlSessionFactory build(InputStream inputStream) {
     return build(inputStream, null, null);
   }
 ```
-SqlSessionFactoryBuilder.build()方法如下：
+* SqlSessionFactoryBuilder.build()
+
 ```java
   public SqlSessionFactory build(InputStream inputStream, String environment, Properties properties) {
     try {
@@ -147,10 +162,12 @@ SqlSessionFactoryBuilder.build()方法如下：
     }
   }
 ```
-首先通过Document对象来解析，然后返回InputStream对象，然后交给XMLConfigBuilder构造成org.apache.ibatis.session.Configuration对象，
+首先通过 Document 对象来解析，然后返回 InputStream 对象，然后交给 XMLConfigBuilder 构造成org.apache.ibatis.session.Configuration 对象，
 ### 3. 创建方法构造成SqlSessionFactory对象
 将前面解析配置文件构造出来的Configuration对象交给SqlSessionFactoryBuilder.build()方法构造成SqlSessionFactory。
-build方法如下：
+
+* build方法如下：
+
 ```java
   public SqlSessionFactory build(Configuration config) {
     return new DefaultSqlSessionFactory(config);
@@ -164,7 +181,8 @@ SqlSession 完全包含了面向数据库执行 SQL 命令所需的所有方法�
         // 3. 用SqlSessionFactory创建SqlSession
         SqlSession sqlSession = sqlSessionFactory.openSession();
 ```
-DefaultSqlSessionFactory.openSession()方法如下:
+* DefaultSqlSessionFactory.openSession()
+
 ```java
   @Override
   public SqlSession openSession() {
@@ -195,21 +213,24 @@ DefaultSqlSessionFactory.openSession()方法如下:
 ```
 构建步骤：
 
-Environment-->TransactionFactory+autoCommit+tx-level-->Transaction+ExecType-->Executor+Configuration+autoCommit-->SqlSession
+>  Environment-->TransactionFactory+autoCommit+tx-level-->Transaction+ExecType-->Executor+Configuration+autoCommit-->SqlSession
 
 其中，Environment是Configuration中的属性。
 
-### 执行CRUD操作
+### 5. 执行SQL操作
 
 SQL语句的执行才是MyBatis的重要职责，该过程就是通过封装JDBC进行操作，然后使用Java反射技术完成JavaBean对象到数据库参数之间的相互转换，
 这种映射关系就是有TypeHandler对象来完成的，在获取数据表对应的元数据时，会保存该表所有列的数据库类型，大致逻辑如下所示：
+
 ```java
   User user = sqlSession.selectOne("com.illusory.i.shiro.mapper.UserMapper.findUserByName", "张三");
         System.out.println(user);
 ```
 调用selectOne方法进行SQL查询，selectOne方法最后调用的是selectList，在selectList中，会查询
 configuration中存储的MappedStatement对象，mapper文件中一个sql语句的配置对应一个MappedStatement对象，然后调用执行器进行查询操作。
-DefaultSqlSession.selectOne();
+
+* DefaultSqlSession.selectOne();
+
 ```java
   @Override
   public <T> T selectOne(String statement, Object parameter) {
@@ -224,7 +245,8 @@ DefaultSqlSession.selectOne();
     }
   }
 ```
-DefaultSqlSession.selectList();
+* DefaultSqlSession.selectList();
+
 ```java
   @Override
   public <E> List<E> selectList(String statement, Object parameter) {
@@ -244,7 +266,9 @@ DefaultSqlSession.selectList();
   }
 ```
 执行器在query操作中，优先会查询缓存是否命中，命中则直接返回，否则从数据库中查询。
-CachingExecutor.query()方法如下：
+
+* CachingExecutor.query()
+
 ```java
   @Override
   public <E> List<E> query(MappedStatement ms, Object parameterObject, RowBounds rowBounds, ResultHandler resultHandler) throws SQLException {
@@ -274,7 +298,8 @@ CachingExecutor.query()方法如下：
      return delegate.<E> query(ms, parameterObject, rowBounds, resultHandler, key, boundSql);
    }
 ```
-最后BaseExecutor.query()方法如下：
+* BaseExecutor.query()
+
 ```java
  @SuppressWarnings("unchecked")
   @Override
@@ -312,7 +337,8 @@ CachingExecutor.query()方法如下：
     return list;
   }
 ```
-BaseExecutor.queryFromDatabase()
+* BaseExecutor.queryFromDatabase()
+
 ```java
   private <E> List<E> queryFromDatabase(MappedStatement ms, Object parameter, RowBounds rowBounds, ResultHandler resultHandler, CacheKey key, BoundSql boundSql) throws SQLException {
     List<E> list;
@@ -343,7 +369,9 @@ BaseExecutor.queryFromDatabase()
   }
 ```
 最后的doQuery由SimpleExecutor代理来完成，该方法中有2个子流程，一个是SQL参数的设置，另一个是SQL查询操作和结果集的封装。
-SimpleExecutor.doQuery()方法如下:
+
+* SimpleExecutor.doQuery()方法如下:
+
 ```java
   @Override
   public <E> List<E> doQuery(MappedStatement ms, Object parameter, RowBounds rowBounds, ResultHandler resultHandler, BoundSql boundSql) throws SQLException {
@@ -361,7 +389,7 @@ SimpleExecutor.doQuery()方法如下:
   }
 ```
 
-子流程1 SQL查询参数的设置：
+#### 子流程1 SQL查询参数的设置
 
 首先获取数据库connection连接，然后准备statement，然后就设置SQL查询中的参数值。打开一个connection连接，在使用完后不会close，
 而是存储下来，当下次需要打开连接时就直接返回。
@@ -382,7 +410,7 @@ private Statement prepareStatement(StatementHandler handler, Log statementLog) t
 }
 ```
 
-子流程2 SQL查询结果集的封装：
+#### 子流程2 SQL查询结果集的封装
 
 ```java
 // SimpleExecutor类
@@ -437,8 +465,8 @@ public List<Object> handleResultSets(Statement stmt) throws SQLException {
   }
 ```
 
-ResultSetWrapper是ResultSet的包装类，调用getFirstResultSet方法获取第一个ResultSet，同时获取数据库的MetaData数据，
-包括数据表列名、列的类型、类序号等，这些信息都存储在ResultSetWrapper类中了。然后调用handleResultSet方法来来进行结果集的封装。
+ResultSetWrapper 是 ResultSet 的包装类，调用 getFirstResultSet 方法获取第一个 ResultSet，同时获取数据库的 MetaData 数据，
+包括数据表列名、列的类型、类序号等，这些信息都存储在 ResultSetWrapper 类中了。然后调用handleResultSet 方法来来进行结果集的封装。
 
 ```java
 // DefaultResultSetHandler类
@@ -553,24 +581,31 @@ public void setValue(String name, Object value) {
 metaValue.setValue方法最后会调用到Java类中对应数据域的set方法，这样也就完成了SQL查询结果集的Java类封装过程
 
 ## 3. MyBatis缓存
-   
+
    MyBatis提供查询缓存，用于减轻数据库压力，提高性能。MyBatis提供了一级缓存和二级缓存。
-   ### 一级缓存
-   一级缓存是SqlSession级别的缓存，每个SqlSession对象都有一个哈希表用于缓存数据，不同SqlSession对象之间缓存不共享。
-   同一个SqlSession对象对象执行2遍相同的SQL查询，在第一次查询执行完毕后将结果缓存起来，这样第二遍查询就不用向数据库查询了，
-   直接返回缓存结果即可。MyBatis默认是开启一级缓存的。
+### 3.1 一级缓存
+
+   一级缓存是 `SqlSession` 级别的缓存，每个 SqlSession 对象都有一个哈希表用于缓存数据，不同 SqlSession 对象之间缓存不共享。
+   同一个 SqlSession 对象对象执行2遍相同的 SQL 查询，在第一次查询执行完毕后将结果缓存起来，这样第二遍查询就不用向数据库查询了，
+   直接返回缓存结果即可。MyBatis` 默认`是`开启`一级缓存的。
    简单说就是SQL语句作为key，查询结果作为value，根据key去查找value，如果查询语句相同就能直接返回value。
-   ### 二级缓存
-   二级缓存是mapper级别的缓存，二级缓存是跨SqlSession的，多个SqlSession对象可以共享同一个二级缓存。不同的SqlSession对象执行两次相同的SQL语句，
-   第一次会将查询结果进行缓存，第二次查询直接返回二级缓存中的结果即可。MyBatis默认是不开启二级缓存的，可以在配置文件中使用如下配置来开启二级缓存：
+
+### 3.2 二级缓存
+
+   二级缓存是` mapper` 级别的缓存，二级缓存是跨 SqlSession 的，多个 SqlSession 对象可以`共享`同一个二级缓存。不同的 SqlSession 对象执行两次相同的 SQL 语句，
+   第一次会将查询结果进行缓存，第二次查询直接返回二级缓存中的结果即可。MyBatis `默认`是`不开启`二级缓存的，可以在配置文件中使用如下配置来开启二级缓存：
+
    ```xml
    <settings>
        <setting name="cacheEnabled" value="true"/>
    </settings>
-```
-   当SQL语句进行更新操作(删除/添加/更新)时，会清空对应的缓存，保证缓存中存储的都是最新的数据。MyBatis的二级缓存对细粒度的数据级别的缓存实现不友好，
-   比如如下需求：对商品信息进行缓存，由于商品信息查询访问量大，但是要求用户每次都能查询最新的商品信息，此时如果使用mybatis的二级缓存就无法实现当一个
-   商品变化时只刷新该商品的缓存信息而不刷新其它商品的信息，因为mybaits的二级缓存区域以mapper为单位划分，当一个商品信息变化会将所有商品信息的缓存数据
-   全部清空。解决此类问题需要在业务层根据需求对数据有针对性缓存，具体业务具体实现。
-   
+   ```
+​    当SQL语句进行`更新操作(删除/添加/更新)`时，会清空对应的缓存，保证缓存中存储的都是最新的数据。
+
+## 4. 参考
+
+`https://www.cnblogs.com/dongying/p/4142476.html`
+
+`http://www.mybatis.org/mybatis-3/zh/getting-started.html`  
+
    
