@@ -43,13 +43,13 @@ DispatcherServlet继承了HttpServlet
 
 11、 DispatcherServlet响应用户。
 
-### 具体分析： 
+### 具体分析：
 
 **1.建立Map<urls,controller>的关系**
 
 在容器初始化时会建立`所有url和controller的对应关系`,保存到`Map<url,controller>`中.
 
-`DispatcherServlet-->initApplicationContext`初始化容器 建立Map<url,controller>关系的部分 
+`DispatcherServlet-->initApplicationContext`初始化容器 建立`Map<url,controller>`关系的部分 
 
 tomcat启动时会通知spring初始化容器(加载bean的定义信息和初始化所有单例bean),然后springmvc会遍历容器中的bean,获取每一个controller中的所有方法访问的url,然后将url和controller保存到一个Map中;
 
@@ -57,7 +57,7 @@ tomcat启动时会通知spring初始化容器(加载bean的定义信息和初始
 
 `DispatcherServlet-->doDispatch()`
 
-　　这样就可以根据request快速定位到controller,因为最终处理request的是controller中的方法,Map中只保留了url和controller中的对应关系,所以要根据request的url进一步确认controller中的method,这一步工作的原理就是拼接controller的url(controller上@RequestMapping的值)和方法的url(method上@RequestMapping的值),与request的url进行匹配,找到匹配的那个方法;　　
+有了前面的 Map 就可以根据 Request快速定位到controller,因为最终处理request的是controller中的方法,Map中只保留了url和controller中的对应关系,所以要根据request的url进一步确认controller中的method,这一步工作的原理就是拼接controller的url(controller上@RequestMapping的值)和方法的url(method上@RequestMapping的值),与request的url进行匹配,找到匹配的那个方法;　　
 
 **3.反射调用处理请求的方法,返回结果视图**
 
