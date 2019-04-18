@@ -259,6 +259,7 @@ public class Book {
 }
 ```
 其中`@Component(value = "book")`相当于`<bean id="book" class="spring.Book">`
+**Bean实例的名称默认是Bean类的首字母小写，其他部分不变**
 属性注入
 普通类型注入:  @Value(value = "illusory")
 引用类型注入:  @Autowired/@Resources(name="") 区别在后面有写
@@ -408,6 +409,160 @@ init-method destroy-method属性对应的注解
         System.out.println("destory");
     }
 ```
+
+## BeanFactory与ApplicationConText区别
+BeanFactroy采用的是延迟加载形式来注入Bean的，即只有在使用到某个Bean时(调用getBean())，才对该Bean进行加载实例化，这样，我们就不能发现一些存在的Spring的配置问题。
+而ApplicationContext则相反，它是在容器启动时，一次性创建了所有的Bean。这样，在容器启动时，我们就可以发现Spring中存在的配置错误。 
+
+BeanFactory和ApplicationContext都支持BeanPostProcessor、BeanFactoryPostProcessor的使用，
+但两者之间的区别是：BeanFactory需要手动注册，而ApplicationContext则是自动注册
+
+BeanFacotry是spring中比较原始的Factory。如XMLBeanFactory就是一种典型的BeanFactory。原始的BeanFactory无法支持spring的许多插件，如AOP功能、Web应用等。 
+  ApplicationContext接口,它由BeanFactory接口派生而来，因而提供BeanFactory所有的功能。ApplicationContext以一种更向面向框架的方式工作以及对上下文进行分层和实现继承，ApplicationContext包还提供了以下的功能： 
+  • MessageSource, 提供国际化的消息访问  
+  • 资源访问，如URL和文件  
+  • 事件传播  
+  • 载入多个（有继承关系）上下文 ，使得每一个上下文都专注于一个特定的层次，比如应用的web层  
+1.利用MessageSource进行国际化  
+  BeanFactory是不支持国际化功能的，因为BeanFactory没有扩展Spring中MessageResource接口。相反，由于ApplicationContext扩展了MessageResource接口，因而具有消息处理的能力(i18N)，具体spring如何使用国际化，以后章节会详细描述。 
+
+2.强大的事件机制(Event)  
+  基本上牵涉到事件(Event)方面的设计，就离不开观察者模式。不明白观察者模式的朋友，最好上网了解下。因为，这种模式在java开发中是比较常用的，又是比较重要的。 
+ApplicationContext的事件机制主要通过ApplicationEvent和ApplicationListener这两个接口来提供的，和java swing中的事件机制一样。即当ApplicationContext中发布一个事件的时，所有扩展了ApplicationListener的Bean都将会接受到这个事件，并进行相应的处理。 
+
+Spring提供了部分内置事件，主要有以下几种：  
+ContextRefreshedEvent ：ApplicationContext发送该事件时，表示该容器中所有的Bean都已经被装载完成，此ApplicationContext已就绪可用 
+ContextStartedEvent：生命周期 beans的启动信号  
+ContextStoppedEvent: 生命周期 beans的停止信号  
+ContextClosedEvent：ApplicationContext关闭事件，则context不能刷新和重启，从而所有的singleton bean全部销毁(因为singleton bean是存在容器缓存中的) 
+
+  虽然，spring提供了许多内置事件，但用户也可根据自己需要来扩展spriong中的事物。注意，要扩展的事件都要实现ApplicationEvent接口。  
+
+3.底层资源的访问  
+  ApplicationContext扩展了ResourceLoader(资源加载器)接口，从而可以用来加载多个Resource，而BeanFactory是没有扩展ResourceLoader 
+
+4.对Web应用的支持  
+  与BeanFactory通常以编程的方式被创建不同的是，ApplicationContext能以声明的方式创建，如使用ContextLoader。当然你也可以使用ApplicationContext的实现之一来以编程的方式创建ApplicationContext实例 。 
+ 
+ContextLoader有两个实现：ContextLoaderListener和ContextLoaderServlet。它们两个有着同样的功能，除了listener不能在Servlet 2.2兼容的容器中使用。自从Servelt 2.4规范，listener被要求在web应用启动后初始化。很多2.3兼容的容器已经实现了这个特性。使用哪一个取决于你自己，但是如果所有的条件都一样，你大概会更喜欢ContextLoaderListener；关于兼容方面的更多信息可以参照ContextLoaderServlet的JavaDoc。
+
+这个listener需要检查contextConfigLocation参数。如果不存在的话，它将默认使用/WEB-INF/applicationContext.xml。如果它存在，它就会用预先定义的分隔符（逗号，分号和空格）分开分割字符串，并将这些值作为应用上下文将要搜索的位置。ContextLoaderServlet可以用来替换ContextLoaderListener。这个servlet像listener那样使用contextConfigLocation参数。
+
+## @Component和@Configuration作为配置类的差别
+### 概述
+@Component和@Configuration都可以作为配置类,但还是有一定差别的。
+```java
+@Target({ElementType.TYPE})
+@Retention(RetentionPolicy.RUNTIME)
+@Documented
+@Component  //看这里！！！
+public @interface Configuration {
+    String value() default "";
+```
+
+```java
+Spring 中新的 Java 配置支持的核心就是@Configuration 注解的类。这些类主要包括 @Bean 注解的方法来为 Spring 的 IoC 容器管理的对象定义实例，配置和初始化逻辑。
+
+使用@Configuration 来注解类表示类可以被 Spring 的 IoC 容器所使用，作为 bean 定义的资源。
+
+@Configuration
+public class AppConfig {
+    @Bean
+    public MyService myService() {
+        return new MyServiceImpl();
+    }
+}
+```
+这和 Spring 的 XML 文件中的非常类似
+```xml
+<beans>
+    <bean id="myService" class="com.acme.services.MyServiceImpl"/>
+</beans>
+```
+### 举例说明@Component 和 @Configuration
+
+```java
+@Configuration
+public static class Config {
+
+    @Bean
+    public SimpleBean simpleBean() {
+        return new SimpleBean();
+    }
+
+    @Bean
+    public SimpleBeanConsumer simpleBeanConsumer() {
+        return new SimpleBeanConsumer(simpleBean());
+    }
+}
+
+@Component
+public static class Config {
+
+    @Bean
+    public SimpleBean simpleBean() {
+        return new SimpleBean();
+    }
+
+    @Bean
+    public SimpleBeanConsumer simpleBeanConsumer() {
+        return new SimpleBeanConsumer(simpleBean());
+    }
+}
+```
+第一个代码正常工作，正如预期的那样，SimpleBeanConsumer将会得到一个单例SimpleBean的链接。
+第二个配置是完全错误的，因为Spring会创建一个SimpleBean的单例bean，但是SimpleBeanConsumer将获得另一个SimpleBean实例（也就是相当于直接调用new SimpleBean() ，
+这个bean是不归Spring管理的），既new SimpleBean() 实例是Spring上下文控件之外的。
+### 原因总结
+使用@ configuration，所有标记为@ bean的方法将被包装成一个CGLIB包装器，它的工作方式就好像是这个方法的第一个调用，那么原始方法的主体将被执行，
+最终的对象将在spring上下文中注册。所有进一步的调用只返回从上下文检索的bean。
+## Spring AOP动态代理支持的核心
+jdk动态代理：`java.lang.reflect.InvocationHandler`
+对应的方法拦截器：
+```java
+public Object invoke(Object proxy, Method method, Object[] args)
+        throws Throwable;
+```
+调用时使用method.invoke(Object, args)
+
+该动态代理是基于接口的动态代理，所以并没有一个原始方法的调用过程，整个方法都是被拦截的。
+
+通过cglib动态创建类进行动态代理。org.springframework.cglib.proxy包下的原生接口，同net.sf.cglib.proxy包下的接口，都是源自cglib库。Spring内部的cglib动态代理使用了这种方式。
+对应的方法拦截器:
+
+`org.springframework.cglib.proxy.Callback`、 `org.springframework.cglib.proxy.MethodInterceptor`
+
+```java
+public interface MethodInterceptor extends Callback {
+    Object intercept(Object obj, Method m, Object[] args, MethodProxy mp) throws Throwable
+}
+```
+调用时，使用mp.invoke(Object obj, Object[] args)调用其他同类对象的原方法或者mp.invokeSuper(Object obj, Object[] args)调用原始(父类)方法。
+
+org.aopalliance的拦截体系
+该包是AOP组织下的公用包，用于AOP中方法增强和调用。相当于一个jsr标准，只有接口和异常。在AspectJ、Spring等AOP框架中使用。
+
+对应的方法拦截器`org.aopalliance.intercept.MethodInterceptor`
+
+```java
+public interface MethodInterceptor extends Interceptor {
+    Object invoke(MethodInvocation inv) throws Throwable;
+}
+```
+调用时使用inv.proceed()调用原始方法。
+
+
+说起AOP就不得不说下OOP了，OOP中引入封装、继承和多态性等概念来建立一种对象层次结构，用以模拟公共行为的一个集合。但是，如果我们需要为部分对象引入公共部分
+的时候，OOP就会引入大量重复的代码。例如：日志功能。
+AOP技术利用一种称为“横切”的技术，解剖封装的对象内部，并将那些影响了多个类的公共行为封装到一个可重用模块，这样就能减少系统的重复代码，
+降低模块间的耦合度，并有利于未来的可操作性和可维护性。AOP把软件系统分为两个部分：核心关注点和横切关注点。业务处理的主要流程是核心关注点，
+与之关系不大的部分是横切关注点。横切关注点的一个特点是，他们经常发生在核心关注点的多处，而各处都基本相似。比如权限认证、日志、事务处理。
+
+AOP（Aspect Orient Programming），作为面向对象编程的一种补充，广泛应用于处理一些具有横切性质的系统级服务，如事务管理、安全检查、缓存、对象池管理等。
+AOP 实现的关键就在于 AOP 框架自动创建的 AOP 代理，AOP 代理则可分为静态代理和动态代理两大类，其中静态代理是指使用 AOP 框架提供的命令进行编译，
+从而在编译阶段就可生成 AOP 代理类，因此也称为编译时增强；而动态代理则在运行时借助于 JDK 动态代理、CGLIB 等在内存中“临时”生成 AOP 动态代理类，
+因此也被称为运行时增强
 ## 参考
 `阿飞云的技术乐园: https://blog.csdn.net/u010648555/article/details/76299467 `
 `https://www.cnblogs.com/_popc/p/3972212.html`
+`https://www.cnblogs.com/wnlja/p/3907836.html`
