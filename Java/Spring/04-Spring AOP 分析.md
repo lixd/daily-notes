@@ -53,9 +53,196 @@ introduction，introduction可以为原有的对象增加新的属性和方法�
 
 
 
+# PointCut
+
+AOP标准中的`Joinpoit`可以有很多类型：构造方法调用、字段的设置和获取、方法调用和执行等。而Spring AOP中只支持方法执行类型的`Joinpoint`，不过这已经够我们用了。
+
+Spring AOP中通过接口`org.springframework.aop.Pointcut`来表示所有连接点`Joinpoit`的抽象。`Pointcut`接口的代码定义如下：
+
+```
+public interface Pointcut {
+
+    ClassFilter getClassFilter();
+
+    MethodMatcher getMethodMatcher();
+
+    Pointcut TRUE = TruePointcut.INSTANCE;
+
+}
+```
+
+`ClassFilter`将用来匹配目标对象，`MethodMatcher`用来匹配将被执行织入操作的相应方法。`TruePointcut`表示匹配所有对象。
+
+```
+public interface ClassFilter {
+
+    /**
+     * 当织入的目标对象的Class类型和Pointcut所规定的类型相同时，
+     * 该方法返回true
+     */
+    boolean matches(Class<?> clazz);
+
+    /**
+     * 匹配所以类的ClassFilter实例.
+     */
+    ClassFilter TRUE = TrueClassFilter.INSTANCE;
+
+}
+```
+
+`MethodMatcher`接口的代码定义如下：
+
+```
+public interface MethodMatcher {
+
+    /**
+     * 判断方法是否匹配，静态的MethodMatcher调用
+     */
+    boolean matches(Method method, Class<?> targetClass);
+
+    /**
+     * 判断MethodMatcher是否是动态的，如果是动态的该方法返回TRUE，将会调用3个参数的matches方法。
+     * 如果是静态的，该方法返回FALSE，将会调用2个参数的matches方法。
+     */
+    boolean isRuntime();
+
+    /**
+     * 判断是否匹配方法，动态的MethodMatcher调用
+     * 
+     */
+    boolean matches(Method method, Class<?> targetClass, Object... args);
+
+
+    /**
+     * 匹配所有方法的MethodMatcher实例
+     */
+    MethodMatcher TRUE = TrueMethodMatcher.INSTANCE;
+
+}
+```
+
+根据是否需要捕捉目标方法执行时的参数，可以将`MethodMatcher`分为动态和静态两种。在`MethodMatcher`类型的基础上，`Pointcut`可以分为两类，即`StaticMethodMatcherPointcut`和`DynamicMethodMatcherPointcut`。因为`StaticMethodMatcherPointcut`具有明显的性能优势，所以，Spring为其提供了更多支持。
+
+# Advice(增强)
+
+Spring中的`Advice`实现全部基于AOP Alliance规定的接口。
+
+按照增强（advice）在目标对象方法连接点的位置，可以将增强分为以下五类：
+
+1. 前置增强：`org.springframework.aop.BeforeAdvice`，在目标方法执行前执行；
+2. 后置增强：`org.springframework.aop.AfterReturningAdvice`，在目标方法调用后执行；
+3. 环绕增强：`org.aopalliance.intercept.MethodInterceptor`，截取目标类方法的执行，并在前后添加横切逻辑；
+4. 抛出异常增强：`org.springframework.aop.ThrowsAdvice`，目标方法抛出异常后执行；
+5. Introduction增强：`org.springframework.aop.introductioninterceptor` 
+
+Spring AOP中的`AfterReturningAdvice`只有在方法正常返回时才会执行，且不能更改方法的返回值。所以要想实现类似资源清理的横切工作，无法使用`AfterReturningAdvice`，而Spring AOP并没有提供After Finally Advice。如果要想实现资源清理的工作我们可以借助Around Advice，它在Spring AOP的API编程实现中没有对应的实现类，不过可以借助`MethodInterceptor`来实现Around Advice。下面来看看如何定义一个`Around Advice`
+
+```
+/**
+ * 通过MethodInterceptor来实现Around Advice
+ */
+public class PerformanceMethodInterceptor implements MethodInterceptor{
+
+    private final Logger logger = LoggerFactory.getLogger(PerformanceMethodInterceptor.class);
+
+    @Override
+    public Object invoke(MethodInvocation invocation) throws Throwable {
+        StopWatch stopWatch = new StopWatch();
+        try {
+            stopWatch.start();
+            return invocation.proceed();
+        } catch (Exception e){
+            // do nothing
+        } finally {
+            stopWatch.stop();
+            if (logger.isInfoEnabled()){
+                logger.info(stopWatch.toString());
+            }
+        }
+        return null;
+    }
+}
+```
+
+异常抛出增强类的定义接口是`ThrowsAdvice`，它是一个标志接口，内部没有定义任何方法。不过我们在编写`ThrowsAdvice`的实现类时，必须要定义如下方法：
+
+```
+/**
+ * 1. 方法名必须是afterThrowing
+ * 2. 前三个参数(method,args,target)是可选的，不过必须是要么同时存在，要么同时不存在
+ * 3. 第四个参数必须存在，可以是Throwable或者其任何子类
+ * 4. 可以存在多个符合规则的afterThrowing，Spring会自动选择最匹配的
+ */
+public void afterThrowing(Method method,Object[] args,Object target,Throwable t)
+```
+
+`ThrowsAdvice`的实现如下：
+
+```
+public class MyThrowsAdvice implements ThrowsAdvice {
+
+    private Logger logger = LoggerFactory.getLogger(MyThrowsAdvice.class);
+
+    public void afterThrowing(Method method, Object[] args, Object target, Throwable t) {
+        logger.error("发送异常啦",t);
+    }
+
+    public void afterThrowing(RuntimeException t) {
+        logger.error("发生了运行时异常，异常信息：",t);
+    }
+}
+```
+
+#### Introduction
+
+除了常见的Advice之外，还有一种特殊的Advice--Introduction。Introduction可以在不改变目标类的情况下，为目标类添加新的属性以及行为。要想为目标对象添加新的属性和行为，必须要先声明对应的接口和实现类，然后可以通过拦截器`IntroductionInterceptor`实现添加。
+
+下面来演示一下
+
+```
+DelegatingIntroductionInterceptor
+```
+
+的用法。
 
 
 
+```
+public class DelegatingIntroductionInterceptorSample {
+    public static void main(String[] args) {
+        IDancer dancer = new Dancer();
+        DelegatingIntroductionInterceptor interceptor = new DelegatingIntroductionInterceptor(dancer);
+
+        ProxyFactory weaver = new ProxyFactory(new Singer());
+        weaver.setInterfaces(new Class[]{IDancer.class,ISinger.class});
+        weaver.addAdvice(interceptor);
+        Object proxy = weaver.getProxy();
+        ((IDancer)proxy).dance();
+        ((ISinger)proxy).sing();
+    }
+}
+```
+
+# Aspect
+
+我们知道@Aspect可以用来表示Aspect。不过在针对面向API编程的Spring AOP中，`Advisor`用来表示Spring中的Aspect。`Advisor`只能看成是一种特殊的`Aspect`，因为在`Advisor`中通常只持有一个Pointcut和一个Advice（实际的Aspect定义中可以有多个Pointcut和多个Advice）。
+
+Advisor可以分为两种：
+
+- PointcutAdvisor
+- IntroductionAdvisor
+
+# 织入
+
+**织入就是为了创建代理对象。**当有了切入点和横切逻辑（advice）之后，如何在目标对象（或方法）中加入横切逻辑呢？这个时候我们需要借助织入器将横切逻辑织入目标对象当中。
+
+在Spring AOP中，根据一次创建代理的个数，可以分为创建单个代理的织入器和创建多个代理的织入器（即自动代理）。
+
+Spring AOP中创建**单个代理**的织入器的类有：
+
+- ProxyFactory
+- ProxyFactoryBean
+- AspectJProxyFactory
 
 
 
