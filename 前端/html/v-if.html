@@ -1,0 +1,24 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>语法篇 v-if</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.5.21/dist/vue.js"></script>
+</head>
+<body>
+
+<div id="vue">
+    <h1 v-if="ok">YES</h1>
+    <h1 v-else>NO</h1>
+</div>
+
+<script type="text/javascript">
+    var vm = new Vue({
+        el: '#vue',
+        data: {
+            ok: true
+        }
+    });
+</script>
+</body>
+</html>
