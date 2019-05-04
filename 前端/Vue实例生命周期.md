@@ -6,7 +6,7 @@ Vue 实例有一个完整的生命周期，也就是从开始创建、初始化�
 
 在 Vue 的整个生命周期中，它提供了一系列的事件，可以让我们在事件触发时注册 JS 方法，可以让我们用自己注册的 JS 方法控制整个大局，在这些事件响应方法中的 this 直接指向的是 Vue 的实例。
 
-![](https://www.funtl.com/assets1/6aedb651gy1fmncxvp4doj20xc2cfaim.jpg)
+![](https://github.com/illusorycloud/daily-notes/raw/master/%E5%89%8D%E7%AB%AF/Vue%E7%94%9F%E5%91%BD%E5%91%A8%E6%9C%9F.jpg)
 
 ## 钩子函数的触发时机
 
