@@ -1,9 +1,13 @@
-# v-if,v-else
+# Vue语法篇
+
+>  源码：[Github](https://github.com/illusorycloud/i-vue)
 
 ## 1. 条件判断语句
 
 - `v-if`
 - `v-else`
+
+### HTML
 
 ```html
 <div id="vue">
@@ -12,7 +16,7 @@
 </div>
 ```
 
-## JavaScript
+### JavaScript
 
 ```javascript
 <script type="text/javascript">
@@ -25,9 +29,7 @@
 </script>
 ```
 
-
-
-## 完整的 HTML
+### 完整的 HTML
 
 ```html
 <!DOCTYPE html>
@@ -62,7 +64,7 @@
 - `v-else-if`
 - `v-else`
 
-## HTML
+### HTML
 
 ```html
 <div id="vue">
@@ -75,7 +77,7 @@
 
 注：`===` 三个等号在 JS 中表示绝对等于（就是数据与类型都要相等）
 
-## JavaScript
+### JavaScript
 
 ```javascript
 <script type="text/javascript">
@@ -88,7 +90,7 @@
 </script>
 ```
 
-## 完整的 HTML
+### 完整的 HTML
 
 ```html
 <!DOCTYPE html>
@@ -123,63 +125,61 @@
 
 - `v-for`
 
-## HTML
+### HTML
 
 ```html
-<div id="vue">
-    <li v-for="item in items">
-        {{ item.message }}
-    </li>
+<div id="app">
+    <ul>
+        <li v-for="item in items">
+          {{item}}
+    </ul>
 </div>
 ```
 
 注：`items` 是源数据数组并且 `item` 是数组元素迭代的别名。和 `Thymeleaf`很像
 
-## JavaScript
+### JavaScript
 
 ```javascript
 <script type="text/javascript">
     var vm = new Vue({
-        el: '#vue',
+        el: '#app',
         data: {
-            items: [
-                {message: 'Foo'},
-                {message: 'Bar'}
-            ]
+            items: ["张三", "李四", "王五"]
         }
     });
 </script>
 ```
 
-## 完整的 HTML
+### 完整的 HTML
 
 ```html
-<!DOCTYPE html>
-<html>
+<!doctype html>
+<html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>语法篇 v-for</title>
-    <script src="https://cdn.jsdelivr.net/npm/vue@2.5.21/dist/vue.js"></script>
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
 </head>
 <body>
-
-<div id="vue">
-    <li v-for="item in items">
-        {{ item.message }}
-    </li>
+<div id="app">
+    <ul>
+        <li v-for="item in items">
+          {{item}}
+    </ul>
 </div>
-
+<script src="https://cdn.jsdelivr.net/npm/vue@2.5.21/dist/vue.js"></script>
 <script type="text/javascript">
     var vm = new Vue({
-        el: '#vue',
+        el: '#app',
         data: {
-            items: [
-                {message: 'Foo'},
-                {message: 'Bar'}
-            ]
+            items: ["张三", "李四", "王五"]
         }
     });
 </script>
 </body>
 </html>
 ```
+
