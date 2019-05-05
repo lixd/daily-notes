@@ -1,6 +1,6 @@
 # Docker入门教程
 
-## 4. docker使用
+## 1. docker使用
 
 ### 1. 拉取镜像
 
@@ -39,7 +39,7 @@ Status: Downloaded newer image for ubuntu:16.04
 
 *如果从 Docker Hub 下载镜像非常缓慢，可以参照 镜像加速器 一节配置加速器。*
 
-### 2.运行
+### 2. 运行
 
 有了镜像后，我们就能够以这个镜像为基础启动并运行一个容器。以上面的 `ubuntu:16.04` 为例，如果我们打算启动里面的 `bash` 并且进行交互式操作的话，可以执行下面的命令。
 
@@ -71,7 +71,7 @@ BUG_REPORT_URL="http://bugs.launchpad.net/ubuntu/"
 
 最后我们通过 `exit` 退出了这个容器。
 
-## 5. docker镜像
+## 2. docker镜像
 
 ### 1. 查看镜像列表
 
@@ -89,7 +89,7 @@ $ docker image rm [选项] <镜像1> [<镜像2> ...]
 $ docker rmi [选项] <镜像1> [<镜像2> ...]
 ```
 
-## 6. 定制docker镜像
+## 3. 定制docker镜像
 
 ### 1. 简介
 
@@ -179,7 +179,7 @@ Sending build context to Docker daemon 2.048 kB
 
 现在就可以理解刚才的命令 `docker build -t ishop .` 中的这个 `.`，实际上是在指定上下文的目录，`docker build` 命令会将该目录下的内容打包交给 Docker 引擎以帮助构建镜像。
 
-## 7. Dockerfile 指令
+## 4. Dockerfile 指令
 
 我们已经介绍了 `FROM`，`RUN`，还提及了 `COPY`, `ADD`，其实 Dockerfile 功能很强大，它提供了十多个指令。下面我们继续讲解其他的指令。
 
