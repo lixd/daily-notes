@@ -562,8 +562,6 @@ Vue.component("todo-items", {
     });
 ```
 
-
-
 1.首先点击按钮 会调用
 
 ```html
@@ -571,4 +569,141 @@ Vue.component("todo-items", {
 ```
 
 button的remove();方法
+
+```javascript
+remove:function(index){
+                this.$emit("remove",index);
+            }
+```
+
+2.然后remove（）方法区调用
+
+```javascript
+ this.$emit("remove",index);
+```
+
+即html中的
+
+```html
+v-on:remove="removeItems(index)"
+```
+
+3.removeItems(index)方法，
+
+```javascript
+    /**
+     * 实例化 Vue
+     * @type {Vue}
+     */
+    var vm = new Vue({
+        el: '#app',
+        data:{
+            title:"Vue入门",
+            items:["component","计算属性","slot"]
+        },
+        methods:{
+            removeItems:function(index){
+                /**
+                 * splice 从数组中删除数据
+                 * 第一个参数 index 开始索引
+                 * 第二个参数  1    删除多少个
+                 */
+               this.items.splice(index,1);
+            }
+        }
+    });
+```
+
+removeItems调用
+
+```javascript
+ this.items.splice(index,1);
+```
+
+最后由splice方法删除数据
+
+### 完整HTML
+
+```html
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+</head>
+<body>
+<div id="app">
+    <todo>
+        <todo-title slot="todo-title" v-bind:title="title"></todo-title>
+        <todo-items slot="todo-items" v-for="(item,index) in items" v-bind:item="item" v-bind:index="index" v-on:remove="removeItems(index)"></todo-items>
+    </todo>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/vue@2.5.21/dist/vue.js"></script>
+<script type="text/javascript">
+    /**
+     * 大组件 todo列表 里面有两个slot 两个slot可以放两个小组件
+     */
+    Vue.component('todo', {
+        template: '<div>\
+                    <slot name="todo-title"></slot>\
+                    <ul>\
+                        <slot name="todo-items"></slot>\
+                    </ul>\
+               </div>'
+    });
+    /**
+     * 小组件1  标题
+     */
+    Vue.component("todo-title", {
+        props:['title'],
+        template: "<div>{{title}}</div>"
+    });
+    /**
+     * 小组件2 内容
+     */
+    Vue.component("todo-items", {
+        props:['item','index'],
+        template: "<li>{{item}} <button @click='remove();'>删除</button></li>",
+        /**
+         * 由于button是在组件中定义的 所以 button的click事件也只能定义在组件中
+         * 但是数据却不是在组件中的 这里就出现问题了
+         * 直接在Vue中定义事件 这里无法调用
+         * 需要用this.$emit（） 绕一次
+         * 这里的  this.$emit("remove"); 这个remove 是v-on:remove="removeItems"中的remove 可以自定义名字（但是不能驼峰命名）
+         * 然后在Vue中定义removeItems 这个function 这样就可以调用了
+         */
+        methods:{
+            remove:function(index){
+                this.$emit("remove",index);
+            }
+        }
+    });
+    /**
+     * 实例化 Vue
+     * @type {Vue}
+     */
+    var vm = new Vue({
+        el: '#app',
+        data:{
+            title:"Vue入门",
+            items:["component","计算属性","slot"]
+        },
+        methods:{
+            removeItems:function(index){
+                /**
+                 * splice 从数组中删除数据
+                 * 第一个参数 index 开始索引
+                 * 第二个参数  1    删除多少个
+                 */
+               this.items.splice(index,1);
+            }
+        }
+    });
+</script>
+</body>
+</html>
+```
 
