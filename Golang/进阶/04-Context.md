@@ -184,12 +184,24 @@ func WithValue(parent Context, key, val interface{}) Context {
 }
 ```
 
-## 3.建议
+## 3. 建议
 
-**Context要是全链路函数的第一个参数**。
+* 1.不要把Context放在结构体中，要以参数的方式传递，parent Context一般为Background
+
+* 2。应该要把Context作为第一个参数传递给入口请求和出口请求链路上的每一个函数，放在第一位，变量名建议都统一，如ctx。
+
+* 3.给一个函数方法传递Context的时候，不要传递nil，否则在tarce追踪的时候，就会断了连接
+* 4.Context的Value相关方法应该传递必须的数据，不要什么数据都使用这个传递
+
+* 5.Context是线程安全的，可以放心的在多个goroutine中传递
+
+* 6.可以把一个 Context 对象传递给任意个数的 gorotuine，对它执行 取消 操作时，所有 goroutine 都会接收到取消信号。
 
 ## 4. 参考
 
 `https://blog.csdn.net/qq_36183935/article/details/81137834`
 
 `https://blog.csdn.net/u011957758/article/details/82948750`
+
+`https://www.jianshu.com/p/e5df3cd0708b`
+
