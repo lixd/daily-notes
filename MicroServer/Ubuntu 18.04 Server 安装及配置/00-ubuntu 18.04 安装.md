@@ -35,8 +35,8 @@ su
 
 ### 设置允许远程登录 Root
 
-```text
-nano /etc/ssh/sshd_config
+```shell
+vi /etc/ssh/sshd_config
 
 # Authentication:
 LoginGraceTime 120
@@ -93,9 +93,66 @@ deb http://mirrors.aliyun.com/ubuntu/ xenial-backports main restricted universe 
 apt-get update
 ```
 
-## 4. APT 命令
+## 修改主机名
 
-### 4.1 常用 APT 命令
+在同一局域网中主机名不应该相同，所以我们需要做修改，下列操作步骤为修改 **18.04** 版本的 Hostname，如果是 16.04 或以下版本则直接修改 `/etc/hostname` 里的名称即可
+
+**查看当前 Hostname**
+
+```bash
+# 查看当前主机名
+hostnamectl
+# 显示如下内容
+   Static hostname: ubuntu
+         Icon name: computer-vm
+           Chassis: vm
+        Machine ID: b18e930d6d6247fabedd12a40e0e0618
+           Boot ID: 85e13103ced7448c9ed4a61a894efc9a
+    Virtualization: vmware
+  Operating System: Ubuntu 18.04.2 LTS
+            Kernel: Linux 4.15.0-50-generic
+      Architecture: x86-64
+```
+
+**修改 Hostname**
+
+```bash
+# 使用 hostnamectl 命令修改，其中 docker 为新的主机名
+hostnamectl set-hostname docker
+```
+
+**修改 cloud.cfg**
+
+如果 `cloud-init package` 安装了，需要修改 `cloud.cfg` 文件。该软件包通常缺省安装用于处理 cloud
+
+```bash
+# 如果有该文件
+vi /etc/cloud/cloud.cfg
+
+# 该配置默认为 false，修改为 true 即可
+preserve_hostname: true
+```
+
+**验证**
+
+```shell
+root@kubernetes-master:~# hostnamectl
+   Static hostname: docker
+         Icon name: computer-vm
+           Chassis: vm
+        Machine ID: b18e930d6d6247fabedd12a40e0e0618
+           Boot ID: eb1e7e196a4e4790a3e9e6cb3ae762c5
+    Virtualization: vmware
+  Operating System: Ubuntu 18.04.2 LTS
+            Kernel: Linux 4.15.0-50-generic
+      Architecture: x86-64
+```
+
+
+
+## 5. APT 命令
+
+### 5.1 常用 APT 命令
 
 #### 安装软件包
 
@@ -121,7 +178,7 @@ apt-get update
 apt-get upgrade
 ```
 
-### 4.2 其它 APT 命令
+### 5.2 其它 APT 命令
 
 #### 搜索
 
