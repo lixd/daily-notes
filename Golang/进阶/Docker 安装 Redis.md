@@ -446,11 +446,16 @@ activerehashing yes
 提前创建好data文件夹 和redis.conf配置文件
 
 ```go
+/usr/loacl/docker/redis/conf/redis.conf
+/usr/loacl/docker/redis/data
+```
+
+```go
 docker run -d \
 --privileged=true \
 -p 6379:6379 \
--v /usr/loacl/docker/redis/redis.conf:/etc/redis/redis.conf \
--v /usr/loacl/docker/redis/redis/data:/data \
+-v /usr/loacl/docker/redis/conf/redis.conf:/etc/redis/redis.conf \
+-v /usr/loacl/docker/redis/data:/data \
 --name redis redis:latest \
 redis-server /etc/redis/redis.conf \
 --appendonly yes \
@@ -459,9 +464,9 @@ redis-server /etc/redis/redis.conf \
 -d 后台运行
 --privileged=true：容器内的root拥有真正root权限，否则容器内root只是外部普通用户权限
 
--v /usr/loacl/docker/redis/redis.conf:/etc/redis/redis.conf ：映射配置文件
+-v /usr/loacl/docker/redis/conf/redis.conf:/etc/redis/redis.conf ：映射配置文件
 
--v /usr/loacl/docker/redis/redis/data:/data ：映射数据目录
+-v /usr/loacl/docker/redis/data:/data ：映射数据目录
 
 redis-server /etc/redis/redis.conf：指定配置文件启动redis-server进程
 

@@ -3,7 +3,7 @@
 ### 拉取镜像
 
 ```shell
-docker pull mongodb
+docker pull mongo
 ```
 
 ### 环境准备
@@ -94,9 +94,13 @@ db.createUser(
  db.createUser({
      user: 'test',
      pwd: '123456',
-     roles: [{role: "read", db: "demo"}]
+     roles: [{role: "readWrite", db: "demo"}]
+ })
+ 
+  db.createUser({
+     user: 'test',
+     pwd: '123456',
+     roles: [{role: "readWrite", db: "vaptcha"}]
  })
 ```
-
-1. 
 
