@@ -86,6 +86,11 @@ c.ShouldBindQuery()
 c.ShouldBindYAML()
 ```
 
+`c.Param()`:路径参数
+`c.Query()`:查询参数
+
+`c.PostForm()`:POST表单数据
+
 ### 3.1 参数匹配
 
 #### c.Param()
