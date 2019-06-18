@@ -16,15 +16,19 @@ protoc 用来将.proto文件转化为自己使用的语言格式，我使用的�
 https://github.com/protocolbuffers/protobuf/releases
 ```
 
-我这里是windows，所以下载的是`[protoc-3.8.0-win64.zip]`,下载后解压,将`bin`目录下的`protoc.exe`复制到`$GOPATH/bin`目录下。
+我这里是windows，所以下载的是`[protoc-3.8.0-win64.zip]`,下载后解压,将`bin`目录下的`protoc.exe`复制到`$GOPATH/bin`目录中。
 
-### 2. 安装protobuf库文件
+### 2. 安装proto
+
+proto是protobuf在golang中的接口模块
 
 ```go
 go get github.com/golang/protobuf/proto
 ```
 
 ### 3. 安装插件
+
+`protoc-gen-go` 是用来将protobuf的的代码转换成go语言代码的一个插件
 
 github地址：`https://github.com/golang/protobuf`
 
