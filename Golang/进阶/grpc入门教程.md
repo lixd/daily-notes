@@ -1,6 +1,6 @@
 # gRPC
 
-## 概述
+## 1. 概述
 
 在 gRPC 里*客户端*应用可以像调用本地对象一样直接调用另一台不同的机器上*服务端*应用的方法，使得您能够更容易地创建分布式应用和服务。与许多 RPC 系统类似，gRPC 也是基于以下理念：定义一个*服务*，指定其能够被远程调用的方法（包含参数和返回类型）。在服务端实现这个接口，并运行一个 gRPC 服务器来处理客户端调用。在客户端拥有一个*存根*能够像服务端一样的方法。
 
@@ -28,7 +28,7 @@
 
 gRPC 默认使用 **protocol buffers**，这是 Google 开源的一套成熟的结构数据序列化机制（当然也可以使用其他数据格式如 JSON）。
 
-## Quick Start
+## 2. 环境准备
 
 #### env
 
@@ -62,7 +62,7 @@ go build -mod=vendor
 
 具体见`protobuf使用教程`
 
-### 使用步骤
+## 3. 使用步骤
 
 * 1）需要使用protobuf定义接口，即.proto文件
 
@@ -72,7 +72,7 @@ go build -mod=vendor
 
 *  4）启动一个或者多个Client端，Client也是基于Netty，Client通过与Server建立TCP长链接，并发送请求；Request与Response均被封装成HTTP2的stream Frame，通过Netty Channel进行交互。
 
-### 示例程序
+## 4. 示例程序
 
 #### 1.hello.proto
 
@@ -238,7 +238,7 @@ SayHello(context.Context, *HelloRequest) (*HelloReply, error)
 
 
 
-### 步骤
+## 5. 小结
 
 #### 1. 写proto文件
 
