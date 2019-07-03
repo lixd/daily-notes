@@ -103,6 +103,11 @@ message HelloReply {
 
 ```go
 protoc --go_out=plugins=grpc:. hello.proto
+// protoc 编译命令
+// go_out 编译成go代码 java_out 则编译成Java代码
+// plugins=grpc 使用grpc插件提供对grpc的支持 否则不会生成Service的接口
+// :. 编译到当前路径
+// hello.proto 被编译的文件
 ```
 
 生成对应的pb.go文件。这里用了plugins选项，提供对grpc的支持，否则不会生成Service的接口。
