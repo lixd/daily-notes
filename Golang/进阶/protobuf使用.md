@@ -18,15 +18,7 @@ https://github.com/protocolbuffers/protobuf/releases
 
 我这里是windows，所以下载的是`[protoc-3.8.0-win64.zip]`,下载后解压,将`bin`目录下的`protoc.exe`复制到`$GOPATH/bin`目录中。
 
-### 2. 安装proto
-
-proto是protobuf在golang中的接口模块
-
-```go
-go get github.com/golang/protobuf/proto
-```
-
-### 3. 安装插件
+### 2. 安装插件
 
 `protoc-gen-go` 是用来将protobuf的的代码转换成go语言代码的一个插件
 
@@ -37,6 +29,36 @@ github地址：`https://github.com/golang/protobuf`
 ```go
 go get -u github.com/golang/protobuf/protoc-gen-go
 ```
+
+goprotobuf还有另外两个插件
+
+- protoc-gen-gogo：和protoc-gen-go生成的文件差不多，性能也几乎一样(稍微快一点点)
+- protoc-gen-gofast：生成的文件更复杂，性能也更高(快5-7倍)
+
+```go
+//gogo
+go get github.com/gogo/protobuf/protoc-gen-gogo
+ 
+//gofast
+go get github.com/gogo/protobuf/protoc-gen-gofast
+```
+
+### 3. 安装proto
+
+proto是protobuf在golang中的接口模块
+
+```go
+go get github.com/golang/protobuf/proto
+```
+
+如果是使用的另外两个插件，则可以装下面的
+
+```go
+go get github.com/gogo/protobuf/proto
+go get github.com/gogo/protobuf/gogoproto  //这个不装也没关系
+```
+
+
 
 ### 4. 编写一个proto文件
 
@@ -74,7 +96,14 @@ message AddressBook {
 ### 5. 编译
 
 ```go
+//官方
 protoc --go_out=. derssbook.proto
+
+//gogo
+protoc --gogo_out=. derssbook.proto
+ 
+//gofast
+protoc --gofast_out=. derssbook.proto
 ```
 
 编译后会生成一个`derssbook.pb.go`文件。
