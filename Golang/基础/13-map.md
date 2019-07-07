@@ -1,20 +1,28 @@
 # map
 
-## 概述
-
 map是一种key，value数据结构。
 
-## map声明
+## 1. Map声明
 
-### map声明1 先声明再make
+通常情况key下是int或string，value是数字、string、map、struct等。
 
-var mapName `map`[keyType]valueType
+* map使用哈希表,必须可以比较相等的类型才能作为key
+* 除了slice,map,function 其余内建类型都可以作为key
+* struct类型如果不包括上述不可以作为key的类型，那么该struct也可以作为key
+
+### 1.1 先声明再make
+
+```go
+var mapName map [keyType]valueType
+// var user map[string]string
+var mapName map [keyType]map[keyType]valueType
+var users map[string]map[string]string
+// 复合map map的key是string类型的 value又是一个map value map的key为string value也为string
+```
 
 其中`map`为关键字
 
-**通常情况key下是int或string，value是数字、string、map、struct**
-
-声明map是不会分配内存的，初始化需要make，分配内存后才能赋值和使用。
+**声明map是不会分配内存的，初始化需要make，分配内存后才能赋值和使用**。
 
 ```go
 package main
@@ -37,11 +45,31 @@ func main() {
 }
 ```
 
-* 1.map 在使用前一定要 make
-* 2.map 的 key 是不能重复的，如果重复了，则后面的 value 会覆盖前面的
-* 3.map 的 value 是可以重复的
-* 4.map 的 key-value 是无序的
-* 5.make 内置函数
+### 1.2  直接make
+
+```go
+//map声明2 直接make
+	var names2 = make(map[int]string)
+	names2[0] = "Go"
+	names2[1] = "C"
+	names2[2] = "Python"
+	names2[3] = "Java"
+	fmt.Println(names2)
+```
+
+### 1.3  直接赋值
+
+```go
+	//map声明3 直接赋值
+	var names3 map[int]string = map[int]string{
+		0: "Go",
+		1: "C",
+		2: "Python",
+		3: "Java"}
+	fmt.Println(names3)
+```
+
+### 1.4  make 内建函数
 
 ```go
 func make
@@ -55,33 +83,18 @@ func make(Type, size IntegerType) Type
 通道：通道的缓存根据指定的缓存容量初始化。若 size为零或被省略，该信道即为无缓存的。
 ```
 
-### map声明2 直接make
+### 1.5  注意事项
 
-```go
-//map声明2 直接make
-	var names2 = make(map[int]string)
-	names2[0] = "Go"
-	names2[1] = "C"
-	names2[2] = "Python"
-	names2[3] = "Java"
-	fmt.Println(names2)
-```
+- 1.**map 在使用前一定要 make**
+- 2.**map 的 key 是不能重复的**，如果重复了，则后面的 value 会覆盖前面的
+- 3.**map 的 value 是可以重复的**
+- 4.**map 的 key-value 是无序的**
 
-### map声明3 直接赋值
+## 2. Map操作
 
-```go
-	//map声明3 直接赋值
-	var names3 map[int]string = map[int]string{
-		0: "Go",
-		1: "C",
-		2: "Python",
-		3: "Java"}
-	fmt.Println(names3)
-```
+### 2.1 删除
 
-## 增删改查
-
-### 删除
+使用`delete`来删除key
 
 ```go
 func delete
@@ -92,12 +105,14 @@ func delete(m map[Type]Type1, key Type)
 * 1.删除所有的key，没有专门的方法（类似map.clear()），可以遍历一下key，逐个删除
 * 2.或者map=make(...) ,make一个新的 让原来的成为垃圾被gc回收
 
-### 查找
+### 2.2 获取
+
+通过`value,ok :=map[key]`来判断是否存在key
 
 ```go
-	s,isFind := names2[12]
-	if isFind {
-		fmt.Println(s)
+	value,ok := names2[12]
+	if ok {
+		fmt.Println(value)
 	}else {
 		fmt.Println("没有这个key")
 	}
@@ -105,13 +120,23 @@ func delete(m map[Type]Type1, key Type)
 
 如果`names2`这个map中存在`12`这个key则`isFind`返回`true` 否则为`false`
 
-## map遍历
+```go
+value：=user[key]
+```
 
-map遍历只能使用for-range的结构遍历
+当key不存在时 会获取到value类型的初始值(零值)
 
+### 2.3 map遍历
 
+map遍历只能使用for-range的结构遍历。
 
-## map切片
+遍历时不保证顺序，如需排序，需手动对key排序之后再分别获取
+
+即将所有的key放入slice中，然后对slice排序，最后再获取map中恶value。
+
+## 3. 其他数据结构
+
+### 3.1 map切片
 
 切片的数据类型是map则称为map切片，这样使用则map个数可以动态变化了。
 
@@ -141,7 +166,7 @@ map遍历只能使用for-range的结构遍历
 
 ```
 
-## map排序
+### 3.2 map排序
 
 按照map的key的顺序排序输出
 
@@ -168,17 +193,17 @@ map遍历只能使用for-range的结构遍历
 	}
 ```
 
-## map使用细节
+## 4. map使用细节
 
 * 1.map 是引用类型，遵循引用类型值传递机制，在一个函数接收map，修改后会直接修改原来的map
 * 2.map的容量达到后，再想增加元素，会自动扩容，并不会发生panic，也就是说 **map 能动态的增加键值对**
 * 3.map 的 value 也经常使用 struct 类型，更适合管理复杂的数据
 
-## make、new操作
+## 5. make、new操作
 
-make用于内建类型（map、slice 和channel）的内存分配。
+**make用于内建类型（map、slice 和channel）的内存分配，返回T类型**。
 
-new用于各种类型的内存分配 
+**new用于各种类型的内存分配，并返回*T类型 **。
 
 内建函数new本质上说跟其它语言中的同名函数功能一样：**new(T)分配了零值填充的T类型的内存空间，并且返回其地址，即一个*T类型的值**。用Go的术语说，它返回了一个指针，指向新分配的类型T的零值。
 
