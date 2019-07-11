@@ -32,6 +32,7 @@ package google.golang.org/grpc: unrecognized import path "google.golang.org/grpc
 ```go
 go mod edit -replace=google.golang.org/grpc=github.com/grpc/grpc-go@latest
 go mod tidy
+//后面两个可以不用
 go mod vendor
 go build -mod=vendor
 ```

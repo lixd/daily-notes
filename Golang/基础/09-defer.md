@@ -1,6 +1,6 @@
 # defer
 
-## 概述
+## 1.概述
 
 1.当执行到defer时，暂时不执行 会将defer后的语句压入到独立的栈中(defer栈)
 
@@ -8,7 +8,7 @@
 
 3.在defer将语句放入栈时，也会将相关的值拷贝同时入栈。
 
-## 例子
+## 2.例子
 
 ```go
 package main
@@ -45,11 +45,19 @@ deferA res: 0
 
 可以看到 defer后的语句中的res的值并不是最后计算出的值 虽然defer后的语句会最后执行但是值和语句同时压入栈中，最后执行时用的是压栈时的值。
 
-## 小结
+## 3.小结
+
+1.确保调用在函数结束时发生。
+
+2.参数在defer语句时计算(即defer语句压栈时参数已经确定,不会受后续程序影响)
+
+3.defer列表为后进先出
+
+
 
 go中的defer类似于Java中的finally
 
-1.在golang编程中通常做法是打开资源后(打开了文件，数据库连接等)，可以执行defer file.Close() defer connect.Close()
+1.在golang编程中通常做法是打开资源后(打开了文件，数据库连接等)，可以执行`defer file.Close()`,` defer connect.Close()`
 
 2.在defer后可以继续使用资源
 
