@@ -1,5 +1,21 @@
 # MongoDB 事务操作
 
+## 环境
+
+mongodb要支持事务，需要满足以下条件：
+
+* 1).4.0以上版本；
+* 2).安装后时以replication set（复本集）模式启动；
+* 3).storageEngine存储引擎须是wiredTiger (支持文档级别的锁)，4.0以上版本已经默认是这个
+
+在独立服务器中使用事务会出现以下错误
+
+```go
+Transaction numbers are only allowed on a replica set member or mongos
+```
+
+
+
 ## 单文档事务
 
 ```sql
