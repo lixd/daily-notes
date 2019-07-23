@@ -391,3 +391,74 @@ func LoginHandler(c *gin.Context) {
 	c.String(http.StatusOK, "name=%v password=%v ", name, password)
 }
 ```
+
+## 7. 上传文件
+
+### 7.1 单个文件
+
+```go
+func (a image) Create(c *gin.Context) {
+	var params MyParams
+	if err := c.ShouldBind(&create); err != nil {
+		c.JSON(http.StatusBadRequest, "参数错误")
+		return
+	}
+	// Get File
+    // image 即前端上传时使用的名字
+	header, err := c.FormFile("image")
+	if err != nil {
+		c.JSON(http.StatusBadRequest, "参数错误")
+		return
+	}
+    // 获取文件名 header.Filename
+	params.ImageName = header.Filename
+	file, err := header.Open()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, "参数错误")
+		return
+	}
+	params.BinaryData, err = ioutil.ReadAll(file)
+	params.Base64 = base64.StdEncoding.EncodeToString(create.BinaryData)
+	// .....
+}
+```
+
+### 7.2 多个文件
+
+```go
+func () Create(c *gin.Context) {
+	var params MyParams
+	// 绑定参数
+	if err := c.ShouldBind(&params); err != nil {
+		c.JSON(http.StatusBadRequest, "参数错误")
+		return
+	}
+	// 2.获取文件 c.MultipartForm()
+	form, err := c.MultipartForm()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, "参数错误")
+		return
+	}
+    // myfile 即前端上传时使用的名字 
+    // 其中 files即上传的多个文件
+	files := form.File["myfile"]
+	for _, v := range files {
+	    var param MyParams
+		file, err := v.Open()
+		if err != nil {
+			c.JSON(http.StatusBadRequest, "参数错误")
+			return
+		}
+		param.BinaryData, err = ioutil.ReadAll(file)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, "参数错误")
+			return
+		}
+		param.Base64 = base64.StdEncoding.EncodeToString(Img.BinaryData)
+		param.ImageName = v.Filename
+		param = append(params, param)
+	}
+    	// .....
+}   
+```
+
