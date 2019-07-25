@@ -89,3 +89,4 @@ func TestHoursJob(t *testing.T) {
 }
 ```
 
+> 就是阻塞在一个for循环内，等待到了定时器的C从channel出来，当获取到值的时候，进行想要的操作。
