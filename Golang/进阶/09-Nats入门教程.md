@@ -4,6 +4,8 @@
 
 NATS是一个开源、轻量级、高性能的分布式消息中间件，实现了高可伸缩性和优雅的Publish/Subscribe模型，使用Golang语言开发。NATS的开发哲学认为高质量的QoS应该在客户端构建，故只建立了Request-Reply，不提供 1.持久化 2.事务处理 3.增强的交付模式 4.企业级队列。
 
+**NATS为一对多通信实现发布 - 订阅消息分发模型**。
+
 ## 2. 使用
 
 ### 1.基于Docker 安装服务端
@@ -103,5 +105,407 @@ Listening on [foo], clientID=[myID], qgroup=[] durable=[]
     --since <duration>              Deliver messages in last interval (e.g. 1s, 1hr, h		ttps://golang.org/pkg/time/#ParseDuration)
     --durable <name>                Durable subscriber name
     --unsubscribe                   Unsubscribe the durable on exit
+```
+
+## 3. 连接到服务器
+
+```go
+//1.连接到默认服务器
+nc, err := nats.Connect(nats.DefaultURL)
+//2.连接到指定服务器
+//nc, err := nats.Connect("demo.nats.io")
+//3.连接到集群
+servers := []string{"nats://127.0.0.1:1222", "nats://127.0.0.1:1223", "nats://127.0.0.1:1224"}
+nc, err := nats.Connect(strings.Join(servers, ","))
+//4. 设置超时时长
+nc, err := nats.Connect("demo.nats.io", nats.Name("API Options Example"), nats.Timeout(10*time.Second))
+//5.心跳协议
+//5.1设置心跳时间间隔20秒
+nc, err := nats.Connect("demo.nats.io", nats.Name("API Ping Example"), nats.PingInterval(20*time.Second))
+//5.2设置最大心跳次数5次
+nc, err := nats.Connect("demo.nats.io", nats.Name("API MaxPing Example"), nats.MaxPingsOutstanding(5))
+//6.获取最大有效负载大小
+nc, err := nats.Connect("demo.nats.io")
+if err != nil {
+	log.Fatal(err)
+}
+defer nc.Close()
+mp := nc.MaxPayload()
+log.Printf("Maximum payload is %v bytes", mp)
+//7.NATS服务器提供了一种迂腐模式，可以对协议进行额外检查。默认情况下，此设置已关闭，但您可以将其打开
+opts := nats.GetDefaultOptions()
+opts.Url = "demo.nats.io"
+// Turn on Pedantic
+opts.Pedantic = true
+nc, err := opts.Connect()
+if err != nil {
+	log.Fatal(err)
+}
+defer nc.Close()
+//8.NATS服务器还提供详细模式。默认情况下，启用详细模式，服务器将使用+ OK或-ERR回复客户端的每条消息。大多数客户端关闭详细模式，禁用所有+ OK流量。错误很少受到详细模式的影响，客户端库会按照文档处理它们。打开详细模式，可能用于测试
+opts := nats.GetDefaultOptions()
+opts.Url = "demo.nats.io"
+// Turn on Verbose
+opts.Verbose = true
+nc, err := opts.Connect()
+if err != nil {
+	log.Fatal(err)
+}
+defer nc.Close()
+//9.关闭回声消息
+//默认情况下，如果连接对已发布主题感兴趣，则NATS连接将回显消息。这意味着，如果连接上的发布者向主题发送消息，则该同一连接上的任何订阅者都将收到该消息。客户端可以选择关闭此行为，这样无论兴趣如何，都不会将消息传递给同一连接上的订阅者。
+nc, err := nats.Connect("demo.nats.io", nats.Name("API NoEcho Example"), nats.NoEcho())
+if err != nil {
+	log.Fatal(err)
+}
+defer nc.Close()
+
+
+
+```
+
+## 4.自动重连
+
+```go
+//1.禁用重新连接 
+nc, err := nats.Connect("demo.nats.io", nats.NoReconnect())
+//2.设置重新连接尝试次数 10次
+nc, err := nats.Connect("demo.nats.io", nats.MaxReconnects(10))
+//3.重新连接暂停时间 重新连接失败后等待10秒再次进行连接尝试
+nc, err := nats.Connect("demo.nats.io", nats.ReconnectWait(10*time.Second))
+//4.避免Thundering Herd
+//当服务器出现故障时其中所有客户端都会立即尝试重新连接，从而产生拒绝服务攻击。为了防止这种情况，大多数NATS客户端库会随机化他们尝试连接的服务器。如果仅使用单个服务器，则此设置无效，但在群集，随机化或随机播放的情况下，将确保没有任何一台服务器承受客户端重新连接尝试的冲击。
+servers := []string{"nats://127.0.0.1:1222",
+	"nats://127.0.0.1:1223",
+	"nats://127.0.0.1:1224",
+}
+
+nc, err := nats.Connect(strings.Join(servers, ","), nats.DontRandomize())
+if err != nil {
+	log.Fatal(err)
+}
+defer nc.Close()
+//5.监听重新连接信息
+nc, err := nats.Connect("demo.nats.io",
+	nats.DisconnectHandler(func(nc *nats.Conn) {
+		// handle disconnect event
+	}),
+	nats.ReconnectHandler(func(nc *nats.Conn) {
+		// handle reconnect event
+	}))
+// 设置断开连接后的消息缓冲区 断开服务器连接后 客户端可以继续发送消息到缓冲区 直到缓冲区满
+// 重新连接后 缓冲区的消息将发送到服务器
+nc, err := nats.Connect("demo.nats.io", nats.ReconnectBufSize(5*1024*1024))
+```
+
+
+
+## 5.保护连接
+
+NATS提供了几种形式的安全性，`身份验证`，`授权`和`隔离`。您可以启用限制NATS系统访问权限的身份验证。
+
+### 使用用户和密码进行身份验证
+
+对于此示例，使用以下命令启动服务器：
+
+```sh
+> nats-server --user myname --pass password
+```
+
+您可以`nats-server`使用服务器提供的简单工具加密要传递的密码：
+
+```sh
+> go run mkpasswd.go -p
+> password: password
+> bcrypt hash: $2a$11$1oJy/wZYNTxr9jNwMNwS3eUGhBpHT3On8CL9o7ey89mpgo88VG6ba
+```
+
+并在服务器配置中使用散列密码。客户端仍使用纯文本版本。
+
+代码使用localhost：4222，以便您可以在计算机上启动服务器以试用它们。
+
+使用密码登录时，`nats-server`将使用纯文本密码或加密密码。
+
+### 使用用户/密码连接
+
+```go
+// 1.使用用户密码连接
+nc, err := nats.Connect("127.0.0.1", nats.UserInfo("myname", "password"))
+// 2.URL中使用用户密码 格式：user：password @server：port
+nc, err := nats.Connect("myname:password@127.0.0.1")
+if err != nil {
+	log.Fatal(err)
+}
+defer nc.Close()
+
+// Do something with the connection
+
+
+```
+
+### 使用Token进行身份验证
+
+对于此示例，使用以下命令启动服务器：
+
+```sh
+> nats-server --auth mytoken
+```
+
+代码使用localhost：4222，以便您可以在计算机上启动服务器以试用它们。
+
+```go
+// 使用token连接
+nc, err := nats.Connect("127.0.0.1", nats.Name("API Token Example"), nats.Token("mytoken"))
+// 在URL中使用Token 格式：token@server:port
+nc, err := nats.Connect("mytoken@localhost")
+if err != nil {
+	log.Fatal(err)
+}
+defer nc.Close()
+
+// Do something with the connection
+```
+
+### 使用NKey进行身份验证
+
+2.0版本的NATS服务器引入了新的质询响应身份验证选项。此挑战响应基于我们称为使用[Ed25519](https://ed25519.cr.yp.to/)签名的NKeys的包装器。服务器可以通过多种方式使用这些密钥进行身份验证。最简单的方法是为服务器配置一个已知公钥列表，并让客户端通过使用私钥对其进行签名来响应挑战。
+
+```go
+opt, err := nats.NkeyOptionFromSeed("seed.txt")
+if err != nil {
+	log.Fatal(err)
+}
+nc, err := nats.Connect("127.0.0.1", opt)
+if err != nil {
+	log.Fatal(err)
+}
+defer nc.Close()
+
+// Do something with the connection
+
+
+```
+
+
+
+### 使用用户凭据文件进行身份验证
+
+2.0版本的NATS服务器引入了基于JWT的身份验证的思想。客户端使用用户JWT和来自NKey对的私钥与此新方案交互。为了更轻松地与JWT建立连接，客户端库支持凭证文件的概念。此文件包含私钥和JWT，可以使用该`nsc`工具生成。
+
+文件内容如下：
+
+```go
+-----BEGIN NATS USER JWT-----
+eyJ0eXAiOiJqd3QiLCJhbGciOiJlZDI1NTE5In0.eyJqdGkiOiJUVlNNTEtTWkJBN01VWDNYQUxNUVQzTjRISUw1UkZGQU9YNUtaUFhEU0oyWlAzNkVMNVJBIiwiaWF0IjoxNTU4MDQ1NTYyLCJpc3MiOiJBQlZTQk0zVTQ1REdZRVVFQ0tYUVM3QkVOSFdHN0tGUVVEUlRFSEFKQVNPUlBWV0JaNEhPSUtDSCIsIm5hbWUiOiJvbWVnYSIsInN1YiI6IlVEWEIyVk1MWFBBU0FKN1pEVEtZTlE3UU9DRldTR0I0Rk9NWVFRMjVIUVdTQUY3WlFKRUJTUVNXIiwidHlwZSI6InVzZXIiLCJuYXRzIjp7InB1YiI6e30sInN1YiI6e319fQ.6TQ2ilCDb6m2ZDiJuj_D_OePGXFyN3Ap2DEm3ipcU5AhrWrNvneJryWrpgi_yuVWKo1UoD5s8bxlmwypWVGFAA
+------END NATS USER JWT------
+
+************************* IMPORTANT *************************
+NKEY Seed printed below can be used to sign and prove identity.
+NKEYs are sensitive and should be treated as secrets.
+
+-----BEGIN USER NKEY SEED-----
+SUAOY5JZ2WJKVR4UO2KJ2P3SW6FZFNWEOIMAXF4WZEUNVQXXUOKGM55CYE
+------END USER NKEY SEED------
+
+*************************************************************
+```
+
+给定一个creds文件，客户端可以作为属于特定帐户的特定用户进行身份验证：
+
+```go
+nc, err := nats.Connect("127.0.0.1", nats.UserCredentials("path_to_creds_file"))
+if err != nil {
+	log.Fatal(err)
+}
+defer nc.Close()
+
+// Do something with the connection
+
+
+```
+
+###  使用TLS加密连接
+
+使用TLS连接到服务器非常简单。当使用TLS连接到NATS系统时，大多数客户端将自动使用TLS。
+
+#### 连接TLS
+
+```go
+nc, err := nats.Connect("localhost",
+	nats.ClientCert("resources/certs/cert.pem", "resources/certs/key.pem"),
+	nats.RootCAs("resources/certs/ca.pem"))
+if err != nil {
+	log.Fatal(err)
+}
+defer nc.Close()
+
+// Do something with the connection
+
+
+```
+
+####  连接TLS协议
+
+```go
+nc, err := nats.Connect("tls://localhost", nats.RootCAs("resources/certs/ca.pem")) // May need this if server is using self-signed certificate
+if err != nil {
+	log.Fatal(err)
+}
+defer nc.Close()
+
+// Do something with the connection
+
+
+```
+
+##  6. 接收消息
+
+### 6.1 同步订阅
+
+同步订阅要求应用程序等待消息。这种类型的订阅易于设置和使用，但如果需要多个消息，则需要应用程序处理循环。
+
+```go
+nc, err := nats.Connect("demo.nats.io")
+if err != nil {
+	log.Fatal(err)
+}
+defer nc.Close()
+
+// Subscribe
+sub, err := nc.SubscribeSync("updates")
+if err != nil {
+	log.Fatal(err)
+}
+
+// Wait for a message
+msg, err := sub.NextMsg(10 * time.Second)
+if err != nil {
+	log.Fatal(err)
+}
+
+// Use the response
+log.Printf("Reply: %s", msg.Data)
+```
+
+### 6.2 异步订阅
+
+异步订阅使用某种形式的回调来在消息到达时通知应用程序。
+
+```go
+nc, err := nats.Connect("demo.nats.io")
+if err != nil {
+	log.Fatal(err)
+}
+defer nc.Close()
+
+// Use a WaitGroup to wait for a message to arrive
+wg := sync.WaitGroup{}
+wg.Add(1)
+
+// Subscribe
+if _, err := nc.Subscribe("updates", func(m *nats.Msg) {
+	wg.Done()
+}); err != nil {
+	log.Fatal(err)
+}
+
+// Wait for a message to come in
+wg.Wait()
+```
+
+### 6.3  退订
+
+客户端库提供了取消订阅先前订阅请求的方法。
+
+此过程需要与服务器进行交互，因此对于异步订阅，可能会有一个小的等待时间，当处理取消订阅时，可能会继续接收到消息。
+
+```go
+nc, err := nats.Connect("demo.nats.io")
+if err != nil {
+	log.Fatal(err)
+}
+defer nc.Close()
+
+// Sync Subscription
+sub, err := nc.SubscribeSync("updates")
+if err != nil {
+	log.Fatal(err)
+}
+if err := sub.Unsubscribe(); err != nil {
+	log.Fatal(err)
+}
+
+// Async Subscription
+sub, err = nc.Subscribe("updates", func(_ *nats.Msg) {})
+if err != nil {
+	log.Fatal(err)
+}
+if err := sub.Unsubscribe(); err != nil {
+	log.Fatal(err)
+}
+```
+
+### 6.4 收到一定数量消息之后取消订阅
+
+NATS提供了一种特殊形式的取消订阅，配置了消息计数，并在许多消息发送给订阅者时生效。
+
+> 例如设置为1条消息，即客户端收到1条消息之后就会自动取消订阅。大多数也使用在1条消息时
+
+```go
+nc, err := nats.Connect("demo.nats.io")
+if err != nil {
+	log.Fatal(err)
+}
+defer nc.Close()
+
+// Sync Subscription
+sub, err := nc.SubscribeSync("updates")
+if err != nil {
+	log.Fatal(err)
+}
+if err := sub.AutoUnsubscribe(1); err != nil {
+	log.Fatal(err)
+}
+
+// Async Subscription
+sub, err = nc.Subscribe("updates", func(_ *nats.Msg) {})
+if err != nil {
+	log.Fatal(err)
+}
+if err := sub.AutoUnsubscribe(1); err != nil {
+	log.Fatal(err)
+}
+```
+
+### 6.5 回复消息
+
+传入消息具有可选的回复字段。如果设置了该字段，则它将包含期望回复的主题。
+
+例如，以下代码将侦听该请求并响应时间。
+
+```go
+nc, err := nats.Connect("demo.nats.io")
+if err != nil {
+	log.Fatal(err)
+}
+defer nc.Close()
+
+// Subscribe
+sub, err := nc.SubscribeSync("time")
+if err != nil {
+	log.Fatal(err)
+}
+
+// Read a message
+msg, err := sub.NextMsg(10 * time.Second)
+if err != nil {
+	log.Fatal(err)
+}
+
+// Get the time
+timeAsBytes := []byte(time.Now().String())
+
+// Send the time as the response.
+msg.Respond(timeAsBytes)
 ```
 
