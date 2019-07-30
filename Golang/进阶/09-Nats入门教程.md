@@ -117,13 +117,16 @@ nc, err := nats.Connect(nats.DefaultURL)
 //3.连接到集群
 servers := []string{"nats://127.0.0.1:1222", "nats://127.0.0.1:1223", "nats://127.0.0.1:1224"}
 nc, err := nats.Connect(strings.Join(servers, ","))
+
 //4. 设置超时时长
 nc, err := nats.Connect("demo.nats.io", nats.Name("API Options Example"), nats.Timeout(10*time.Second))
+
 //5.心跳协议
 //5.1设置心跳时间间隔20秒
 nc, err := nats.Connect("demo.nats.io", nats.Name("API Ping Example"), nats.PingInterval(20*time.Second))
 //5.2设置最大心跳次数5次
 nc, err := nats.Connect("demo.nats.io", nats.Name("API MaxPing Example"), nats.MaxPingsOutstanding(5))
+
 //6.获取最大有效负载大小
 nc, err := nats.Connect("demo.nats.io")
 if err != nil {
@@ -132,6 +135,7 @@ if err != nil {
 defer nc.Close()
 mp := nc.MaxPayload()
 log.Printf("Maximum payload is %v bytes", mp)
+
 //7.NATS服务器提供了一种迂腐模式，可以对协议进行额外检查。默认情况下，此设置已关闭，但您可以将其打开
 opts := nats.GetDefaultOptions()
 opts.Url = "demo.nats.io"
@@ -142,6 +146,7 @@ if err != nil {
 	log.Fatal(err)
 }
 defer nc.Close()
+
 //8.NATS服务器还提供详细模式。默认情况下，启用详细模式，服务器将使用+ OK或-ERR回复客户端的每条消息。大多数客户端关闭详细模式，禁用所有+ OK流量。错误很少受到详细模式的影响，客户端库会按照文档处理它们。打开详细模式，可能用于测试
 opts := nats.GetDefaultOptions()
 opts.Url = "demo.nats.io"
@@ -152,6 +157,7 @@ if err != nil {
 	log.Fatal(err)
 }
 defer nc.Close()
+
 //9.关闭回声消息
 //默认情况下，如果连接对已发布主题感兴趣，则NATS连接将回显消息。这意味着，如果连接上的发布者向主题发送消息，则该同一连接上的任何订阅者都将收到该消息。客户端可以选择关闭此行为，这样无论兴趣如何，都不会将消息传递给同一连接上的订阅者。
 nc, err := nats.Connect("demo.nats.io", nats.Name("API NoEcho Example"), nats.NoEcho())
@@ -159,9 +165,6 @@ if err != nil {
 	log.Fatal(err)
 }
 defer nc.Close()
-
-
-
 ```
 
 ## 4.自动重连
@@ -507,5 +510,294 @@ timeAsBytes := []byte(time.Now().String())
 
 // Send the time as the response.
 msg.Respond(timeAsBytes)
+```
+
+### 6.6 通配符
+
+订阅通配符主题没有特殊代码。通配符是主题名称的正常部分。
+
+```go
+nc, err := nats.Connect("demo.nats.io")
+if err != nil {
+	log.Fatal(err)
+}
+defer nc.Close()
+
+// Use a WaitGroup to wait for 2 messages to arrive
+wg := sync.WaitGroup{}
+wg.Add(2)
+
+// Subscribe
+if _, err := nc.Subscribe("time.*.east", func(m *nats.Msg) {
+	log.Printf("%s: %s", m.Subject, m.Data)
+	wg.Done()
+}); err != nil {
+	log.Fatal(err)
+}
+
+// Wait for the 2 messages to come in
+wg.Wait()
+```
+
+或者
+
+```go
+nc, err := nats.Connect("demo.nats.io")
+if err != nil {
+	log.Fatal(err)
+}
+defer nc.Close()
+
+// Use a WaitGroup to wait for 4 messages to arrive
+wg := sync.WaitGroup{}
+wg.Add(4)
+
+// Subscribe
+if _, err := nc.Subscribe("time.>", func(m *nats.Msg) {
+	log.Printf("%s: %s", m.Subject, m.Data)
+	wg.Done()
+}); err != nil {
+	log.Fatal(err)
+}
+
+// Wait for the 4 messages to come in
+wg.Wait()
+
+// Close the connection
+nc.Close()
+```
+
+以下示例可用于测试这两个订户。该`*`用户应接受至多2个消息，而`>`用户接收4.更重要的是`time.*.east`用户将无法收到`time.us.east.atlanta`，因为这将不匹配。
+
+```go
+nc, err := nats.Connect("demo.nats.io")
+if err != nil {
+	log.Fatal(err)
+}
+defer nc.Close()
+
+zoneID, err := time.LoadLocation("America/New_York")
+if err != nil {
+	log.Fatal(err)
+}
+now := time.Now()
+zoneDateTime := now.In(zoneID)
+formatted := zoneDateTime.String()
+
+nc.Publish("time.us.east", []byte(formatted))
+nc.Publish("time.us.east.atlanta", []byte(formatted))
+
+zoneID, err = time.LoadLocation("Europe/Warsaw")
+if err != nil {
+	log.Fatal(err)
+}
+zoneDateTime = now.In(zoneID)
+formatted = zoneDateTime.String()
+
+nc.Publish("time.eu.east", []byte(formatted))
+nc.Publish("time.eu.east.warsaw", []byte(formatted))
+```
+
+### 6.7  队列订阅
+
+订阅队列组与仅订阅主题略有不同。应用程序只包含订阅的队列名称。包含组的效果相当重要，因为服务器现在将在队列组的成员之间加载平衡消息，但代码差异很小。
+
+NATS中的队列组是动态的，不需要任何服务器配置。您几乎可以将常规订阅视为1的队列组
+
+例如，要`workers`使用主题订阅队列`updates`
+
+```go
+nc, err := nats.Connect("demo.nats.io")
+if err != nil {
+	log.Fatal(err)
+}
+defer nc.Close()
+
+// Use a WaitGroup to wait for 10 messages to arrive
+wg := sync.WaitGroup{}
+wg.Add(10)
+
+// Create a queue subscription on "updates" with queue name "workers"
+if _, err := nc.QueueSubscribe("updates", "worker", func(m *nats.Msg) {
+	wg.Done()
+}); err != nil {
+	log.Fatal(err)
+}
+
+// Wait for messages to come in
+wg.Wait()
+```
+
+如果您使用发送到的发布示例运行此示例`updates`，您将看到其中一个实例收到消息，而您运行的其他实例则不会。
+
+### 6.8 排空连接和订阅
+
+最近在NATS客户端库中添加的功能是消耗连接或订阅的能力。关闭连接或取消订阅通常被视为立即请求。当您关闭或取消订阅时，库将暂停任何待处理队列中的消息或订阅者的缓存。当您消耗订阅或连接时，它将在关闭之前处理任何飞行和缓存/挂起的消息。
+
+Drain为使用队列订阅的客户端提供了一种在不丢失任何消息的情况下关闭应用程序的方法。客户端可以调出新的队列成员，排空并关闭旧的队列成员，所有这些都不会丢失发送给旧客户端的消息。
+
+对于连接，该过程基本上是：
+
+1. 排除所有订阅
+2. 阻止发布新消息
+3. 刷新任何剩余的已发布消息
+4. close
+
+```go
+wg := sync.WaitGroup{}
+wg.Add(1)
+
+errCh := make(chan error, 1)
+
+// To simulate a timeout, you would set the DrainTimeout()
+// to a value less than the time spent in the message callback,
+// so say: nats.DrainTimeout(10*time.Millisecond).
+
+nc, err := nats.Connect("demo.nats.io",
+	nats.DrainTimeout(10*time.Second),
+	nats.ErrorHandler(func(_ *nats.Conn, _ *nats.Subscription, err error) {
+		errCh <- err
+	}),
+	nats.ClosedHandler(func(_ *nats.Conn) {
+		wg.Done()
+	}))
+if err != nil {
+	log.Fatal(err)
+}
+
+// Just to not collide using the demo server with other users.
+subject := nats.NewInbox()
+
+// Subscribe, but add some delay while processing.
+if _, err := nc.Subscribe(subject, func(_ *nats.Msg) {
+	time.Sleep(200 * time.Millisecond)
+}); err != nil {
+	log.Fatal(err)
+}
+
+// Publish a message
+if err := nc.Publish(subject, []byte("hello")); err != nil {
+	log.Fatal(err)
+}
+
+// Drain the connection, which will close it when done.
+if err := nc.Drain(); err != nil {
+	log.Fatal(err)
+}
+
+// Wait for the connection to be closed.
+wg.Wait()
+
+// Check if there was an error
+select {
+case e := <-errCh:
+	log.Fatal(e)
+default:
+}
+```
+
+订阅的流失机制更简单：
+
+1. 退订
+2. 处理所有缓存或飞行消息
+3. 清理
+
+```go
+
+	nc, err := nats.Connect("demo.nats.io")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer nc.Close()
+
+	done := sync.WaitGroup{}
+	done.Add(1)
+
+	count := 0
+	errCh := make(chan error, 1)
+
+	msgAfterDrain := "not this one"
+
+	// Just to not collide using the demo server with other users.
+	subject := nats.NewInbox()
+
+	// This callback will process each message slowly
+	sub, err := nc.Subscribe(subject, func(m *nats.Msg) {
+		if string(m.Data) == msgAfterDrain {
+			errCh <- fmt.Errorf("Should not have received this message")
+			return
+		}
+		time.Sleep(100 * time.Millisecond)
+		count++
+		if count == 2 {
+			done.Done()
+		}
+	})
+
+	// Send 2 messages
+	for i := 0; i < 2; i++ {
+		nc.Publish(subject, []byte("hello"))
+	}
+
+	// Call Drain on the subscription. It unsubscribes but
+	// wait for all pending messages to be processed.
+	if err := sub.Drain(); err != nil {
+		log.Fatal(err)
+	}
+
+	// Send one more message, this message should not be received
+	nc.Publish(subject, []byte(msgAfterDrain))
+
+	// Wait for the subscription to have processed the 2 messages.
+	done.Wait()
+
+	// Now check that the 3rd message was not received
+	select {
+	case e := <-errCh:
+		log.Fatal(e)
+	case <-time.After(200 * time.Millisecond):
+		// OK!
+	}
+```
+
+因为耗尽可能涉及流向服务器的消息，对于刷新和异步消息处理，耗尽的超时通常应高于简单消息请求/回复或类似的超时。
+
+### 6.9 接收结构化数据
+
+客户端库可以提供工具来帮助接收结构化数据，如JSON。NATS服务器的核心流量始终是不透明的字节数组。服务器不以任何形式处理消息有效负载。对于不提供帮助程序的库，您始终可以在将相关字节发送到NATS客户端之前对数据进行编码和解码。
+
+例如，要接收JSON，您可以执行以下操作：
+
+```go
+nc, err := nats.Connect("demo.nats.io")
+if err != nil {
+	log.Fatal(err)
+}
+defer nc.Close()
+ec, err := nats.NewEncodedConn(nc, nats.JSON_ENCODER)
+if err != nil {
+	log.Fatal(err)
+}
+defer ec.Close()
+
+// Define the object
+type stock struct {
+	Symbol string
+	Price  int
+}
+
+wg := sync.WaitGroup{}
+wg.Add(1)
+
+// Subscribe
+if _, err := ec.Subscribe("updates", func(s *stock) {
+	log.Printf("Stock: %s - Price: %v", s.Symbol, s.Price)
+	wg.Done()
+}); err != nil {
+	log.Fatal(err)
+}
+
+// Wait for a message to come in
+wg.Wait()
 ```
 
