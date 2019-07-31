@@ -1027,3 +1027,154 @@ if err := ec.Publish("updates", &stock{Symbol: "GOOG", Price: 1200}); err != nil
 
 ## 8. 控连接
 
+管理与服务器的交互主要是客户端库的工作，但大多数库还提供了一些洞察正在发生的事情。
+
+```go
+nc, err := nats.Connect("demo.nats.io", nats.Name("API Example"))
+if err != nil {
+	log.Fatal(err)
+}
+defer nc.Close()
+
+getStatusTxt := func(nc *nats.Conn) string {
+	switch nc.Status() {
+	case nats.CONNECTED:
+		return "Connected"
+	case nats.CLOSED:
+		return "Closed"
+	default:
+		return "Other"
+	}
+}
+log.Printf("The connection is %v\n", getStatusTxt(nc))
+
+nc.Close()
+
+log.Printf("The connection is %v\n", getStatusTxt(nc))
+
+
+```
+
+### 监控连接事件
+
+虽然连接状态很有趣，但知道状态何时发生变化可能更有趣。大多数（如果不是全部）NATS客户端库提供了一种监听与连接及其状态相关的事件的方法。
+
+连接事件可能包括`连接被关闭`，`断开连接`或`重新连接`。重新连接涉及断开连接和连接，但是当客户端尝试查找服务器或服务器重新启动时，根据库实现可能还包括多个断开连接。
+
+```go
+// There is not a single listener for connection events in the NATS Go Client.
+// Instead, you can set individual event handlers using:
+
+DisconnectHandler(cb ConnHandler)
+ReconnectHandler(cb ConnHandler)
+ClosedHandler(cb ConnHandler)
+DiscoveredServersHandler(cb ConnHandler)
+ErrorHandler(cb ErrHandler)
+
+```
+
+###  监控新服务器
+
+使用群集时，可能会添加或更改服务器。某些客户端允许您收听此通知：
+
+```go
+// Be notified if a new server joins the cluster.
+// Print all the known servers and the only the ones that were discovered.
+nc, err := nats.Connect("demo.nats.io",
+	nats.DiscoveredServersHandler(func(nc *nats.Conn) {
+		log.Printf("Known servers: %v\n", nc.Servers())
+		log.Printf("Discovered servers: %v\n", nc.DiscoveredServers())
+	}))
+if err != nil {
+	log.Fatal(err)
+}
+defer nc.Close()
+
+// Do something with the connection
+
+
+```
+
+### 监控错误
+
+客户端库可以将服务器到客户端错误与事件分开。许多服务器事件不由应用程序代码处理，导致连接被关闭。监听错误对于调试问题非常有用。
+
+```go
+// Set the callback that will be invoked when an asynchronous error occurs.
+nc, err := nats.Connect("demo.nats.io",
+	nats.ErrorHandler(func(_ *nats.Conn, _ *nats.Subscription, err error) {
+		log.Printf("Error: %v", err)
+	}))
+if err != nil {
+	log.Fatal(err)
+}
+defer nc.Close()
+
+// Do something with the connection
+
+
+```
+
+### 消费者缓慢
+
+NATS旨在快速通过服务器移动消息。因此，NATS依赖于要考虑的应用程序并响应不断变化的消息速率。服务器会进行一些阻抗匹配，但如果客户端太慢，服务器最终会将其切断。这些切断连接称为*慢速消费者*。
+
+一些库处理突发消息流量的一种方法是为订阅缓存传入消息。因此，如果一个应用程序每秒可处理10条消息，有时每秒接收20条消息，那么该库可能会保留额外的10条消息，以便让应用程序有时间赶上。对于服务器，应用程序似乎正在处理消息并认为连接正常。当缓存太大时，由客户端库决定要做什么，但大多数客户端库将丢弃传入的消息。
+
+从服务器接收和删除消息可使与服务器的连接保持健康，但会创建应用程序要求。有几种常见的模式：
+
+- 使用请求/回复来限制发送方并防止订户超载
+- 使用具有多个订阅者的队列来分割工作
+- 使用NATS流等内容保留消息
+
+###  按计数和字节限制传入/挂起的消息
+
+可以限制传入队列的第一种方式是通过消息计数。限制传入队列的第二种方法是按总大小。例如，要将传入缓存限制为1,000条消息或5mb，以先到者为准：
+
+```go
+nc, err := nats.Connect("demo.nats.io")
+if err != nil {
+	log.Fatal(err)
+}
+defer nc.Close()
+
+// Subscribe
+sub1, err := nc.Subscribe("updates", func(m *nats.Msg) {})
+if err != nil {
+	log.Fatal(err)
+}
+
+// Set limits of 1000 messages or 5MB, whichever comes first
+sub1.SetPendingLimits(1000, 5*1024*1024)
+
+// Subscribe
+sub2, err := nc.Subscribe("updates", func(m *nats.Msg) {})
+if err != nil {
+	log.Fatal(err)
+}
+
+// Set no limits for this subscription
+sub2.SetPendingLimits(-1, -1)
+
+// Close the connection
+nc.Close()
+
+```
+
+###  检测慢速消费者并检查丢弃的消息
+
+当检测到慢速消费者并且即将丢弃消息时，库可以通知应用程序。此过程可能与其他错误类似，或者可能涉及自定义回调.
+
+```go
+// Set the callback that will be invoked when an asynchronous error occurs.
+nc, err := nats.Connect("demo.nats.io", nats.ErrorHandler(logSlowConsumer))
+if err != nil {
+	log.Fatal(err)
+}
+defer nc.Close()
+
+// Do something with the connection
+
+
+```
+
