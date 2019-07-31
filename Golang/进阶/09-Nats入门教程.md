@@ -801,3 +801,229 @@ if _, err := ec.Subscribe("updates", func(s *stock) {
 wg.Wait()
 ```
 
+## 7. 发送消息
+
+NATS使用包括目标主题，可选回复主题和字节数组的协议发送和接收消息。某些库可能会提供帮助程序以将其他数据格式转换为字节，但NATS服务器会将所有消息视为不透明的字节数组。
+
+```go
+nc, err := nats.Connect("demo.nats.io", nats.Name("API PublishBytes Example"))
+if err != nil {
+	log.Fatal(err)
+}
+defer nc.Close()
+
+if err := nc.Publish("updates", []byte("All is Well")); err != nil {
+	log.Fatal(err)
+}
+
+```
+
+### 包括回复主题
+
+发布消息时的可选回复字段可以在接收方用于响应。回复主题通常称为*收件箱*，并且大多数库可以提供用于生成唯一收件箱主题的方法。大多数库还通过单个调用提供请求 - 回复模式。例如，要向主题发送请求`time`而没有消息内容，您可以：
+
+```go
+nc, err := nats.Connect("demo.nats.io")
+if err != nil {
+	log.Fatal(err)
+}
+defer nc.Close()
+
+// Create a unique subject name for replies.
+uniqueReplyTo := nats.NewInbox()
+
+// Listen for a single response
+sub, err := nc.SubscribeSync(uniqueReplyTo)
+if err != nil {
+	log.Fatal(err)
+}
+
+// Send the request.
+// If processing is synchronous, use Request() which returns the response message.
+if err := nc.PublishRequest("time", uniqueReplyTo, nil); err != nil {
+	log.Fatal(err)
+}
+
+// Read the reply
+msg, err := sub.NextMsg(time.Second)
+if err != nil {
+	log.Fatal(err)
+}
+
+// Use the response
+log.Printf("Reply: %s", msg.Data)
+
+
+```
+
+### 请求 - 回复
+
+发送消息和接收响应的模式在大多数客户端库中封装为请求方法。在封面下，此方法将发布带有唯一回复主题的消息，并在返回之前等待响应。
+
+请求方法与使用回复发布之间的主要区别在于，库只接受一个响应，并且在大多数库中，请求将被视为同步操作。该库甚至可以提供设置超时的方法。
+
+例如，更新先前的发布示例，我们可能会请求`time`一秒超时：
+
+```go
+nc, err := nats.Connect("demo.nats.io")
+if err != nil {
+	log.Fatal(err)
+}
+defer nc.Close()
+
+// Send the request
+msg, err := nc.Request("time", nil, time.Second)
+if err != nil {
+	log.Fatal(err)
+}
+
+// Use the response
+log.Printf("Reply: %s", msg.Data)
+
+// Close the connection
+nc.Close()
+
+```
+
+您可以将库中的请求 - 回复视为订阅，获取一条消息，取消订阅模式。在Go中，这可能看起来像：
+
+```go
+sub, err := nc.SubscribeSync(replyTo)
+if err != nil {
+    log.Fatal(err)
+}
+nc.Flush()
+
+// Send the request
+nc.PublishRequest(subject, replyTo, []byte(input))
+
+// Wait for a single response
+for {
+    msg, err := sub.NextMsg(1 * time.Second)
+    if err != nil {
+        log.Fatal(err)
+    }
+
+    response = string(msg.Data)
+    break
+}
+sub.Unsubscribe()
+```
+
+###  分散 - 集中
+
+您可以将请求 - 回复模式扩展为通常称为scatter-gather的内容。要接收多条消息，超时，您可以执行以下操作，其中获取消息的循环使用时间作为限制，而不是接收单个消息：
+
+```go
+sub, err := nc.SubscribeSync(replyTo)
+if err != nil {
+    log.Fatal(err)
+}
+nc.Flush()
+
+// Send the request
+nc.PublishRequest(subject, replyTo, []byte(input))
+
+// Wait for a single response
+max := 100 * time.Millisecond
+start := time.Now()
+for time.Now().Sub(start) < max {
+    msg, err := sub.NextMsg(1 * time.Second)
+    if err != nil {
+        break
+    }
+
+    responses = append(responses, string(msg.Data))
+}
+sub.Unsubscribe()
+```
+
+或者，您可以循环计数器和超时以尝试获得*至少N个*响应：
+
+```go
+sub, err := nc.SubscribeSync(replyTo)
+if err != nil {
+    log.Fatal(err)
+}
+nc.Flush()
+
+// Send the request
+nc.PublishRequest(subject, replyTo, []byte(input))
+
+// Wait for a single response
+max := 500 * time.Millisecond
+start := time.Now()
+for time.Now().Sub(start) < max {
+    msg, err := sub.NextMsg(1 * time.Second)
+    if err != nil {
+        break
+    }
+
+    responses = append(responses, string(msg.Data))
+
+    if len(responses) >= minResponses {
+        break
+    }
+}
+sub.Unsubscribe()
+```
+
+### Caches, Flush and Ping
+
+出于性能原因，大多数（如果不是全部）客户端库将缓存传出数据，以便可以一次将更大的块写入网络。这可能就像字节缓冲区一样简单，它在被推送到网络之前存储了一些消息。
+
+这些缓冲区不会永久保留消息，通常它们被设计为在高吞吐量情况下保存消息，同时仍然在低吞吐量情况下提供良好的延迟。
+
+```go
+nc, err := nats.Connect("demo.nats.io")
+if err != nil {
+	log.Fatal(err)
+}
+defer nc.Close()
+
+// Just to not collide using the demo server with other users.
+subject := nats.NewInbox()
+
+if err := nc.Publish(subject, []byte("All is Well")); err != nil {
+	log.Fatal(err)
+}
+// Sends a PING and wait for a PONG from the server, up to the given timeout.
+// This gives guarantee that the server has processed the above message.
+if err := nc.FlushTimeout(time.Second); err != nil {
+	log.Fatal(err)
+}
+
+```
+
+### 发送结构化数据
+
+些客户端库提供帮助程序来发送结构化数据，而其他客户端库依赖于应用程序来执行任何编码和解码，只需要使用字节数组进行发送。以下示例显示了如何发送JSON，但这可以很容易地更改为发送协议缓冲区，YAML或其他一些格式。JSON是一种文本格式，因此我们还必须将大多数语言的字符串编码为字节。我们使用的是UTF-8，即JSON标准编码。
+
+```go
+nc, err := nats.Connect("demo.nats.io")
+if err != nil {
+	log.Fatal(err)
+}
+defer nc.Close()
+
+ec, err := nats.NewEncodedConn(nc, nats.JSON_ENCODER)
+if err != nil {
+	log.Fatal(err)
+}
+defer ec.Close()
+
+// Define the object
+type stock struct {
+	Symbol string
+	Price  int
+}
+
+// Publish the message
+if err := ec.Publish("updates", &stock{Symbol: "GOOG", Price: 1200}); err != nil {
+	log.Fatal(err)
+}
+
+```
+
+## 8. 控连接
+
