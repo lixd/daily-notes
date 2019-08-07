@@ -42,11 +42,27 @@ sudo cp etcd* /usr/local/bin/
 
 其实就是将编译后的二进制文件，拷贝到`/usr/local/bin/`目录，各个版本的二进制文件，可以从 `https://github.com/coreos/etcd/releases/` 中查找下载。
 
-启动
+#### 启动
+
+etcd默认监听的是`localhost`的2379端口，既只监听了I/O设备，这样会导致启动后集群中的其他机器无法访问
+因此我们可以在启动的时候将默认的localhost改成`0.0.0.0`,确保etcd监听了所有网卡。
 
 ```go
-./etcd --listen-client-urls="http://192.168.1.9:2379" --advertise-client-urls="http://192.168.1.9:2379"
+./etcd --listen-client-urls="http://0.0.0.0:2379" --advertise-client-urls="http://0.0.0.0:2379"
 ```
+
+**注意**：etcd有要求，如果--listen-client-urls被设置了，那么就必须同时设置--advertise-client-urls，所以即使设置和默认相同，也必须显式设置
+
+### 测试
+
+我们来使用curl来测试一下，是否可以远程访问，这里我的机器IP是`192.168.1.9`
+
+```go
+C:\Users\illusory>curl -L  http://192.168.1.9:2379/version
+{"etcdserver":"3.3.13","etcdcluster":"3.3.0"}
+```
+
+
 
 ### 启动参数解释
 
@@ -96,4 +112,8 @@ rm -rf /tmp/etcd-data.tmp && mkdir -p /tmp/etcd-data.tmp && \
   --initial-cluster-token tkn \
   --initial-cluster-state new
 ```
+
+## 参考
+
+`https://www.cnblogs.com/chenqionghe/p/10503840.html`
 
