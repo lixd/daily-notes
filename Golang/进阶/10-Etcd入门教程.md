@@ -17,25 +17,16 @@
 - 快速：每个实例每秒支持一千次写操作。
 - 可信：使用Raft算法充分实现了分布式。
 
-应用场景：
-
-```
-服务发现和服务注册
-配置中心
-分布式锁
-master选举
-```
+### 应用场景：
 
 和ZK类似，ETCD有很多使用场景，包括：
 
-- 配置管理
-- 服务注册于发现
-- 选主
-- 应用调度
-- 分布式队列
-- 分布式锁
+* 服务发现和服务注册
+* 配置中心
+* 分布式锁
+* master选举
 
-ETCD集群是一个分布式系统，由多个节点相互通信构成整体对外服务，每个节点都存储了完整的数据，并且通过Raft协议保证每个节点维护的数据是一致的。
+`ETCD`集群是一个分布式系统，由多个节点相互通信构成整体对外服务，每个节点都存储了完整的数据，并且通过`Raft协议`保证每个节点维护的数据是一致的。
 
 ## 2. 安装
 
@@ -50,6 +41,35 @@ sudo cp etcd* /usr/local/bin/
 ```
 
 其实就是将编译后的二进制文件，拷贝到`/usr/local/bin/`目录，各个版本的二进制文件，可以从 `https://github.com/coreos/etcd/releases/` 中查找下载。
+
+启动
+
+```go
+./etcd --listen-client-urls="http://192.168.1.9:2379" --advertise-client-urls="http://192.168.1.9:2379"
+```
+
+### 启动参数解释
+
+```shell
+--name
+etcd集群中的节点名，这里可以随意，可区分且不重复就行  
+--listen-peer-urls
+监听的用于节点之间通信的url，可监听多个，集群内部将通过这些url进行数据交互(如选举，数据同步等)
+--initial-advertise-peer-urls 
+建议用于节点之间通信的url，节点间将以该值进行通信。
+--listen-client-urls
+监听的用于客户端通信的url,同样可以监听多个。
+--advertise-client-urls
+建议使用的客户端通信url,该值用于etcd代理或etcd成员与etcd节点通信。
+--initial-cluster-token etcd-cluster-1
+节点的token值，设置该值后集群将生成唯一id,并为每个节点也生成唯一id,当使用相同配置文件再启动一个集群时，只要该token值不一样，etcd集群就不会相互影响。
+--initial-cluster
+也就是集群中所有的initial-advertise-peer-urls 的合集
+--initial-cluster-state new
+新建集群的标志
+
+
+```
 
 ### 2.2 Docker安装
 
