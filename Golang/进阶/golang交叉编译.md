@@ -80,3 +80,27 @@ B和D的可选参数可参见$GOARCH
 
 
 
+## 遇到的问题
+
+### 交叉编译出错
+
+windows下go编译成linux可执行文件报错：
+
+```go
+cmd/go: unsupported GOOS/GOARCH pair linux /amd64
+```
+
+操作步骤如下
+
+```go
+SET CGO_ENABLED=0
+SET GOOS=linux
+SET GOARCH=amd64 
+go build main.go
+```
+
+最后在`https://github.com/golang/go/issues/24501#issuecomment-375682124`找到了原因。
+
+是因为在 `SET GOOS=linux`这句后面多了个空格（直接复制的命令。。。）
+编译器也没有自动去掉多余的空格，不容易发现错误原因。
+
