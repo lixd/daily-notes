@@ -47,9 +47,12 @@ Linux 系统请使用以下介绍的方法安装。
 
 例如，在 Linux 64 位系统上直接下载对应的二进制包。
 
-```bash
-curl -L https://github.com/docker/compose/releases/download/1.24.0/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose
+```sh
+curl -L https://github.com/docker/compose/releases/download/1.25.0-rc2/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose
 chmod +x /usr/local/bin/docker-compose
+
+//获取最新版本
+https://github.com/docker/compose/releases
 ```
 
 ### 2. PIP 安装

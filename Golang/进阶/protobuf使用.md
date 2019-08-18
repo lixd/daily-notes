@@ -55,7 +55,7 @@ go get github.com/golang/protobuf/proto
 
 ```go
 go get github.com/gogo/protobuf/proto
-go get github.com/gogo/protobuf/gogoproto  //这个不装也没关系
+go get github.com/gogo/protobuf/gogoproto
 ```
 
 
