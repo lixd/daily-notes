@@ -78,7 +78,46 @@ docker-compose up
 
 　如果服务已经运行过就要把修改 --initial-cluster-state 为existing
 
+### 4. 验证集群的状态
+
+验证从三个node返回的v2/members数据是一样的值。
+
+```
+$ docker ps
+CONTAINER ID        IMAGE                 COMMAND                  CREATED             STATUS              PORTS                                              NAMES
+33785a959d95        quay.io/coreos/etcd   "etcd -name etcd1 ..."   2 hours ago         Up 2 hours          0.0.0.0:32791->2379/tcp, 0.0.0.0:32790->2380/tcp   etcd1
+106ba12b1c25        quay.io/coreos/etcd   "etcd -name etcd2 ..."   2 hours ago         Up 2 hours          0.0.0.0:32789->2379/tcp, 0.0.0.0:32788->2380/tcp   etcd2
+76cd127439a3        quay.io/coreos/etcd   "etcd -name etcd3 ..."   2 hours ago         Up 2 hours          0.0.0.0:32787->2379/tcp, 0.0.0.0:32786->2380/tcp   etcd3
+
+$ curl -L http://127.0.0.1:32787/v2/members
+{"members":[{"id":"ade526d28b1f92f7","name":"etcd1","peerURLs":["http://etcd1:2380"],"clientURLs":["http://0.0.0.0:2379"]},{"id":"bd388e7810915853","name":"etcd3","peerURLs":["http://etcd3:2380"],"clientURLs":["http://0.0.0.0:2379"]},{"id":"d282ac2ce600c1ce","name":"etcd2","peerURLs":["http://etcd2:2380"],"clientURLs":["http://0.0.0.0:2379"]}]}
+
+$ curl -L http://127.0.0.1:32789/v2/members
+{"members":[{"id":"ade526d28b1f92f7","name":"etcd1","peerURLs":["http://etcd1:2380"],"clientURLs":["http://0.0.0.0:2379"]},{"id":"bd388e7810915853","name":"etcd3","peerURLs":["http://etcd3:2380"],"clientURLs":["http://0.0.0.0:2379"]},{"id":"d282ac2ce600c1ce","name":"etcd2","peerURLs":["http://etcd2:2380"],"clientURLs":["http://0.0.0.0:2379"]}]}
+
+$ curl -L http://127.0.0.1:32791/v2/members
+{"members":[{"id":"ade526d28b1f92f7","name":"etcd1","peerURLs":["http://etcd1:2380"]
+```
+
+也可以用命令行工具etcdctl：
+
+```
+$ docker exec -t etcd1 etcdctl member list
+ade526d28b1f92f7: name=etcd1 peerURLs=http://etcd1:2380 clientURLs=http://0.0.0.0:2379 isLeader=false
+bd388e7810915853: name=etcd3 peerURLs=http://etcd3:2380 clientURLs=http://0.0.0.0:2379 isLeader=false
+d282ac2ce600c1ce: name=etcd2 peerURLs=http://etcd2:2380 clientURLs=http://0.0.0.0:2379 isLeader=true
+
+$ docker exec -t etcd3 etcdctl -C http://etcd1:2379,http://etcd2:2379,http://etcd3:2379 member list
+ade526d28b1f92f7: name=etcd1 peerURLs=http://etcd1:2380 clientURLs=http://0.0.0.0:2379 isLeader=false
+bd388e7810915853: name=etcd3 peerURLs=http://etcd3:2380 clientURLs=http://0.0.0.0:2379 isLeader=false
+d282ac2ce600c1ce: name=etcd2 peerURLs=http://etcd2:2380 clientURLs=http://0.0.0.0:2379 isLead
+```
+
+
+
 ## 2. 多机集群
+
+//TODO 单节点添加到集群有点问题。。
 
 ### 2.1 下载
 
@@ -111,13 +150,21 @@ $ docker pull quay.io/coreos/etcd
 
 ### 启动各个节点
 
-主节点 docker-compose文件
+```sh
+192.168.1.9
+192.168.1.10
+192.168.1.11
+```
+
+
+
+节点`192.168.1.9` docker-compose文件
 
 ```yaml
 version: '2'
 services:
   etcd:
-    container_name: etcd1
+    container_name: etcd_node1
     image: quay.io/coreos/etcd
     network_mode: "host"
     ports:
@@ -128,7 +175,7 @@ services:
       - LANG=zh_CN.UTF-8
     command:
       /usr/local/bin/etcd
-      -name etcd-offline-10
+      -name etcd_node1
       -data-dir /etcd-data
       -advertise-client-urls http://192.168.1.9:2379
       -listen-client-urls http://192.168.1.9:2379,http://127.0.0.1:2379
@@ -146,11 +193,83 @@ services:
 docker-compose up
 ```
 
-然后使用本地的 etcdctl进行添加节点的操作（注意：要向集群添加节点再启动节点）
-
-
+添加到集群
 
 ```sh
-./etcdctl member add etcd-node1 http://10.100.46.6:2380
+ETCDCTL_API=3 etcdctl member add etcd-node2 http://192.168.1.10:2380
+```
+
+
+
+节点`192.168.1.10` docker-compose文件
+
+```yaml
+version: '2'
+services:
+  etcd:
+    container_name: etcd_node2
+    image: quay.io/coreos/etcd
+    network_mode: "host"
+    ports:
+      - "2379:2379"
+      - "2380:2380"
+    environment:
+      - TZ=CST-8
+      - LANG=zh_CN.UTF-8
+    command:
+      /usr/local/bin/etcd
+      -name etcd_node2
+      -data-dir /etcd-data
+      -advertise-client-urls http://192.168.1.10:2379
+      -listen-client-urls http://192.168.1.10:2379,http://127.0.0.1:2379
+      -initial-advertise-peer-urls http://192.168.1.10:2380
+      -listen-peer-urls http://192.168.1.10:2380
+      -initial-cluster-token myetcd
+      -initial-cluster-state new
+    volumes:
+      - "/usr/local/docker/etcdd/data:/etcd-data"
+```
+
+启动该节点
+
+```sh
+docker-compose up
+```
+
+
+
+节点`192.168.1.11` docker-compose文件
+
+```yaml
+version: '2'
+services:
+  etcd:
+    container_name: etcd_node3
+    image: quay.io/coreos/etcd
+    network_mode: "host"
+    ports:
+      - "2379:2379"
+      - "2380:2380"
+    environment:
+      - TZ=CST-8
+      - LANG=zh_CN.UTF-8
+    command:
+      /usr/local/bin/etcd
+      -name etcd-node3
+      -data-dir /etcd-data
+      -advertise-client-urls http://192.168.1.11:2379
+      -listen-client-urls http://192.168.1.11:2379,http://127.0.0.1:2379
+      -initial-advertise-peer-urls http://192.168.1.11:2380
+      -listen-peer-urls http://192.168.1.11:2380
+      -initial-cluster-token myetcd
+      -initial-cluster-state new
+    volumes:
+      - "/usr/local/docker/etcdd/data:/etcd-data"
+```
+
+启动该节点
+
+```sh
+docker-compose up
 ```
 
