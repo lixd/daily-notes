@@ -1,4 +1,4 @@
-# etcd入门教程
+# etcd原理分析
 
 ## 1. etcd与zookeeper比较
 
@@ -198,13 +198,162 @@ compact(n)表示压缩掉revision.main <= n的所有历史版本，会发生一�
 	}
 ```
 
+### 2.4 watch机制
+
+etcd的事件通知机制是基于mvcc多版本实现的。
+
+客户端可以提供一个要监听的revision.main作为watch的起始ID，只要etcd当前的全局自增事务ID > watch起始ID，etcd就会将MVCC在bbolt中存储的所有历史revision数据，逐一顺序的推送给客户端。
+
+这显然和zk是不同的，zk总是获取最新数据并建立一个一次性的监听后续变化。而etcd支持客户端从任意历史版本开始订阅事件，并且会推送当时的数据快照给客户端。
+
+那么，etcd大概是如何实现基于mvcc的watch机制的呢？
+
+etcd会保存每个客户端发来的watch请求，watch请求可以关注一个key（单key），或者一个key前缀（区间）。
+
+etcd会有一个协程持续不断的遍历所有的watch请求，每个watch对象都维护了其watch的key事件推送到了哪个revision。
+
+etcd会拿着这个revision.main ID去bbolt中继续向后遍历，实际上bbolt类似于leveldb，是一个按key有序的K-V引擎，而bbolt中的key是revision.main+revision.sub组成的，所以遍历就会依次经过历史上发生过的所有事务(tx)记录。
+
+对于遍历经过的每个k-v，etcd会反序列化其中的value，也就是mvccpb.KeyValue，判断其中的Key是否为watch请求关注的key，如果是就发送给客户端。
+
+```go
+// syncWatchersLoop syncs the watcher in the unsynced map every 100ms.
+func (s *watchableStore) syncWatchersLoop() {
+	defer s.wg.Done()
+
+	for {
+		s.mu.RLock()
+		st := time.Now()
+		lastUnsyncedWatchers := s.unsynced.size()
+		s.mu.RUnlock()
+
+		unsyncedWatchers := 0
+		if lastUnsyncedWatchers > 0 {
+			unsyncedWatchers = s.syncWatchers()
+		}
+		syncDuration := time.Since(st)
+
+		waitDuration := 100 * time.Millisecond
+		// more work pending?
+		if unsyncedWatchers != 0 && lastUnsyncedWatchers > unsyncedWatchers {
+			// be fair to other store operations by yielding time taken
+			waitDuration = syncDuration
+		}
+
+		select {
+		case <-time.After(waitDuration):
+		case <-s.stopc:
+			return
+		}
+	}
+}
+```
+
+上述代码是一个循环，不停的调用syncWatchers：
+
+```go
+// syncWatchers syncs unsynced watchers by:
+//	1. choose a set of watchers from the unsynced watcher group
+//	2. iterate over the set to get the minimum revision and remove compacted watchers
+//	3. use minimum revision to get all key-value pairs and send those events to watchers
+//	4. remove synced watchers in set from unsynced group and move to synced group
+func (s *watchableStore) syncWatchers() int {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if s.unsynced.size() == 0 {
+		return 0
+	}
+
+	s.store.revMu.RLock()
+	defer s.store.revMu.RUnlock()
+
+	// in order to find key-value pairs from unsynced watchers, we need to
+	// find min revision index, and these revisions can be used to
+	// query the backend store of key-value pairs
+	curRev := s.store.currentRev
+	compactionRev := s.store.compactMainRev
+
+	wg, minRev := s.unsynced.choose(maxWatchersPerSync, curRev, compactionRev)
+	minBytes, maxBytes := newRevBytes(), newRevBytes()
+	revToBytes(revision{main: minRev}, minBytes)
+	revToBytes(revision{main: curRev + 1}, maxBytes)
+
+	// UnsafeRange returns keys and values. And in boltdb, keys are revisions.
+	// values are actual key-value pairs in backend.
+	tx := s.store.b.ReadTx()
+	tx.Lock()
+	revs, vs := tx.UnsafeRange(keyBucketName, minBytes, maxBytes, 0)
+	evs := kvsToEvents(wg, revs, vs)
+	tx.Unlock()
+```
+
+代码比较长不全贴，它会每次从所有的watcher选出一批watcher进行批处理（组成为一个group，叫做watchGroup），这批watcher中观察的最小revision.main ID作为bbolt的遍历起始位置，这是一种优化。
+
+你可以想一下，如果为每个watcher单独遍历bbolt并从中摘出属于自己关注的key，那性能就太差了。通过一次性遍历，处理多个watcher，显然可以有效减少遍历的次数。
+
+也许你觉得这样在watcher数量多的情况下性能仍旧很差，但是你需要知道一般的用户行为都是从最新的Revision开始watch，很少有需求关注到很古老的revision，这就是关键。
+
+遍历bbolt时，json反序列化每个mvccpb.KeyValue结构，判断其中的key是否属于watchGroup关注的key，这是由kvsToEvents函数完成的：
+
+```go
+// kvsToEvents gets all events for the watchers from all key-value pairs
+func kvsToEvents(wg *watcherGroup, revs, vals [][]byte) (evs []mvccpb.Event) {
+	for i, v := range vals {
+		var kv mvccpb.KeyValue
+		if err := kv.Unmarshal(v); err != nil {
+			plog.Panicf("cannot unmarshal event: %v", err)
+		}
+
+		if !wg.contains(string(kv.Key)) {
+			continue
+		}
+
+		ty := mvccpb.PUT
+		if isTombstone(revs[i]) {
+			ty = mvccpb.DELETE
+			// patch in mod revision so watchers won't skip
+			kv.ModRevision = bytesToRev(revs[i]).main
+		}
+		evs = append(evs, mvccpb.Event{Kv: &kv, Type: ty})
+	}
+	return evs
+}
+```
+
+可见，删除key对应的revision也会保存到bbolt中，只是bbolt的key比较特别：
+
+put操作的key由main+sub构成：
+
+```go
+ibytes := newRevBytes()
+idxRev := revision{main: rev, sub: int64(len(tw.changes))}
+revToBytes(idxRev, ibytes)
+```
+
+delete操作的key由main+sub+”t”构成：
+
+```go
+idxRev := revision{main: tw.beginRev + 1, sub: int64(len(tw.changes))}
+revToBytes(idxRev, ibytes)
+ibytes = appendMarkTombstone(ibytes)
 
 
+// appendMarkTombstone appends tombstone mark to normal revision bytes.
+func appendMarkTombstone(b []byte) []byte {
+	if len(b) != revBytesLen {
+		plog.Panicf("cannot append mark to non normal revision bytes")
+	}
+	return append(b, markTombstone)
+}
 
+// isTombstone checks whether the revision bytes is a tombstone.
+func isTombstone(b []byte) bool {
+	return len(b) == markedRevBytesLen && b[markBytePosition] == markTombstone
+}
+```
 
+## 3. 参考
 
-
-## 1. 概述
-
-Etcdv3客户端的使用。
+`https://yuerblog.cc/2017/12/12/etcd-v3-sdk-usage/`
 
