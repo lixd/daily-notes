@@ -1,359 +1,564 @@
-# etcd原理分析
+# Etcd入门教程
 
-## 1. etcd与zookeeper比较
+## 1. 概述
 
-### 1.1 CAP原则
+主要是etcdclientv3的使用。
 
-**zookeeper和etcd都是强一致的（满足CAP的CP）**，意味着无论你访问任意节点，都将获得最终一致的数据视图。这里最终一致比较重要，因为zk使用的paxos和etcd使用的raft都是quorum机制（大多数同意原则），所以部分节点可能因为任何原因延迟收到更新，但数据将最终一致，高度可靠。
+## 2. 基本操作
 
-### 1.2 逻辑结构
-
-**zk从逻辑上来看是一种目录结构，而etcd从逻辑上来看就是一个k-v结构**。但是有意思的是，etcd的key可以是任意字符串，所以仍旧可以模拟出目录，例如：key=/a/b/c，那这是否意味着etcd无法表达父子关系呢？
-
-当然不是，etcd在存储上实现了key有序排列，因此/a/b，/a/b/c，/a/b/d在存储中顺序排列的，通过定位到key=/a/b并依次顺序向后扫描，就会遇到/a/b/c与/a/b/d这两个孩子，从而一样可以实现父子目录关系，所以我们在设计模型与使用etcd时仍旧沿用zookeeper的目录表达方式。
-
-***在这里，你需要记录一个结论：etcd本质上是一个有序的k-v存储。***
-
-### 1.3 临时节点
-
-在实现服务发现时，我们一般都会用到zk的临时节点，只要客户端与zk之间的session会话没有中断（过期），那么创建的临时节点就会存在。当客户端掉线一段时间，对应的zk session会过期，那么对应的临时节点就会被自动删除。
-
-在etcd中并没有临时节点的概念，但是支持lease租约机制。什么叫lease？其实就是etcd支持申请定时器，比如：可以申请一个TTL=10秒的lease（租约），会返回给你一个lease ID标识定时器。你可以在set一个key的同时携带lease ID，那么就实现了一个自动过期的key。在etcd中，一个lease可以关联给任意多的Key，当lease过期后所有关联的key都将被自动删除。
-
-那么如何实现临时节点呢？首先申请一个TTL=N的lease，然后set一个key with lease作为自己的临时节点，在程序中定时的为lease（租约）进行续约，也就是重置TTL=N，这样关联的key就不会过期了。
-
-### 1.4 事件模型
-
-在我们用zk实现服务发现时，我们一般会`getChildrenAndWatch`来获取一个目录下的所有在线节点，这个API会先获取当前的孩子列表并同时原子注册了一个观察器。每当zk发现孩子有变动的时候，就会发送一个通知事件给客户端（同时关闭观察器），此时我们会再次调用getChildrenAndWatch再次获取最新的孩子列表并重新注册观察器。
-
-简单的来说，zk提供了一个原子API，它先获取当前状态，同时注册一个观察器，当后续变化发生时会发送一次通知到客户端：获取并观察->收到变化事件->获取并观察->收到变化事件->….，如此往复。
-
-zk的事件模型非常可靠，不会出现发生了更新而客户端不知道的情况，但是特点也很明显：
-
-- 事件不包含数据，仅仅是通知变化。
-- 多次连续的更新，通知会合并成一个；即，客户端收到通知再次拉取数据，会跳过中间的多个版本，只拿到最新数据。
-
-这些特点并不是缺点，因为一般应用只关注最新状态，并不关注中间的连续变化。
-
-那么etcd的事件模型呢？在现在，你只需要记住etcd的事件是包含数据的，并且通常情况下连续的更新不会被合并通知，而是逐条通知到客户端。
-
-***具体etcd事件模型如何工作，要求对etcd的k-v存储原理先做了解，所以接下来我会结合一些简单的源码，说一下etcd的存储模型，最后再来说它的事件模型。***
-
-
-
-## 2. etcd原理分析
-
-### 2.1 raft协议
-
-etcd基于raft协议实现数据同步（K-V数据），集群由多个节点组成，zookeeper基于paxos协议。
-
-raft协议理解起来相比paxos并没有简单到哪里，因为都很难理解。
-
-- 每次写入都是在一个事务（tx）中完成的。
-- 一个事务（tx）可以包含若干put（写入k-v键值对）操作。
-- etcd集群有一个leader，写入请求都会提交给它。
-- leader先将数据保存成日志形式，并定时的将日志发往其他节点保存。
-- 当超过1/2节点成功保存了日志，则leader会将tx最终提交（也是一条日志）。
-- 一旦leader提交tx，则会在下一次心跳时将提交记录发送给其他节点，其他节点也会提交。
-- leader宕机后，剩余节点协商找到拥有最大已提交tx ID（必须是被超过半数的节点已提交的）的节点作为新leader。
-
-这里最重要的是知道：
-
-- raft中，后提交的事务ID>先提交的事务ID，每个事务ID都是唯一的。
-- 无论客户端是在哪个etcd节点提交，整个集群对外表现出数据视图最终都是一样的。
-
-### 2.2 k-v存储
-
-etcd根本上来说是一个k-v存储，它在内存中维护了一个btree（B树），就和mysql的索引一样，它是有序的。
-
-在这个btree中，key就是用户传入的原始key，而value并不是用户传入的value，具体是什么后面再说，整个k-v存储大概就是这样：
+### 2.1 连接
 
 ```go
-type treeIndex struct {
-	sync.RWMutex
-	tree *btree.BTree
+	cli, err := clientv3.New(clientv3.Config{
+		Endpoints:   []string{"localhost:2379"},
+		DialTimeout: 5 * time.Second,
+	})
+```
+
+要访问etcd第一件事就是创建client，它需要传入一个Config配置，这里传了2个选项：
+
+- Endpoints：etcd的多个节点服务地址，因为我是单点测试，所以只传1个。
+- DialTimeout：创建client的首次连接超时，这里传了5秒，如果5秒都没有连接成功就会返回err；值得注意的是，一旦client创建成功，我们就不用再关心后续底层连接的状态了，client内部会重连。
+
+当然，如果上述err != nil，那么一般情况下我们可以选择重试几次，或者退出程序（重启）。
+
+这里重点需要了解一下client到底长什么样：
+
+```go
+type Client struct {
+    Cluster
+    KV
+    Lease
+    Watcher
+    Auth
+    Maintenance
+
+    // Username is a user name for authentication.
+    Username string
+    // Password is a password for authentication.
+    Password string
+    // contains filtered or unexported fields
 }
 ```
 
-当存储大量的k-v时，因为用户的value一般比较大，全部放在内存btree里内存耗费过大，所以etcd将用户value保存在磁盘中。
+Cluster、KV、Lease…，你会发现它们其实就代表了整个客户端的几大核心功能板块，分别用于：
 
-简单的说，etcd是纯内存索引，数据在磁盘持久化，这个模型整体来说并不复杂。在磁盘上，etcd使用了一个叫做bbolt的纯K-V存储引擎（可以理解为leveldb），那么bbolt的key和value分别是什么呢？
+- Cluster：向集群里增加etcd服务端节点之类，属于管理员操作。
+- KV：我们主要使用的功能，即操作K-V。
+- Lease：租约相关操作，比如申请一个TTL=10秒的租约。
+- Watcher：观察订阅，从而监听最新的数据变化。
+- Auth：管理etcd的用户和权限，属于管理员操作。
+- Maintenance：维护etcd，比如主动迁移etcd的leader节点，属于管理员操作。
 
-### 2.3 mvcc多版本
+我们需要使用什么功能，就去获取对应的对象即可。
 
-之前说到，etcd在事件模型上与zk完全不同，每次数据变化都会通知，并且通知里携带有变化后的数据内容，这是怎么实现的呢？当然就是多版本了。
+### 2.2 获取KV对象
 
-如果仅仅维护一个k-v模型，那么连续的更新只能保存最后一个value，历史版本无从追溯，而多版本可以解决这个问题，怎么维护多个版本呢？下面是几条预备知识：
-
-- 每个tx事务有唯一事务ID，在etcd中叫做main ID，全局递增不重复。
-- 一个tx可以包含多个修改操作（put和delete），每一个操作叫做一个revision（修订），共享同一个main ID。
-- 一个tx内连续的多个修改操作会被从0递增编号，这个编号叫做sub ID。
-- 每个revision由（main ID，sub ID）唯一标识。
-
-下面是revision的定义：
+实际上client.KV是一个interface，提供了关于k-v操作的所有方法：
 
 ```go
-// A revision indicates modification of the key-value space.
-// The set of changes that share same main revision changes the key-value space atomically.
-type revision struct {
-	// main is the main revision of a set of changes that happen atomically.
-	main int64
+type KV interface {
+	// Put puts a key-value pair into etcd.
+	// Note that key,value can be plain bytes array and string is
+	// an immutable representation of that bytes array.
+	// To get a string of bytes, do string([]byte{0x10, 0x20}).
+	Put(ctx context.Context, key, val string, opts ...OpOption) (*PutResponse, error)
 
-	// sub is the the sub revision of a change in a set of changes that happen
-	// atomically. Each change has different increasing sub revision in that
-	// set.
-	sub int64
+	// Get retrieves keys.
+	// By default, Get will return the value for "key", if any.
+	// When passed WithRange(end), Get will return the keys in the range [key, end).
+	// When passed WithFromKey(), Get returns keys greater than or equal to key.
+	// When passed WithRev(rev) with rev > 0, Get retrieves keys at the given revision;
+	// if the required revision is compacted, the request will fail with ErrCompacted .
+	// When passed WithLimit(limit), the number of returned keys is bounded by limit.
+	// When passed WithSort(), the keys will be sorted.
+	Get(ctx context.Context, key string, opts ...OpOption) (*GetResponse, error)
+
+	// Delete deletes a key, or optionally using WithRange(end), [key, end).
+	Delete(ctx context.Context, key string, opts ...OpOption) (*DeleteResponse, error)
+
+	// Compact compacts etcd KV history before the given rev.
+	Compact(ctx context.Context, rev int64, opts ...CompactOption) (*CompactResponse, error)
+
+	// Do applies a single Op on KV without a transaction.
+	// Do is useful when creating arbitrary operations to be issued at a
+	// later time; the user can range over the operations, calling Do to
+	// execute them. Get/Put/Delete, on the other hand, are best suited
+	// for when the operation should be issued at the time of declaration.
+	Do(ctx context.Context, op Op) (OpResponse, error)
+
+	// Txn creates a transaction.
+	Txn(ctx context.Context) Txn
 }
 ```
 
-在内存索引中，每个用户原始key会关联一个key_index结构，里面维护了多版本信息：
+但是我们并不是直接获取client.KV来使用，而是通过一个方法来获得一个经过装饰的KV实现（内置错误重试机制的高级KV）：
 
 ```go
-type keyIndex struct {
-	key         []byte
-	modified    revision // the main rev of the last modification
-	generations []generation
-}
+	kv := clientv3.NewKV(cli)
 ```
 
-key字段就是用户的原始key，modified字段记录这个key的最后一次修改对应的revision信息。
+接下来，我们将通过kv对象操作etcd中的数据。
 
-多版本（历史修改）保存在generations数组中，它的定义：
-
-```go
-// generation contains multiple revisions of a key.
-type generation struct {
-	ver     int64
-	created revision // when the generation is created (put in first revision).
-	revs    []revision
-}
-```
-
-我称generations[i]为第i代，当一个key从无到有的时候，generations[0]会被创建，其created字段记录了引起本次key创建的revision信息。
-
-当用户继续更新这个key的时候，generations[0].revs数组会不断追加记录本次的revision信息（main，sub）。
-
-在多版本中，每一次操作行为都被单独记录下来，那么用户value是怎么存储的呢？就是保存到bbolt中。
-
-在bbolt中，每个revision将作为key，即序列化（revision.main+revision.sub）作为key。因此，我们先通过内存btree在keyIndex.generations[0].revs中找到最后一条revision，即可去bbolt中读取对应的数据。
-
-相应的，etcd支持按key前缀查询，其实也就是遍历btree的同时根据revision去bbolt中获取用户的value。
-
-如果我们持续更新同一个key，那么generations[0].revs就会一直变大，这怎么办呢？在多版本中的，一般采用compact来压缩历史版本，即当历史版本到达一定数量时，会删除一些历史版本，只保存最近的一些版本。
-
-下面的是一个keyIndex在compact时，generations数组的变化：
+#### 1. Put
 
 ```go
-// For example: put(1.0);put(2.0);tombstone(3.0);put(4.0);tombstone(5.0) on key "foo"
-// generate a keyIndex:
-// key:     "foo"
-// rev: 5
-// generations:
-//    {empty}
-//    {4.0, 5.0(t)}
-//    {1.0, 2.0, 3.0(t)}
-//
-// Compact a keyIndex removes the versions with smaller or equal to
-// rev except the largest one. If the generation becomes empty
-// during compaction, it will be removed. if all the generations get
-// removed, the keyIndex should be removed.
-
-// For example:
-// compact(2) on the previous example
-// generations:
-//    {empty}
-//    {4.0, 5.0(t)}
-//    {2.0, 3.0(t)}
-//
-// compact(4)
-// generations:
-//    {empty}
-//    {4.0, 5.0(t)}
-//
-// compact(5):
-// generations:
-//    {empty} -> key SHOULD be removed.
-//
-// compact(6):
-// generations:
-//    {empty} -> key SHOULD be removed.
-```
-
-tombstone就是指delete删除key，一旦发生删除就会结束当前的generation，生成新的generation，小括号里的(t)标识tombstone。
-
-compact(n)表示压缩掉revision.main <= n的所有历史版本，会发生一系列的删减操作，可以仔细观察上述流程。
-
-多版本总结来说：内存btree维护的是用户key => keyIndex的映射，keyIndex内维护多版本的revision信息，而revision可以映射到磁盘bbolt中的用户value。
-
-最后，在bbolt中存储的value是这样一个json序列化后的结构，包括key创建时的revision（对应某一代generation的created），本次更新版本，sub ID（Version ver），Lease ID（租约ID）：
-
-```go
-	kv := mvccpb.KeyValue{
-		Key:            key,
-		Value:          value,
-		CreateRevision: c,
-		ModRevision:    rev,
-		Version:        ver,
-		Lease:          int64(leaseID),
+if putResp, err = kv.Put(con, "/illusory/cloud", "hello", clientv3.WithPrevKV()); err != nil {
+		fmt.Println(err)
+		return
 	}
 ```
 
-### 2.4 watch机制
+第一个参数context经常用golang的同学比较熟悉，很多API利用context实现取消操作，比如希望超过一定时间就让API立即返回，但是通常我们不需要用到。
 
-etcd的事件通知机制是基于mvcc多版本实现的。
+后面2个参数分别是key和value，还记得etcd是k-v存储引擎么？对于etcd来说，key=/test/a只是一个字符串而已，但是对我们而言却可以模拟出目录层级关系，先继续往下看。
 
-客户端可以提供一个要监听的revision.main作为watch的起始ID，只要etcd当前的全局自增事务ID > watch起始ID，etcd就会将MVCC在bbolt中存储的所有历史revision数据，逐一顺序的推送给客户端。
-
-这显然和zk是不同的，zk总是获取最新数据并建立一个一次性的监听后续变化。而etcd支持客户端从任意历史版本开始订阅事件，并且会推送当时的数据快照给客户端。
-
-那么，etcd大概是如何实现基于mvcc的watch机制的呢？
-
-etcd会保存每个客户端发来的watch请求，watch请求可以关注一个key（单key），或者一个key前缀（区间）。
-
-etcd会有一个协程持续不断的遍历所有的watch请求，每个watch对象都维护了其watch的key事件推送到了哪个revision。
-
-etcd会拿着这个revision.main ID去bbolt中继续向后遍历，实际上bbolt类似于leveldb，是一个按key有序的K-V引擎，而bbolt中的key是revision.main+revision.sub组成的，所以遍历就会依次经过历史上发生过的所有事务(tx)记录。
-
-对于遍历经过的每个k-v，etcd会反序列化其中的value，也就是mvccpb.KeyValue，判断其中的Key是否为watch请求关注的key，如果是就发送给客户端。
+其函数原型如下：
 
 ```go
-// syncWatchersLoop syncs the watcher in the unsynced map every 100ms.
-func (s *watchableStore) syncWatchersLoop() {
-	defer s.wg.Done()
+	// Put puts a key-value pair into etcd.
+	// Note that key,value can be plain bytes array and string is
+	// an immutable representation of that bytes array.
+	// To get a string of bytes, do string([]byte{0x10, 0x20}).
+	Put(ctx context.Context, key, val string, opts ...OpOption) (*PutResponse, error)
+```
 
-	for {
-		s.mu.RLock()
-		st := time.Now()
-		lastUnsyncedWatchers := s.unsynced.size()
-		s.mu.RUnlock()
+除了我们传递的参数，还支持一个可变参数，主要是传递一些控制项来影响Put的行为，例如可以携带一个lease ID来支持key过期，这个后面再说。
 
-		unsyncedWatchers := 0
-		if lastUnsyncedWatchers > 0 {
-			unsyncedWatchers = s.syncWatchers()
-		}
-		syncDuration := time.Since(st)
+上述Put操作返回的是PutResponse，不同的KV操作对应不同的response结构，这里顺便一提。
 
-		waitDuration := 100 * time.Millisecond
-		// more work pending?
-		if unsyncedWatchers != 0 && lastUnsyncedWatchers > unsyncedWatchers {
-			// be fair to other store operations by yielding time taken
-			waitDuration = syncDuration
-		}
+```go
+type (
+	CompactResponse pb.CompactionResponse
+	PutResponse     pb.PutResponse
+	GetResponse     pb.RangeResponse
+	DeleteResponse  pb.DeleteRangeResponse
+	TxnResponse     pb.TxnResponse
+)
+```
 
-		select {
-		case <-time.After(waitDuration):
-		case <-s.stopc:
-			return
-		}
-	}
+你可以通过IDE跳转到PutResponse，详细看看有哪些可用的信息：
+
+```go
+type PutResponse struct {
+	Header *ResponseHeader `protobuf:"bytes,1,opt,name=header" json:"header,omitempty"`
+	// if prev_kv is set in the request, the previous key-value pair will be returned.
+	PrevKv *mvccpb.KeyValue `protobuf:"bytes,2,opt,name=prev_kv,json=prevKv" json:"prev_kv,omitempty"`
 }
 ```
 
-上述代码是一个循环，不停的调用syncWatchers：
+Header里保存的主要是本次更新的revision信息，而PrevKv可以返回Put覆盖之前的value是什么（目前是nil，后面会说原因），打印给大家看看：
 
 ```go
-// syncWatchers syncs unsynced watchers by:
-//	1. choose a set of watchers from the unsynced watcher group
-//	2. iterate over the set to get the minimum revision and remove compacted watchers
-//	3. use minimum revision to get all key-value pairs and send those events to watchers
-//	4. remove synced watchers in set from unsynced group and move to synced group
-func (s *watchableStore) syncWatchers() int {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	if s.unsynced.size() == 0 {
-		return 0
-	}
-
-	s.store.revMu.RLock()
-	defer s.store.revMu.RUnlock()
-
-	// in order to find key-value pairs from unsynced watchers, we need to
-	// find min revision index, and these revisions can be used to
-	// query the backend store of key-value pairs
-	curRev := s.store.currentRev
-	compactionRev := s.store.compactMainRev
-
-	wg, minRev := s.unsynced.choose(maxWatchersPerSync, curRev, compactionRev)
-	minBytes, maxBytes := newRevBytes(), newRevBytes()
-	revToBytes(revision{main: minRev}, minBytes)
-	revToBytes(revision{main: curRev + 1}, maxBytes)
-
-	// UnsafeRange returns keys and values. And in boltdb, keys are revisions.
-	// values are actual key-value pairs in backend.
-	tx := s.store.b.ReadTx()
-	tx.Lock()
-	revs, vs := tx.UnsafeRange(keyBucketName, minBytes, maxBytes, 0)
-	evs := kvsToEvents(wg, revs, vs)
-	tx.Unlock()
+cluster_id:16331561280905954307 member_id:9359753661018847437 revision:6 raft_term:7
 ```
 
-代码比较长不全贴，它会每次从所有的watcher选出一批watcher进行批处理（组成为一个group，叫做watchGroup），这批watcher中观察的最小revision.main ID作为bbolt的遍历起始位置，这是一种优化。
+记得，我们需要判断err来确定操作是否成功。
 
-你可以想一下，如果为每个watcher单独遍历bbolt并从中摘出属于自己关注的key，那性能就太差了。通过一次性遍历，处理多个watcher，显然可以有效减少遍历的次数。
-
-也许你觉得这样在watcher数量多的情况下性能仍旧很差，但是你需要知道一般的用户行为都是从最新的Revision开始watch，很少有需求关注到很古老的revision，这就是关键。
-
-遍历bbolt时，json反序列化每个mvccpb.KeyValue结构，判断其中的key是否属于watchGroup关注的key，这是由kvsToEvents函数完成的：
+我们再Put其他2个key，用于后续演示：
 
 ```go
-// kvsToEvents gets all events for the watchers from all key-value pairs
-func kvsToEvents(wg *watcherGroup, revs, vals [][]byte) (evs []mvccpb.Event) {
-	for i, v := range vals {
-		var kv mvccpb.KeyValue
-		if err := kv.Unmarshal(v); err != nil {
-			plog.Panicf("cannot unmarshal event: %v", err)
-		}
+	// 再写一个孩子
+	kv.Put(context.TODO(),"/illusory/wind"", "world")
 
-		if !wg.contains(string(kv.Key)) {
-			continue
-		}
+	// 再写一个同前缀的干扰项
+	kv.Put(context.TODO(), "/illusoryxxx, "干扰")
+```
 
-		ty := mvccpb.PUT
-		if isTombstone(revs[i]) {
-			ty = mvccpb.DELETE
-			// patch in mod revision so watchers won't skip
-			kv.ModRevision = bytesToRev(revs[i]).main
-		}
-		evs = append(evs, mvccpb.Event{Kv: &kv, Type: ty})
-	}
-	return evs
+现在理论上来说，`illusory`目录下有2个孩子：`cloud`与`wind`，而`/illusoryxxx`并不是。
+
+#### 2. Get
+
+我们可以先来读取一下`/illusory/cloud`：
+
+```go
+// 用kv获取key
+	if putResp, err = kv.Put(con, "/illusory/wind", "world"); err != nil {
+		fmt.Println(err)
+	} 
+```
+
+其函数原型如下：
+
+```go
+	// Get retrieves keys.
+	// By default, Get will return the value for "key", if any.
+	// When passed WithRange(end), Get will return the keys in the range [key, end).
+	// When passed WithFromKey(), Get returns keys greater than or equal to key.
+	// When passed WithRev(rev) with rev > 0, Get retrieves keys at the given revision;
+	// if the required revision is compacted, the request will fail with ErrCompacted .
+	// When passed WithLimit(limit), the number of returned keys is bounded by limit.
+	// When passed WithSort(), the keys will be sorted.
+	Get(ctx context.Context, key string, opts ...OpOption) (*GetResponse, error)
+```
+
+和Put类似，函数注释里提示我们可以传递一些控制参数来影响Get的行为，比如：WithFromKey表示读取从参数key开始递增的所有key，而不是读取单个key。
+
+在上面的例子中，我没有传递opOption，所以就是获取key=/test/a的最新版本数据。
+
+这里err并不能反馈出key是否存在（只能反馈出本次操作因为各种原因异常了），我们需要通过GetResponse（实际上是pb.RangeResponse）判断key是否存在：
+
+```go
+type RangeResponse struct {
+	Header *ResponseHeader `protobuf:"bytes,1,opt,name=header" json:"header,omitempty"`
+	// kvs is the list of key-value pairs matched by the range request.
+	// kvs is empty when count is requested.
+	Kvs []*mvccpb.KeyValue `protobuf:"bytes,2,rep,name=kvs" json:"kvs,omitempty"`
+	// more indicates if there are more keys to return in the requested range.
+	More bool `protobuf:"varint,3,opt,name=more,proto3" json:"more,omitempty"`
+	// count is set to the number of keys within the range when requested.
+	Count int64 `protobuf:"varint,4,opt,name=count,proto3" json:"count,omitempty"`
 }
 ```
 
-可见，删除key对应的revision也会保存到bbolt中，只是bbolt的key比较特别：
+Kvs字段，保存了本次Get查询到的所有k-v对，因为上述例子只Get了一个单key，所以只需要判断一下len(Kvs)是否==1即可知道是否存在。
 
-put操作的key由main+sub构成：
+而mvccpb.KeyValue在etcd原理分析中有所提及，它就是etcd在bbolt中保存的K-v对象：
 
 ```go
-ibytes := newRevBytes()
-idxRev := revision{main: rev, sub: int64(len(tw.changes))}
-revToBytes(idxRev, ibytes)
+type KeyValue struct {
+	// key is the key in bytes. An empty key is not allowed.
+	Key []byte `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
+	// create_revision is the revision of last creation on this key.
+	CreateRevision int64 `protobuf:"varint,2,opt,name=create_revision,json=createRevision,proto3" json:"create_revision,omitempty"`
+	// mod_revision is the revision of last modification on this key.
+	ModRevision int64 `protobuf:"varint,3,opt,name=mod_revision,json=modRevision,proto3" json:"mod_revision,omitempty"`
+	// version is the version of the key. A deletion resets
+	// the version to zero and any modification of the key
+	// increases its version.
+	Version int64 `protobuf:"varint,4,opt,name=version,proto3" json:"version,omitempty"`
+	// value is the value held by the key, in bytes.
+	Value []byte `protobuf:"bytes,5,opt,name=value,proto3" json:"value,omitempty"`
+	// lease is the ID of the lease that attached to key.
+	// When the attached lease expires, the key will be deleted.
+	// If lease is 0, then no lease is attached to the key.
+	Lease int64 `protobuf:"varint,6,opt,name=lease,proto3" json:"lease,omitempty"`
+}
 ```
 
-delete操作的key由main+sub+”t”构成：
+至于RangeResponse.More和Count，当我们使用withLimit()选项进行Get时会发挥作用，相当于翻页查询。
+
+接下来，我们通过一个特别的Get选项，获取`/illusory`目录下的所有孩子：
 
 ```go
-idxRev := revision{main: tw.beginRev + 1, sub: int64(len(tw.changes))}
-revToBytes(idxRev, ibytes)
-ibytes = appendMarkTombstone(ibytes)
+// 用kv获取Key 获取前缀为/illusory/的 即 /illusory/的所有孩子
+	if getResp, err = kv.Get(con, "/illusory/",clientv3.WithPrefix()); err != nil {
+		fmt.Println(err)
+	} 
+```
+
+我们知道etcd是一个有序的k-v存储，因此/test/为前缀的key总是顺序排列在一起。
+
+withPrefix实际上会转化为范围查询，它根据前缀/illusory/生成了一个key range，[“/illusory/”, “/illusory0”)，为什么呢？因为比/大的字符是’0’，所以以/illusory0作为范围的末尾，就可以扫描到所有的/illusory/打头的key了。
+
+在之前，我Put了一个/illusoryxxx干扰项，因为不符合/illusory/前缀（注意末尾的/），所以就不会被这次Get获取到。但是，如果我查询的前缀是/illusory，那么/illusoryxxx也会被扫描到，这就是etcd k-v模型导致的，编程时一定要特别注意。
+
+#### 3. 获取Lease对象
+
+和获取KV对象一样，通过下面代码获取它：
+
+```go
+lease := clientv3.NewLease(client)
+```
 
 
-// appendMarkTombstone appends tombstone mark to normal revision bytes.
-func appendMarkTombstone(b []byte) []byte {
-	if len(b) != revBytesLen {
-		plog.Panicf("cannot append mark to non normal revision bytes")
+
+```go
+type Lease interface {
+	// Grant creates a new lease.
+	Grant(ctx context.Context, ttl int64) (*LeaseGrantResponse, error)
+
+	// Revoke revokes the given lease.
+	Revoke(ctx context.Context, id LeaseID) (*LeaseRevokeResponse, error)
+
+	// TimeToLive retrieves the lease information of the given lease ID.
+	TimeToLive(ctx context.Context, id LeaseID, opts ...LeaseOption) (*LeaseTimeToLiveResponse, error)
+
+	// Leases retrieves all leases.
+	Leases(ctx context.Context) (*LeaseLeasesResponse, error)
+
+	// KeepAlive keeps the given lease alive forever.
+	KeepAlive(ctx context.Context, id LeaseID) (<-chan *LeaseKeepAliveResponse, error)
+
+	// KeepAliveOnce renews the lease once. In most of the cases, KeepAlive
+	// should be used instead of KeepAliveOnce.
+	KeepAliveOnce(ctx context.Context, id LeaseID) (*LeaseKeepAliveResponse, error)
+
+	// Close releases all resources Lease keeps for efficient communication
+	// with the etcd server.
+	Close() error
+}
+```
+
+Lease提供了几个功能：
+
+- Grant：分配一个租约。
+- Revoke：释放一个租约。
+- TimeToLive：获取剩余TTL时间。
+- Leases：列举所有etcd中的租约。
+- KeepAlive：自动定时的续约某个租约。
+- KeepAliveOnce：为某个租约续约一次。
+- Close：貌似是关闭当前客户端建立的所有租约。
+
+#### 4. Grant与TTL
+
+要想实现key自动过期，首先得创建一个租约，它有10秒的TTL：
+
+```go
+grantResp, err := lease.Grant(context.TODO(), 10)
+```
+
+grantResp中主要使用到了ID，也就是租约ID：
+
+```go
+// LeaseGrantResponse wraps the protobuf message LeaseGrantResponse.
+type LeaseGrantResponse struct {
+	*pb.ResponseHeader
+	ID    LeaseID
+	TTL   int64
+	Error string
+}
+```
+
+接下来，我们用这个租约来Put一个会自动过期的Key：
+
+```go
+	// 用client也可以设置key，kv是client的一个结构，因此可以使用其方法
+	if putResp, err = kv.Put(context.TODO(), "/illusory/cloud/x", "ok", clientv3.WithLease(leaseResp.ID)); err != nil {
+		fmt.Println(err)
 	}
-	return append(b, markTombstone)
-}
+```
 
-// isTombstone checks whether the revision bytes is a tombstone.
-func isTombstone(b []byte) bool {
-	return len(b) == markedRevBytesLen && b[markBytePosition] == markTombstone
+这里特别需要注意，有一种情况是在Put之前Lease已经过期了，那么这个Put操作会返回error，此时你需要重新分配Lease。
+
+当我们实现服务注册时，需要主动给Lease进行续约，这需要调用`KeepAlive`/`KeepAliveOnce`，
+
+* KeepAlive:自动定时的续约某个租约。 
+* KeepAliveOnce:为某个租约续约一次
+
+```go
+	// 主动给Lease进行续约
+	if keepAliveChan, err := client.KeepAlive(context.TODO(), leaseResp.ID); err != nil { // 有协程来帮自动续租，每秒一次。
+		fmt.Println(err)
+	}
+```
+
+keepResp结构如下：
+
+```go
+// LeaseKeepAliveResponse wraps the protobuf message LeaseKeepAliveResponse.
+type LeaseKeepAliveResponse struct {
+	*pb.ResponseHeader
+	ID  LeaseID
+	TTL int64
 }
 ```
+
+KeepAlive和Put一样，如果在执行之前Lease就已经过期了，那么需要重新分配Lease。Etcd并没有提供API来实现原子的Put with Lease。
+
+#### 5. Op
+
+Op字面意思就是”操作”，Get和Put都属于Op，只是为了简化用户开发而开放的特殊API。
+
+实际上，KV有一个Do方法接受一个Op：
+
+```go
+	// Do applies a single Op on KV without a transaction.
+	// Do is useful when creating arbitrary operations to be issued at a
+	// later time; the user can range over the operations, calling Do to
+	// execute them. Get/Put/Delete, on the other hand, are best suited
+	// for when the operation should be issued at the time of declaration.
+	Do(ctx context.Context, op Op) (OpResponse, error)
+```
+
+其参数Op是一个抽象的操作，可以是Put/Get/Delete…；而OpResponse是一个抽象的结果，可以是PutResponse/GetResponse…
+
+可以通过一些函数来分配Op：
+
+```go
+func OpDelete(key string, opts …OpOption) Op
+func OpGet(key string, opts …OpOption) Op
+func OpPut(key, val string, opts …OpOption) Op
+func OpTxn(cmps []Cmp, thenOps []Op, elseOps []Op) Op
+```
+
+
+
+其实和直接调用KV.Put，KV.GET没什么区别。
+
+下面是一个例子：
+
+```go
+// 给key设置新的value并返回设置之前的值
+op := clientv3.OpPut("/illusory/cloud", "newKey", clientv3.WithPrevKV())
+response, err := kv.Do(context.TODO(), op)
+```
+
+把这个op交给Do方法执行，返回的opResp结构如下：
+
+```go
+type OpResponse struct {
+	put *PutResponse
+	get *GetResponse
+	del *DeleteResponse
+	txn *TxnResponse
+}
+```
+
+你的操作是什么类型，你就用哪个指针来访问对应的结果，仅此而已。
+
+#### 6. Txn事务
+
+etcd中事务是原子执行的，只支持if … then … else …这种表达，能实现一些有意思的场景。
+
+首先，我们需要开启一个事务，这是通过KV对象的方法实现的：
+
+```go
+	// 开启事务
+	txn := kv.Txn(context.TODO())
+```
+
+我写了如下的测试代码，Then和Else还比较好理解，If是比较陌生的。
+
+```go
+	// 如果/illusory/cloud的值为hello则获取/illusory/cloud的值 否则获取/illusory/wind的值
+	txnResp, err := txn.If(clientv3.Compare(clientv3.Value("/illusory/cloud"), "=", "hello")).
+		Then(clientv3.OpGet("/illusory/cloud")).
+		Else(clientv3.OpGet("/illusory/wind", clientv3.WithPrefix())).
+		Commit()
+```
+
+我们先看下Txn支持的方法：
+
+```go
+type Txn interface {
+	// If takes a list of comparison. If all comparisons passed in succeed,
+	// the operations passed into Then() will be executed. Or the operations
+	// passed into Else() will be executed.
+	If(cs ...Cmp) Txn
+
+	// Then takes a list of operations. The Ops list will be executed, if the
+	// comparisons passed in If() succeed.
+	Then(ops ...Op) Txn
+
+	// Else takes a list of operations. The Ops list will be executed, if the
+	// comparisons passed in If() fail.
+	Else(ops ...Op) Txn
+
+	// Commit tries to commit the transaction.
+	Commit() (*TxnResponse, error)
+}
+```
+
+Txn必须是这样使用的：If(满足条件) Then(执行若干Op) Else(执行若干Op)。
+
+If中支持传入多个Cmp比较条件，如果所有条件满足，则执行Then中的Op（上一节介绍过Op），否则执行Else中的Op。
+
+在我的例子中只传入了1个比较条件：
+
+```go
+txn.If(clientv3.Compare(clientv3.Value("/illusory/cloud"), "=", "hello"))
+```
+
+`Value(“/illusory/cloud”)`是指`key=/illusory/cloud`对应的`value`，它是条件表达式的”主语”，类型是Cmp：
+
+```go
+func Value(key string) Cmp {
+	return Cmp{Key: []byte(key), Target: pb.Compare_VALUE}
+}
+```
+
+这个`Value(“/illusory/cloud”)`返回的Cmp表达了：”/illusory/cloud这个key对应的value”。
+
+接下来，利用Compare函数来继续为”主语”增加描述，形成了一个完整条件语句，即”/illusory/cloud"i这个key对应的value”必须等于”hello”。
+
+Compare函数实际上是对Value返回的Cmp对象进一步修饰，增加了”=”与”hello”两个描述信息：
+
+```go
+func Compare(cmp Cmp, result string, v interface{}) Cmp {
+	var r pb.Compare_CompareResult
+
+	switch result {
+	case "=":
+		r = pb.Compare_EQUAL
+	case "!=":
+		r = pb.Compare_NOT_EQUAL
+	case ">":
+		r = pb.Compare_GREATER
+	case "<":
+		r = pb.Compare_LESS
+	default:
+		panic("Unknown result op")
+	}
+
+	cmp.Result = r
+	switch cmp.Target {
+	case pb.Compare_VALUE:
+		val, ok := v.(string)
+		if !ok {
+			panic("bad compare value")
+		}
+		cmp.TargetUnion = &pb.Compare_Value{Value: []byte(val)}
+	case pb.Compare_VERSION:
+		cmp.TargetUnion = &pb.Compare_Version{Version: mustInt64(v)}
+	case pb.Compare_CREATE:
+		cmp.TargetUnion = &pb.Compare_CreateRevision{CreateRevision: mustInt64(v)}
+	case pb.Compare_MOD:
+		cmp.TargetUnion = &pb.Compare_ModRevision{ModRevision: mustInt64(v)}
+	case pb.Compare_LEASE:
+		cmp.TargetUnion = &pb.Compare_Lease{Lease: mustInt64orLeaseID(v)}
+	default:
+		panic("Unknown compare type")
+	}
+	return cmp
+}
+```
+
+Cmp可以用于描述”key=xxx的yyy属性，必须=、!=、<、>，kkk值”，比如：
+
+- key=xxx的value，必须!=，hello。
+- key=xxx的create版本号，必须=，11233。
+- key=xxx的lease id，必须=，12319231231238。
+
+经过Compare函数修饰的Cmp对象，内部包含了完整的条件信息，传递给If函数即可。
+
+类似于Value的函数用于指定yyy属性，有这么几个方法：
+
+```go
+func CreateRevision(key string) Cmp：key=xxx的创建版本必须满足…
+func LeaseValue(key string) Cmp：key=xxx的Lease ID必须满足…
+func ModRevision(key string) Cmp：key=xxx的最后修改版本必须满足…
+func Value(key string) Cmp：key=xxx的创建值必须满足…
+func Version(key string) Cmp：key=xxx的累计更新次数必须满足…
+```
+
+最后Commit提交整个Txn事务，我们需要判断txnResp获知If条件是否成立：
+
+```go
+	if txnResp.Succeeded { // If = true
+		fmt.Println("~~~", txnResp.Responses[0].GetResponseRange().Kvs)
+	} else { // If =false
+		fmt.Println("!!!", txnResp.Responses[0].GetResponseRange().Kvs)
+	}
+```
+
+Succeed=true表示If条件成立，接下来我们需要获取Then或者Else中的OpResponse列表（因为可以传多个Op），可以看一下txnResp的结构：
+
+```go
+type TxnResponse struct {
+	Header *ResponseHeader `protobuf:"bytes,1,opt,name=header" json:"header,omitempty"`
+	// succeeded is set to true if the compare evaluated to true or false otherwise.
+	Succeeded bool `protobuf:"varint,2,opt,name=succeeded,proto3" json:"succeeded,omitempty"`
+	// responses is a list of responses corresponding to the results from applying
+	// success if succeeded is true or failure if succeeded is false.
+	Responses []*ResponseOp `protobuf:"bytes,3,rep,name=responses" json:"responses,omitempty"`
+}
+```
+
+#### 7. watch
+
+
 
 ## 3. 参考
 
 `https://yuerblog.cc/2017/12/12/etcd-v3-sdk-usage/`
-
