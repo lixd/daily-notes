@@ -155,3 +155,4 @@ message:"Hello illusory"
 
 
 
+Go-grpc服务与go-micro服务一样，也就是说你可以直接将服务声明方式`micro.NewService`换成`grpc.NewService`，而不需要改动其它代码。
