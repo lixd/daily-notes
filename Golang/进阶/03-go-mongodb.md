@@ -590,6 +590,24 @@ $limit会提前到$skip前面去执行。
 
 管道对数据的类型和结果的大小会有一些限制，对于一些简单的固定的聚集操作可以使用管道，但是对于一些复杂的、大量数据集的聚合任务还是使用MapReduce。
 
+### 聚合查询
+
+```mysql
+db.orders.aggregate([
+   {
+     $lookup:
+       {
+         from: "inventory",
+         localField: "item",
+         foreignField: "sku",
+         as: "inventory_docs"
+       }
+  }
+])
+```
+
+从集合order中逐个获取文档处理，拿到一个文档后，会根据localField 值 遍历 被 Join的 inventory集合（from: "inventory"），看inventory集合文档中 foreignField值是否与之相等。如果相等，就把符合条件的inventory文档  整体 内嵌到聚合框架新生成的文档中，并且新key 统一命名为 inventory_docs。考虑到符合条件的文档不唯一，这个Key对应的Value是个数组形式。原集合中Key对应的值为Null值或不存在时，需特别小心。
+
 ## 参考
 
 `https://www.cnblogs.com/shanyou/p/3494854.html`
