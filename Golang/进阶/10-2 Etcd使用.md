@@ -557,6 +557,16 @@ type TxnResponse struct {
 
 #### 7. watch
 
+```go
+	watch := client.Watch(context.Background(), "maxProcess")
+	select {
+	case <-watch:
+		fmt.Println(client.Get(context.Background(), "maxProcess"))
+	}
+```
+
+
+
 ## 3. 遇到的问题
 
 ### 3.1 空间不足
