@@ -24,8 +24,8 @@ networks:
 services:
   etcd1:
     image: quay.io/coreos/etcd
-    container_name: etcd_node1
-    command: etcd -name etcd_node1 -advertise-client-urls http://0.0.0.0:2379 -listen-client-urls http://0.0.0.0:2379 -listen-peer-urls http://0.0.0.0:2380 -initial-cluster-token etcd-cluster -initial-cluster "etcd1=http://etcd1:2380,etcd2=http://etcd2:2380,etcd3=http://etcd3:2380" -initial-cluster-state new
+    container_name: etcd1
+    command: etcd -name etcd1 -advertise-client-urls http://0.0.0.0:2379 -listen-client-urls http://0.0.0.0:2379 -listen-peer-urls http://0.0.0.0:2380 -initial-cluster-token etcd-cluster -initial-cluster "etcd1=http://etcd1:2380,etcd2=http://etcd2:2380,etcd3=http://etcd3:2380" -initial-cluster-state new
     ports:
       - 2379
       - 2380
@@ -52,6 +52,49 @@ services:
     networks:
       - etcdnet
 ```
+
+
+
+```sh
+version: '2'
+networks:
+  etcdnet:
+
+services:
+  etcd1:
+    image: quay.io/coreos/etcd
+    container_name: etcd1
+    command: etcd -name etcd1 -advertise-client-urls http://127.0.0.1:2379 -listen-client-urls http://127.0.0.1:2379 -listen-peer-urls http://127.0.0.1:2380 -initial-cluster-token etcd-cluster -initial-cluster "etcd1=http://etcd1:2380,etcd2=http://etcd2:2380,etcd3=http://etcd3:2380" -initial-cluster-state new
+    ports:
+      - 2379
+      - 2380
+    networks:
+      - etcdnet
+
+  etcd2:
+    image: quay.io/coreos/etcd
+    container_name: etcd2
+    command: etcd -name etcd2 -advertise-client-urls http://127.0.0.1:2379 -listen-client-urls http://127.0.0.1:2379 -listen-peer-urls http://127.0.0.1:2380 -initial-cluster-token etcd-cluster -initial-cluster "etcd1=http://etcd1:2380,etcd2=http://etcd2:2380,etcd3=http://etcd3:2380" -initial-cluster-state new
+    ports:
+      - 2379
+      - 2380
+    networks:
+      - etcdnet
+
+  etcd3:
+    image: quay.io/coreos/etcd
+    container_name: etcd3
+    command: etcd -name etcd3 -advertise-client-urls http://127.0.0.1:2379 -listen-client-urls http://127.0.0.1:2379 -listen-peer-urls http://127.0.0.1:2380 -initial-cluster-token etcd-cluster -initial-cluster "etcd1=http://etcd1:2380,etcd2=http://etcd2:2380,etcd3=http://etcd3:2380" -initial-cluster-state new
+    ports:
+      - 2379
+      - 2380
+    networks:
+      - etcdnet
+```
+
+
+
+
 
 ### 3. 启动
 
@@ -106,7 +149,7 @@ $ docker exec -t etcd1 etcdctl member list
 ade526d28b1f92f7: name=etcd1 peerURLs=http://etcd1:2380 clientURLs=http://0.0.0.0:2379 isLeader=false
 bd388e7810915853: name=etcd3 peerURLs=http://etcd3:2380 clientURLs=http://0.0.0.0:2379 isLeader=false
 d282ac2ce600c1ce: name=etcd2 peerURLs=http://etcd2:2380 clientURLs=http://0.0.0.0:2379 isLeader=true
-
+docker inspect
 $ docker exec -t etcd3 etcdctl -C http://etcd1:2379,http://etcd2:2379,http://etcd3:2379 member list
 ade526d28b1f92f7: name=etcd1 peerURLs=http://etcd1:2380 clientURLs=http://0.0.0.0:2379 isLeader=false
 bd388e7810915853: name=etcd3 peerURLs=http://etcd3:2380 clientURLs=http://0.0.0.0:2379 isLeader=false
