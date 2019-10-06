@@ -37,6 +37,64 @@ NATS是一个开源、轻量级、高性能的分布式消息中间件，实现�
 
 
 
+## 集群
+
+docker-compose.yml
+
+```yaml
+version: '3.3'
+services:
+  nats1:
+    image: registry.docker-cn.com/library/nats
+    command: --cluster nats://0.0.0.0:5222 -routes nats://nats2:5222,nats://nats3:5222
+    ports:
+      - 4222
+    networks:
+      - nats
+    deploy:
+      restart_policy:
+        condition: on-failure
+      replicas: 1
+      placement:
+        constraints:
+          - node.hostname==manager
+  nats2:
+    image: registry.docker-cn.com/library/nats
+    command: --cluster nats://0.0.0.0:5222 -routes nats://nats1:5222,nats://nats3:5222
+    ports:
+      - 4222
+    networks:
+      - nats
+    deploy:
+      restart_policy:
+        condition: on-failure
+      replicas: 1
+      placement:
+        constraints:
+          - node.hostname==worker1
+  nats3:
+    image: registry.docker-cn.com/library/nats
+    command: --cluster nats://0.0.0.0:5222 -routes nats://nats1:5222,nats2:5222
+    ports:
+      - 4222
+    networks:
+      - nats
+    deploy:
+      restart_policy:
+        condition: on-failure
+      replicas: 1
+      placement:
+        constraints:
+          - node.hostname==worker2
+networks:
+  nats:
+    external: true
+```
+
+
+
+
+
 ### Install
 
 ## 建立
