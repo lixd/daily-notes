@@ -12,6 +12,8 @@ bufio包实现了有缓冲的I/O，可以大幅提高文件读写的效率。它
 
 利用缓冲区减少I/O次数已达到提高速度的效果。
 
+![bufio原理](https://github.com/illusorycloud/daily-notes/raw/master/Golang/%E8%BF%9B%E9%98%B6/%E5%9F%BA%E7%A1%80%E5%BA%93/io/imgs/bufio%E5%8E%9F%E7%90%86.jpg)
+
 ## bufio 源码分析
 
 ### Reader对象

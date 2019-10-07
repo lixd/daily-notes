@@ -132,7 +132,7 @@ func MultiWriter(writers ...Writer) Writer
 
 当然，Go语言中并没有Java中那样的继承关系，而是基于duck type形式实现，我用下图尝试展示Go io接口的继承关系。
 
-![继承关系](D:\lillusory\dailynote\Golang\进阶\基础库\io\imgs\golang io继承关系.png)
+![继承关系](https://github.com/illusorycloud/daily-notes/raw/master/Golang/%E8%BF%9B%E9%98%B6/%E5%9F%BA%E7%A1%80%E5%BA%93/io/imgs/golang%20io%E7%BB%A7%E6%89%BF%E5%85%B3%E7%B3%BB.png)
 
 * 黄色是 bufio 包下的类型
 * 绿色是 archive.tar 包下的类型
