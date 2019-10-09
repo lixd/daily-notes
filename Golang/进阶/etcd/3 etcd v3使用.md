@@ -58,36 +58,15 @@ Cluster、KV、Lease…，你会发现它们其实就代表了整个客户端的
 
 ```go
 type KV interface {
-	// Put puts a key-value pair into etcd.
-	// Note that key,value can be plain bytes array and string is
-	// an immutable representation of that bytes array.
-	// To get a string of bytes, do string([]byte{0x10, 0x20}).
 	Put(ctx context.Context, key, val string, opts ...OpOption) (*PutResponse, error)
 
-	// Get retrieves keys.
-	// By default, Get will return the value for "key", if any.
-	// When passed WithRange(end), Get will return the keys in the range [key, end).
-	// When passed WithFromKey(), Get returns keys greater than or equal to key.
-	// When passed WithRev(rev) with rev > 0, Get retrieves keys at the given revision;
-	// if the required revision is compacted, the request will fail with ErrCompacted .
-	// When passed WithLimit(limit), the number of returned keys is bounded by limit.
-	// When passed WithSort(), the keys will be sorted.
 	Get(ctx context.Context, key string, opts ...OpOption) (*GetResponse, error)
 
-	// Delete deletes a key, or optionally using WithRange(end), [key, end).
 	Delete(ctx context.Context, key string, opts ...OpOption) (*DeleteResponse, error)
 
-	// Compact compacts etcd KV history before the given rev.
 	Compact(ctx context.Context, rev int64, opts ...CompactOption) (*CompactResponse, error)
-
-	// Do applies a single Op on KV without a transaction.
-	// Do is useful when creating arbitrary operations to be issued at a
-	// later time; the user can range over the operations, calling Do to
-	// execute them. Get/Put/Delete, on the other hand, are best suited
-	// for when the operation should be issued at the time of declaration.
 	Do(ctx context.Context, op Op) (OpResponse, error)
 
-	// Txn creates a transaction.
 	Txn(ctx context.Context) Txn
 }
 ```
@@ -95,7 +74,22 @@ type KV interface {
 但是我们并不是直接获取client.KV来使用，而是通过一个方法来获得一个经过装饰的KV实现（内置错误重试机制的高级KV）：
 
 ```go
-	kv := clientv3.NewKV(cli)
+kv := clientv3.NewKV(cli)
+
+func NewKV(c *Client) KV {
+	api := &kv{remote: RetryKVClient(c)}
+	if c != nil {
+		api.callOpts = c.callOpts
+	}
+	return api
+}
+// RetryKVClient implements a KVClient.
+func RetryKVClient(c *Client) pb.KVClient {
+	return &retryKVClient{
+		kc:     pb.NewKVClient(c.conn),
+		retryf: c.newAuthRetryWrapper(c.newRetryWrapper()),
+	}
+}
 ```
 
 接下来，我们将通过kv对象操作etcd中的数据。
@@ -103,7 +97,7 @@ type KV interface {
 #### 1. Put
 
 ```go
-if putResp, err = kv.Put(con, "/illusory/cloud", "hello", clientv3.WithPrevKV()); err != nil {
+if putResp, err = kv.Put(ctx, "/illusory/cloud", "hello", clientv3.WithPrevKV()); err != nil {
 		fmt.Println(err)
 		return
 	}
@@ -116,10 +110,6 @@ if putResp, err = kv.Put(con, "/illusory/cloud", "hello", clientv3.WithPrevKV())
 其函数原型如下：
 
 ```go
-	// Put puts a key-value pair into etcd.
-	// Note that key,value can be plain bytes array and string is
-	// an immutable representation of that bytes array.
-	// To get a string of bytes, do string([]byte{0x10, 0x20}).
 	Put(ctx context.Context, key, val string, opts ...OpOption) (*PutResponse, error)
 ```
 
@@ -181,14 +171,6 @@ cluster_id:16331561280905954307 member_id:9359753661018847437 revision:6 raft_te
 其函数原型如下：
 
 ```go
-	// Get retrieves keys.
-	// By default, Get will return the value for "key", if any.
-	// When passed WithRange(end), Get will return the keys in the range [key, end).
-	// When passed WithFromKey(), Get returns keys greater than or equal to key.
-	// When passed WithRev(rev) with rev > 0, Get retrieves keys at the given revision;
-	// if the required revision is compacted, the request will fail with ErrCompacted .
-	// When passed WithLimit(limit), the number of returned keys is bounded by limit.
-	// When passed WithSort(), the keys will be sorted.
 	Get(ctx context.Context, key string, opts ...OpOption) (*GetResponse, error)
 ```
 
@@ -201,12 +183,8 @@ cluster_id:16331561280905954307 member_id:9359753661018847437 revision:6 raft_te
 ```go
 type RangeResponse struct {
 	Header *ResponseHeader `protobuf:"bytes,1,opt,name=header" json:"header,omitempty"`
-	// kvs is the list of key-value pairs matched by the range request.
-	// kvs is empty when count is requested.
 	Kvs []*mvccpb.KeyValue `protobuf:"bytes,2,rep,name=kvs" json:"kvs,omitempty"`
-	// more indicates if there are more keys to return in the requested range.
 	More bool `protobuf:"varint,3,opt,name=more,proto3" json:"more,omitempty"`
-	// count is set to the number of keys within the range when requested.
 	Count int64 `protobuf:"varint,4,opt,name=count,proto3" json:"count,omitempty"`
 }
 ```
@@ -217,21 +195,10 @@ Kvs字段，保存了本次Get查询到的所有k-v对，因为上述例子只Ge
 
 ```go
 type KeyValue struct {
-	// key is the key in bytes. An empty key is not allowed.
 	Key []byte `protobuf:"bytes,1,opt,name=key,proto3" json:"key,omitempty"`
-	// create_revision is the revision of last creation on this key.
 	CreateRevision int64 `protobuf:"varint,2,opt,name=create_revision,json=createRevision,proto3" json:"create_revision,omitempty"`
-	// mod_revision is the revision of last modification on this key.
 	ModRevision int64 `protobuf:"varint,3,opt,name=mod_revision,json=modRevision,proto3" json:"mod_revision,omitempty"`
-	// version is the version of the key. A deletion resets
-	// the version to zero and any modification of the key
-	// increases its version.
-	Version int64 `protobuf:"varint,4,opt,name=version,proto3" json:"version,omitempty"`
-	// value is the value held by the key, in bytes.
 	Value []byte `protobuf:"bytes,5,opt,name=value,proto3" json:"value,omitempty"`
-	// lease is the ID of the lease that attached to key.
-	// When the attached lease expires, the key will be deleted.
-	// If lease is 0, then no lease is attached to the key.
 	Lease int64 `protobuf:"varint,6,opt,name=lease,proto3" json:"lease,omitempty"`
 }
 ```
@@ -265,27 +232,18 @@ lease := clientv3.NewLease(client)
 
 ```go
 type Lease interface {
-	// Grant creates a new lease.
 	Grant(ctx context.Context, ttl int64) (*LeaseGrantResponse, error)
 
-	// Revoke revokes the given lease.
 	Revoke(ctx context.Context, id LeaseID) (*LeaseRevokeResponse, error)
 
-	// TimeToLive retrieves the lease information of the given lease ID.
 	TimeToLive(ctx context.Context, id LeaseID, opts ...LeaseOption) (*LeaseTimeToLiveResponse, error)
 
-	// Leases retrieves all leases.
 	Leases(ctx context.Context) (*LeaseLeasesResponse, error)
 
-	// KeepAlive keeps the given lease alive forever.
 	KeepAlive(ctx context.Context, id LeaseID) (<-chan *LeaseKeepAliveResponse, error)
 
-	// KeepAliveOnce renews the lease once. In most of the cases, KeepAlive
-	// should be used instead of KeepAliveOnce.
 	KeepAliveOnce(ctx context.Context, id LeaseID) (*LeaseKeepAliveResponse, error)
 
-	// Close releases all resources Lease keeps for efficient communication
-	// with the etcd server.
 	Close() error
 }
 ```
@@ -311,7 +269,6 @@ grantResp, err := lease.Grant(context.TODO(), 10)
 grantResp中主要使用到了ID，也就是租约ID：
 
 ```go
-// LeaseGrantResponse wraps the protobuf message LeaseGrantResponse.
 type LeaseGrantResponse struct {
 	*pb.ResponseHeader
 	ID    LeaseID

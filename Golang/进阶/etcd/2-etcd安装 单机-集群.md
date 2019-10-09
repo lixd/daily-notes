@@ -2,7 +2,99 @@
 
 类似Zookeeper,Etcd官方推荐的集群个数同样为奇数个，当节点为3个和为4个时的容错都是1, 节点5个和6个时，容错为2，即剩余机器大于50%时集群都可以正常运行。
 
-## 1. 单机伪集群
+## 1.单机版
+
+### 1.1 直接安装
+
+```go
+$ curl -L  https://github.com/coreos/etcd/releases/download/v3.3.13/etcd-v3.3.13-linux-amd64.tar.gz -o etcd-v3.3.13-linux-amd64.tar.gz && 
+sudo tar xzvf etcd-v3.3.13-linux-amd64.tar.gz -C /usr/local/etcd && 
+cd etcd-v3.3.13-linux-amd64 && 
+sudo cp etcd* /usr/local/bin/
+//当前最新release版本为3.3.13 
+```
+
+其实就是将编译后的二进制文件，拷贝到`/usr/local/bin/`目录，各个版本的二进制文件，可以从 `https://github.com/coreos/etcd/releases/` 中查找下载。
+
+启动
+
+etcd默认监听的是`localhost`的2379端口，既只监听了I/O设备，这样会导致启动后集群中的其他机器无法访问
+因此我们可以在启动的时候将默认的localhost改成`0.0.0.0`,确保etcd监听了所有网卡。
+
+```go
+./etcd --listen-client-urls="http://0.0.0.0:2379" --advertise-client-urls="http://0.0.0.0:2379"
+```
+
+**注意**：etcd有要求，如果--listen-client-urls被设置了，那么就必须同时设置--advertise-client-urls，所以即使设置和默认相同，也必须显式设置
+
+
+
+```go
+C:\Users\illusory>curl -L  http://192.168.1.9:2379/version
+{"etcdserver":"3.3.13","etcdcluster":"3.3.0"}
+```
+
+### 1.2 Docker安装
+
+拉取镜像
+
+```sh
+docker pull quay.io/coreos/etcd
+```
+
+启动
+
+```sh
+rm -rf /tmp/etcd-data.tmp && mkdir -p /tmp/etcd-data.tmp && \
+  docker run \
+  -p 2379:2379 \
+  -p 2380:2380 \
+  --mount type=bind,source=/tmp/etcd-data.tmp,destination=/etcd-data \
+  --name etcd-3.3.13 \
+  quay.io/coreos/etcd:latest \
+  /usr/local/bin/etcd \
+  --name s1 \
+  --data-dir /etcd-data \
+  --listen-client-urls http://0.0.0.0:2379 \
+  --advertise-client-urls http://0.0.0.0:2379 \
+  --listen-peer-urls http://0.0.0.0:2380 \
+  --initial-advertise-peer-urls http://0.0.0.0:2380 \
+  --initial-cluster s1=http://0.0.0.0:2380 \
+  --initial-cluster-token tkn \
+  --initial-cluster-state new
+```
+
+### 3. 测试
+
+我们来使用curl来测试一下，是否可以远程访问，这里我的机器IP是`192.168.1.9`
+
+```sh
+C:\Users\illusory>curl -L  http://192.168.1.9:2379/version
+{"etcdserver":"3.3.13","etcdcluster":"3.3.0"}
+```
+
+### 4. 启动参数解释
+
+* --**name**
+  etcd集群中的节点名，这里可以随意，可区分且不重复就行  
+* --**listen-peer-urls**
+  监听的用于节点之间通信的url，可监听多个，集群内部将通过这些url进行数据交互(如选举，数据同步等)
+* --**initial-advertise-peer-urls **
+  建议用于节点之间通信的url，节点间将以该值进行通信。
+* --**listen-client-urls**
+  监听的用于客户端通信的url,同样可以监听多个。
+* --**advertise-client-urls**
+  建议使用的客户端通信url,该值用于etcd代理或etcd成员与etcd节点通信。
+* --**initial-cluster-token etcd-cluster-1**
+  节点的token值，设置该值后集群将生成唯一id,并为每个节点也生成唯一id,当使用相同配置文件再启动一个集群时，只要该token值不一样，etcd集群就不会相互影响。
+* --**initial-cluster**
+  也就是集群中所有的initial-advertise-peer-urls 的合集
+* --**initial-cluster-state new**
+  新建集群的标志
+
+
+
+## 2. 单机伪集群
 
 机器有限，在一台机器配置了3个容器，在机器上创建了子网络，三台容器在一个网络里。
 
@@ -94,8 +186,6 @@ services:
 
 
 
-
-
 ### 3. 启动
 
 ```sh
@@ -160,11 +250,11 @@ d282ac2ce600c1ce: name=etcd2 peerURLs=http://etcd2:2380 clientURLs=http://0.0.0.
 
 最开始的时候只能本地访问无法远程访问，很奇怪 然后重启docker之后就行了。。。
 
-## 2. 多机集群
+## 3. 多机集群
 
-//TODO 单节点添加到集群有点问题。。
+//FIXME 单节点添加到集群有点问题。。暂时先用单机伪集群了。
 
-### 2.1 下载
+### 3.1 下载
 
 分别在三台服务器上下载etcd。
 
@@ -187,13 +277,13 @@ rm -f /tmp/etcd-${ETCD_VER}-linux-amd64.tar.gz
 /tmp/etcd-download-test/etcdctl version
 ```
 
-### 2.1 拉取镜像
+### 3.2 拉取镜像
 
 ```sh
 $ docker pull quay.io/coreos/etcd
 ```
 
-### 启动各个节点
+### 3.3 启动各个节点
 
 ```sh
 192.168.1.9
@@ -238,7 +328,7 @@ services:
 docker-compose up
 ```
 
-添加到集群
+添加到集群 这里出错emmm
 
 ```sh
 ETCDCTL_API=3 etcdctl member add etcd-node2 http://192.168.1.10:2380
