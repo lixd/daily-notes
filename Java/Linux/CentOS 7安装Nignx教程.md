@@ -92,7 +92,7 @@ Configuration summary
 **编译安装**:
 
 ```linux
-[root@localhost nginx-1.15.9]# make&&make install
+    [root@localhost nginx-1.15.9]# make&&make install
 
 //出现下面的提示就算编译安装ok
 make[1]: Leaving directory `/usr/local/nginx-1.15.9'
