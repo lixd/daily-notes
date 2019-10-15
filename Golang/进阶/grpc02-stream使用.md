@@ -512,6 +512,12 @@ data:"All Stream From Client"
 
 grpc 的 stream 和 go的协程 配合 简直完美。通过流 我们 可以更加 灵活的 实现自己的业务。如 订阅，大数据传输等。
 
+## 6. 问题
+
+程序运行一段时间后，server端无法继续提供服务。
+
+猜测：Stream未关闭 测试
+
 ## 6. 参考
 
 `https://blog.csdn.net/weixin_34219944/article/details/87456847`
