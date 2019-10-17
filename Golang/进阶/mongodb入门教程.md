@@ -78,3 +78,38 @@ mongodb提供的一些工具
  `db.version()`: 查看mongo版本
 
 `db.getMongo()`: 查看当前连接的mongo主机
+
+### 9.创建索引
+
+```go
+db.集合名.createIndex({"字段名": -1 },{"name":'索引名'})
+db.GenerateTask.createIndex({"CreateTime": -1 },{"name":'idx_createtime'})
+```
+
+*说明： （1）索引命名规范：idx_<构成索引的字段名>。如果字段名字过长，可采用字段缩写。*
+
+​         *（2）字段值后面的 1 代表升序；如是 -1 代表 降序。*
+
+2.为内嵌字段添加索引
+
+db.*集合名*.createIndex({"*字段名*.*内嵌字段名*":1},{"name":'idx_*字段名*_*内嵌字段名*'})
+
+ 
+
+3.通过后台创建索引
+
+db.*集合名*.createIndex({"*字段名*":1},{"name":'idx_*字段名*',**background:true**})
+
+ 
+
+4:组合索引
+
+db.*集合名*.createIndex({"*字段名1*":-1,"*字段名2*":1},{"name":'idx_*字段名1*_*字段名2*',background:true})
+
+ 
+
+5.设置TTL 索引
+
+db.*集合名*.createIndex( { "*字段名*": 1 },{ "name":'idx_*字段名*',**expireAfterSeconds**: 定义的时间,background:true} )
+
+  说明 ：expireAfterSeconds为过期时间（单位秒）  
