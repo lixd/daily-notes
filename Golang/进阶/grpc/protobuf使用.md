@@ -4,7 +4,7 @@
 
 Protocol buffers是一个灵活的、高效的、自动化的用于对结构化数据进行序列化的协议，与XML、json相比，Protocol buffers序列化后的码流更小、速度更快、操作更简单。
 
-## 使用
+## 2. Windows
 
 ### 1. 安装protoc
 
@@ -130,3 +130,87 @@ protoc --gofast_out=. derssbook.proto
 
 到此为止就ok了。
 
+## 3. Linux
+
+#### 1.下载`protoc`
+
+```sh
+https://github.com/protocolbuffers/protobuf/releases
+```
+
+下载并解压后将`/bin`目录下的`protoc`复制到`/gopath/bin`目录下。
+
+输入`protoc --version`出现以下结果则成功。
+
+```sh
+illusory@illusory-virtual-machine:/mnt/hgfs/Share$ protoc --version
+libprotoc 3.10.0
+```
+
+#### 2.安装插件
+
+`protoc-gen-go` 是用来将protobuf的的代码转换成go语言代码的一个插件
+
+```sh
+# 官方版
+go get -u github.com/golang/protobuf/protoc-gen-go
+# gofast
+go get github.com/gogo/protobuf/protoc-gen-gofast
+```
+
+其中`gofast`会比官方的性能好些，生成出来的问题也更复杂。
+
+#### 3.安装`proto`
+
+proto是protobuf在golang中的接口模块
+
+```sh
+# 官方
+go get github.com/golang/protobuf/proto
+# gofast
+go get github.com/gogo/protobuf/gogoproto
+```
+
+#### 4.编写proto文件测试
+
+```protobuf
+syntax = "proto3";
+package go_protoc;
+
+message Person {
+  string name = 1;
+  int32 id = 2;
+  string email = 3;
+
+  enum PhoneType {
+    MOBILE = 0;
+    HOME = 1;
+    WORK = 2;
+  }
+
+  message PhoneNumber {
+    string number = 1;
+    PhoneType type = 2;
+  }
+
+  repeated PhoneNumber phones = 4;
+
+}
+
+message AddressBook {
+  repeated Person people = 1;
+}
+```
+
+#### 5.编译
+
+```sh
+#官方
+protoc --go_out=. derssbook.proto
+#gofast
+protoc --gofast_out=. derssbook.proto
+```
+
+#### 6.问题
+
+插件会自动安装到`/$gopath/bin`目录下。不过在ubuntu中安装到了`/$gopath/bin/linux_386`下面 导致使用的时候找不到文件，最后复制出来就能正常使用了。
