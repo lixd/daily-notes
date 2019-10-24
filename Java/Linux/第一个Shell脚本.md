@@ -11,7 +11,7 @@ helloworld.sh 内容如下：
 ```shell
 #!/bin/bash
 #第一个shell小程序,echo 是linux中的输出命令。
-echo  "helloworld!"
+echo  "hello world !"
 ```
 
 shell中 # 符号表示注释。**shell 的第一行比较特殊，一般都会以#!开始来指定使用的 shell 类型。在linux中，除了bash shell以外，还有很多版本的shell， 例如zsh、dash等等...不过bash shell还是我们使用最多的。**

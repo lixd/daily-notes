@@ -22,6 +22,14 @@ VMware Tools 目录`/midea/username/WMware/Tools/WMwareTools-10.3.2-xxxx.tar.gz`
 
 然后一路yes+回车就可以了
 
+问题
+
+安装vmware-tools出现”what is the location of the “ifconfig”program on your machine?”, 回车键后出现”The answer is invalid”.
+
+解决
+
+当出现”what is the location of the “ifconfig”program on your machine?”时直接输入“yes”,再回车即可，
+
 ### 2. 设置共享文件夹
 
 VMware中选择 虚拟机--》设置--》选项--》共享文件夹--》添加。
