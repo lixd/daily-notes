@@ -1,0 +1,5 @@
+最近我遇到了同样的问题，发现它是我操作系统（Windows）中的默认配置。
+
+很快，根据上面链接中提到的文章，Windows使用3000ms初始超时（InitialRto设置），并执行2次重试，使用上次尝试（MaxSynRetransmissions设置）的双倍超时：3sec + 2*3sec + 4*3sec = 21 sec。为了增加此超时，您可以使用以下命令设置更多重试：
+
+netsh interface tcp set global MaxSynRetransmissions=3
