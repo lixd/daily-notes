@@ -199,3 +199,57 @@ json表达式 $.data[0].name
 缺省值： "defaultname"
 ```
 
+
+
+## 5. 命令行启动
+
+使用GUI方式启动jmeter，运行线程较多的测试时，会造成内存和CPU的大量消耗，导致客户机卡死。
+
+所以正确的打开方式是在GUI模式下调整测试脚本，再用命令行模式执行。
+
+启动命令
+
+```sh
+jmeter -n -t <testplan filename> -l <listener filename>
+# -n 设置命令模式
+# -t 指定脚本文件路径 即测试计划文件的路径 xxx.JMX
+# -l 指定结果文件路径
+ex：jmeter -n -t E:\Work\Project\Test\apache-jmeter-5.1.1\vaptcha\testplan\apiTest.jmx -l E:\Work\Project\Test\apache-jmeter-5.1.1\vaptcha\result\result.jtl
+
+/usr/local/jmeter/apache-jmeter-5.1.1/bin/jmeter -n -t /usr/local/jmeter/testplan/apiTest.jmx -l /usr/local/jmeter/result/result/result.jtl
+```
+
+执行命令前要检查当前目录是否是`%JMeter_Home%\bin`目录；如果 JMeter 脚本不在当前目录，需要指定完整的路径；如果要把执行的结果保存在其他地方也要指定完整的路径。命令中不指定测试计划与测试结果的路径时，默认都是在该目录下。
+
+命令中不写位置的话中间文件默认生成在bin下，下次执行不能覆盖，需要先删除result.jtl；报告指定文件夹同理，需要保证文件夹为空
+
+**将windows下的测试计划拿到linux下执行遇到的问题**
+
+```sh
+[root@iZ2ze8rcch16k4k7kdtwmpZ bin]# /usr/local/jmeter/apache-jmeter-5.1.1/bin/jmeter -n -t /usr/local/jmeter/testplan/apiTest.jmx -l /usr/local/jmeter/result/result/jtl
+Error in NonGUIDriver java.lang.IllegalArgumentException: Problem loading XML from:'/usr/local/jmeter/testplan/apiTest.jmx'. 
+Cause:
+CannotResolveClassException: kg.apc.jmeter.perfmon.PerfMonCollector
+
+ Detail:com.thoughtworks.xstream.converters.ConversionException: 
+---- Debugging information ----
+cause-exception     : com.thoughtworks.xstream.converters.ConversionException
+cause-message       : 
+first-jmeter-class  : org.apache.jmeter.save.converters.HashTreeConverter.unmarshal(HashTreeConverter.java:67)
+class               : org.apache.jmeter.save.ScriptWrapper
+required-type       : org.apache.jmeter.save.ScriptWrapper
+converter-type      : org.apache.jmeter.save.ScriptWrapperConverter
+path                : /jmeterTestPlan/hashTree/hashTree/hashTree/kg.apc.jmeter.perfmon.PerfMonCollector
+line number         : 278
+version             : 5.1.1 r1855137
+
+```
+
+原因
+
+1、linux环境jmeter与win环境编写脚本的jmeter版本不一致，版本改为一致
+
+2、脚本中存在中文，去除中文
+
+3、脚本中存在类似于jp@gc - Active Threads Over Time 监听器，去除监听器（查看结果树和聚合报告可以保留）
+
