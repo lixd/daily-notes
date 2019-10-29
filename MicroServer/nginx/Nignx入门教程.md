@@ -50,7 +50,7 @@ epoll 的特点：epoll 对于句柄事件的选择不是遍历的，是事件�
 # yum install gcc gcc-c++ ncurses-devel perl 
 ```
 
-**安装HTTP rewrite module模块**: 
+****安装HTTP rewrite module模块****: 
 
 ```linux
 # yum install pcre pcre-devel
