@@ -4,6 +4,11 @@ map是一种key，value数据结构。
 
 ## 1. Map声明
 
+```go
+//也可以选择是否在创建时指定该map的初始存储能力，创建了一个初始存储能力为100的map.
+myMap = make(map[string] PersonInfo, 100) 
+```
+
 通常情况key下是int或string，value是数字、string、map、struct等。
 
 * map使用哈希表,必须可以比较相等的类型才能作为key
