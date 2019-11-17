@@ -91,7 +91,74 @@ sudo apt-get -f install
 sudo apt-get upgrade
 ```
 
+### 遇到的问题
 
+更新的时候出现下面的问题:
+
+```sh
+
+$ sudo apt-get update
+获取:1 http://mirrors.tuna.tsinghua.edu.cn/ubuntu xenial InRelease [2,281 B]                                    
+获取:2 http://mirrors.tuna.tsinghua.edu.cn/ubuntu xenial-backports InRelease [2,281 B]
+获取:3 http://security.ubuntu.com/ubuntu xenial-security InRelease [2,281 B]
+获取:4 http://mirrors.tuna.tsinghua.edu.cn/ubuntu xenial-proposed InRelease [2,281 B]
+错误:1 http://mirrors.tuna.tsinghua.edu.cn/ubuntu xenial InRelease                                                                                 
+  明文签署文件不可用，结果为‘NOSPLIT’（您的网络需要认证吗？）
+错误:2 http://mirrors.tuna.tsinghua.edu.cn/ubuntu xenial-backports InRelease                                                                       
+  明文签署文件不可用，结果为‘NOSPLIT’（您的网络需要认证吗？）
+错误:3 http://security.ubuntu.com/ubuntu xenial-security InRelease                                                                                 
+  明文签署文件不可用，结果为‘NOSPLIT’（您的网络需要认证吗？）
+错误:4 http://mirrors.tuna.tsinghua.edu.cn/ubuntu xenial-proposed InRelease                                                                        
+  明文签署文件不可用，结果为‘NOSPLIT’（您的网络需要认证吗？）
+获取:5 http://mirrors.tuna.tsinghua.edu.cn/ubuntu xenial-security InRelease [2,281 B]                                                              
+错误:5 http://mirrors.tuna.tsinghua.edu.cn/ubuntu xenial-security InRelease                                                                  
+  明文签署文件不可用，结果为‘NOSPLIT’（您的网络需要认证吗？）
+获取:6 http://cn.archive.ubuntu.com/ubuntu xenial InRelease [2,281 B]                                                                        
+错误:6 http://cn.archive.ubuntu.com/ubuntu xenial InRelease                                                                                  
+  明文签署文件不可用，结果为‘NOSPLIT’（您的网络需要认证吗？）
+获取:7 http://mirrors.tuna.tsinghua.edu.cn/ubuntu xenial-updates InRelease [2,281 B]                                                         
+错误:7 http://mirrors.tuna.tsinghua.edu.cn/ubuntu xenial-updates InRelease         
+  明文签署文件不可用，结果为‘NOSPLIT’（您的网络需要认证吗？）
+获取:8 http://cn.archive.ubuntu.com/ubuntu xenial-updates InRelease [2,281 B]      
+错误:8 http://cn.archive.ubuntu.com/ubuntu xenial-updates InRelease                
+  明文签署文件不可用，结果为‘NOSPLIT’（您的网络需要认证吗？）
+获取:9 http://cn.archive.ubuntu.com/ubuntu xenial-backports InRelease [2,281 B]    
+错误:9 http://cn.archive.ubuntu.com/ubuntu xenial-backports InRelease
+  明文签署文件不可用，结果为‘NOSPLIT’（您的网络需要认证吗？）
+已下载 13.7 kB，耗时 0秒 (14.2 kB/s)
+正在读取软件包列表... 完成
+E: 无法下载 http://cn.archive.ubuntu.com/ubuntu/dists/xenial/InRelease  明文签署文件不可用，结果为‘NOSPLIT’（您的网络需要认证吗？）
+E: 无法下载 http://cn.archive.ubuntu.com/ubuntu/dists/xenial-updates/InRelease  明文签署文件不可用，结果为‘NOSPLIT’（您的网络需要认证吗？）
+E: 无法下载 http://cn.archive.ubuntu.com/ubuntu/dists/xenial-backports/InRelease  明文签署文件不可用，结果为‘NOSPLIT’（您的网络需要认证吗？）
+E: 无法下载 http://security.ubuntu.com/ubuntu/dists/xenial-security/InRelease  明文签署文件不可用，结果为‘NOSPLIT’（您的网络需要认证吗？）
+E: 无法下载 http://mirrors.tuna.tsinghua.edu.cn/ubuntu/dists/xenial/InRelease  明文签署文件不可用，结果为‘NOSPLIT’（您的网络需要认证吗？）
+E: 无法下载 http://mirrors.tuna.tsinghua.edu.cn/ubuntu/dists/xenial-backports/InRelease  明文签署文件不可用，结果为‘NOSPLIT’（您的网络需要认证吗？）
+E: 无法下载 http://mirrors.tuna.tsinghua.edu.cn/ubuntu/dists/xenial-proposed/InRelease  明文签署文件不可用，结果为‘NOSPLIT’（您的网络需要认证吗？）
+E: 无法下载 http://mirrors.tuna.tsinghua.edu.cn/ubuntu/dists/xenial-security/InRelease  明文签署文件不可用，结果为‘NOSPLIT’（您的网络需要认证吗？）
+E: 无法下载 http://mirrors.tuna.tsinghua.edu.cn/ubuntu/dists/xenial-updates/InRelease  明文签署文件不可用，结果为‘NOSPLIT’（您的网络需要认证吗？）
+```
+
+ 解决办法：
+
+替换成可以用的源
+
+```sh
+# 默认注释了源码仓库，如有需要可自行取消注释
+deb https://mirrors.ustc.edu.cn/ubuntu/ xenial main restricted universe multiverse
+# deb-src https://mirrors.ustc.edu.cn/ubuntu/ xenial main restricted universe multiverse
+deb https://mirrors.ustc.edu.cn/ubuntu/ xenial-updates main restricted universe multiverse
+# deb-src https://mirrors.ustc.edu.cn/ubuntu/ xenial-updates main restricted universe multiverse
+deb https://mirrors.ustc.edu.cn/ubuntu/ xenial-backports main restricted universe multiverse
+# deb-src https://mirrors.ustc.edu.cn/ubuntu/ xenial-backports main restricted universe multiverse
+deb https://mirrors.ustc.edu.cn/ubuntu/ xenial-security main restricted universe multiverse
+# deb-src https://mirrors.ustc.edu.cn/ubuntu/ xenial-security main restricted universe multiverse
+ 
+# 预发布软件源，不建议启用
+# deb https://mirrors.ustc.edu.cn/ubuntu/ xenial-proposed main restricted universe multiverse
+# deb-src https://mirrors.ustc.edu.cn/ubuntu/ xenial-proposed main restricted universe multiverse
+```
+
+很奇怪 ，阿里的不行清华的也不行 换成中科大就可以了。
 
 ### 4. 下载中文包
 
