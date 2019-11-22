@@ -8,7 +8,7 @@ Docker 在容器的基础上，进行了进一步的封装，从文件系统、�
 
 下面的图片比较了 Docker 和传统虚拟化方式的不同之处。传统虚拟机技术是虚拟出一套硬件后，在其上运行一个完整操作系统，在该系统上再运行所需应用进程；而容器内的应用进程直接运行于宿主的内核，容器内没有自己的内核，而且也没有进行硬件虚拟。因此容器要比传统虚拟机更为轻便。
 
-### Docker 引擎
+**Docker 引擎**
 
 Docker 引擎是一个包含以下主要组件的客户端服务器应用程序。
 
@@ -18,7 +18,7 @@ Docker 引擎是一个包含以下主要组件的客户端服务器应用程序�
 
 ## 2. 安装
 
-### 1.yum安装
+### 1.centos
 
 Docker 要求 CentOS 系统的内核版本高于 `3.10`，查看本页面的前提条件来验证你的CentOS 版本是否支持 Docker 。
 
@@ -135,7 +135,166 @@ For more examples and ideas, visit:
 
 若能正常输出以上信息，则说明安装成功。
 
-### 2.使用脚本自动安装
+### 2. ubuntu
+
+Docker 的旧版本被称为 docker，docker.io 或 docker-engine 。如果已安装，请卸载它们：
+
+```sh
+$ sudo apt-get remove docker docker-engine docker.io containerd runc
+```
+
+在新主机上首次安装 Docker Engine-Community 之前，需要设置 Docker 仓库。之后，您可以从仓库安装和更新 Docker 。
+
+### 设置仓库
+
+更新 apt 包索引。
+
+```
+$ sudo apt-get update
+```
+
+安装 apt 依赖包，用于通过HTTPS来获取仓库:
+
+```sh
+$ sudo apt-get install \
+    apt-transport-https \
+    ca-certificates \
+    curl \
+    gnupg-agent \
+    software-properties-common
+```
+
+添加 Docker 的官方 GPG 密钥：
+
+```sh
+$ curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+```
+
+9DC8 5822 9FC7 DD38 854A E2D8 8D81 803C 0EBF CD88 通过搜索指纹的后8个字符，验证您现在是否拥有带有指纹的密钥。
+
+```sh
+$ sudo apt-key fingerprint 0EBFCD88
+   
+pub   rsa4096 2017-02-22 [SCEA]
+      9DC8 5822 9FC7 DD38 854A  E2D8 8D81 803C 0EBF CD88
+uid           [ unknown] Docker Release (CE deb) <docker@docker.com>
+sub   rsa4096 2017-02-22 [S]
+```
+
+
+
+使用以下指令设置稳定版仓库
+
+```sh
+$ sudo add-apt-repository \
+   "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
+  $(lsb_release -cs) \
+  stable"
+```
+
+安装 Docker Engine-Community
+
+更新 apt 包索引。
+
+```sh
+$ sudo apt-get update
+```
+
+安装最新版本的 Docker Engine-Community 和 containerd ，或者转到下一步安装特定版本：
+
+```sh
+$ sudo apt-get install docker-ce docker-ce-cli containerd.io
+```
+
+要安装特定版本的 Docker Engine-Community，请在仓库中列出可用版本，然后选择一种安装。列出您的仓库中可用的版本：
+
+```sh
+$ apt-cache madison docker-ce
+
+  docker-ce | 5:18.09.1~3-0~ubuntu-xenial | https://download.docker.com/linux/ubuntu  xenial/stable amd64 Packages
+  docker-ce | 5:18.09.0~3-0~ubuntu-xenial | https://download.docker.com/linux/ubuntu  xenial/stable amd64 Packages
+  docker-ce | 18.06.1~ce~3-0~ubuntu       | https://download.docker.com/linux/ubuntu  xenial/stable amd64 Packages
+  docker-ce | 18.06.0~ce~3-0~ubuntu       | https://download.docker.com/linux/ubuntu  xenial/stable amd64 Packages
+  ...
+```
+
+
+
+使用第二列中的版本字符串安装特定版本，例如 5:18.09.1~3-0~ubuntu-xenial。
+
+```sh
+$ sudo apt-get install docker-ce=<VERSION_STRING> docker-ce-cli=<VERSION_STRING> containerd.io
+```
+
+测试 Docker 是否安装成功，输入以下指令，打印出以下信息则安装成功:
+
+```sh
+sudo docker run hello-world
+```
+
+****
+
+1.更换国内软件源，推荐中国科技大学的源，稳定速度快（可选）
+
+```
+sudo cp /etc/apt/sources.list /etc/apt/sources.list.bak
+sudo sed -i 's/archive.ubuntu.com/mirrors.ustc.edu.cn/g' /etc/apt/sources.list
+sudo apt update
+```
+
+2.安装需要的包
+
+```
+sudo apt install apt-transport-https ca-certificates software-properties-common curl
+```
+
+3.添加 GPG 密钥，并添加 Docker-ce 软件源，这里还是以中国科技大学的 Docker-ce 源为例
+
+```
+curl -fsSL https://mirrors.ustc.edu.cn/docker-ce/linux/ubuntu/gpg | sudo apt-key add -
+sudo add-apt-repository "deb [arch=amd64] https://mirrors.ustc.edu.cn/docker-ce/linux/ubuntu \
+$(lsb_release -cs) stable"
+```
+
+4.添加成功后更新软件包缓存
+
+```
+sudo apt update
+```
+
+5.安装 Docker-ce
+
+```
+sudo apt install docker-ce
+```
+
+6.设置开机自启动并启动 Docker-ce（安装成功后默认已设置并启动，可忽略）
+
+```
+sudo systemctl enable docker
+sudo systemctl start docker
+```
+
+7.测试运行
+
+```
+sudo docker run hello-world
+```
+
+8.添加当前用户到 docker 用户组，可以不用 sudo 运行 docker（可选）
+
+```
+sudo groupadd docker
+sudo usermod -aG docker $USER
+```
+
+9.测试添加用户组（可选）
+
+```
+docker run hello-world
+```
+
+### 3.使用脚本自动安装
 
 在测试或开发环境中 Docker 官方为了简化安装流程，提供了一套便捷的安装脚本，Ubuntu 系统上可以使用这套脚本安装：
 
@@ -145,6 +304,10 @@ $ sudo sh get-docker.sh --mirror Aliyun
 ```
 
 执行这个命令后，脚本就会自动的将一切准备工作做好，并且把 Docker CE 的 Edge 版本安装在系统中。
+
+### 
+
+
 
 ## 3. 镜像加速器
 
