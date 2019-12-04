@@ -54,10 +54,11 @@ docker run --name mongodb -v \
 
 ```yml
 version: '3'
-    services:  mongodb:    
+  services:  mongodb:    
     container_name: mymongo    
     image: "mongo:latest"    
-    ports:      - "27017:27017"    
+    ports: 
+      - "27017:27017"    
     restart: always    
     command: --auth --storageEngine wiredTiger
 
@@ -92,11 +93,33 @@ db.createUser(
  )
  # 创建有可读写权限的用户. 对于一个特定的数据库, 比如'demo'
  db.createUser({
-     user: 'test',
+     user: 'puuguser',
      pwd: '123456',
-     roles: [{role: "read", db: "demo"}]
+     roles: [{role: "readWrite", db "demo"}]
  })
 ```
 
-1. 
+
+
+增加数据库和用户
+
+```sh
+mongo host:port
+```
+
+进入mongo shell
+
+```sh
+# 进入 admin 的数据库
+use admin
+# admin账号授权 只有admin才能创建用户
+db.auth("admin","123456")
+
+use newdb
+ db.createUser({
+     user: 'newuser',
+     pwd: '123456',
+     roles: [{role: "readWrite", db "newdb"}]
+ })
+```
 

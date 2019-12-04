@@ -227,6 +227,7 @@ services:
   master:
     image: redis
     container_name: redis-master
+ 	command: redis-server --requirepass 123456
     ports:
       - 6379:6379
 
@@ -235,14 +236,14 @@ services:
     container_name: redis-slave-1
     ports:
       - 6380:6379
-    command: redis-server --slaveof redis-master 6379
+    command: redis-server --slaveof redis-master 6379 --requirepass 123456 --masterauth 123456
 
   slave2:
     image: redis
     container_name: redis-slave-2
     ports:
       - 6381:6379
-    command: redis-server --slaveof redis-master 6379
+    command: redis-server --slaveof redis-master 6379 --requirepass 123456 --masterauth 123456
 ```
 
 ## 搭建 Sentinel 集群
@@ -261,8 +262,8 @@ services:
       - 26379:26379
     command: redis-sentinel /usr/local/etc/redis/sentinel.conf
     volumes:
-      - ./sentinel1.conf:/usr/local/etc/redis/sentinel.conf
-
+      - ./conf/sentinel1.conf:/usr/local/etc/redis/sentinel.conf
+	  - ./data/sentinel-1:/data
   sentinel2:
     image: redis
     container_name: redis-sentinel-2
@@ -270,8 +271,8 @@ services:
       - 26380:26379
     command: redis-sentinel /usr/local/etc/redis/sentinel.conf
     volumes:
-      - ./sentinel2.conf:/usr/local/etc/redis/sentinel.conf
-
+      - ./conf/sentinel2.conf:/usr/local/etc/redis/sentinel.conf
+	  - ./data/sentinel-1:/data
   sentinel3:
     image: redis
     container_name: redis-sentinel-3
@@ -279,7 +280,8 @@ services:
       - 26381:26379
     command: redis-sentinel /usr/local/etc/redis/sentinel.conf
     volumes:
-      - ./sentinel3.conf:/usr/local/etc/redis/sentinel.conf
+      - ./conf/sentinel3.conf:/usr/local/etc/redis/sentinel.conf
+      - ./data/sentinel-3:/data
 ```
 
 ### 修改 Sentinel 配置文件
@@ -294,6 +296,7 @@ dir /tmp
 # 自定义集群名，其中 127.0.0.1 为 redis-master 的 ip，6379 为 redis-master 的端口，2 为最小投票数（因为有 3 台 Sentinel 所以可以设置成 2）
 #sentinel monitor mymaster 127.0.0.1 6379 2
 sentinel monitor mymaster 192.168.5.213 6379 2
+sentinel auth-pass mymaster 123456
 sentinel down-after-milliseconds mymaster 30000
 sentinel parallel-syncs mymaster 1
 sentinel failover-timeout mymaster 180000
