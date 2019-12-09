@@ -79,14 +79,22 @@ services:
     container_name: es-master
     hostname: es-master
     environment:
-      - cluster.name=docker-cluster
+      # 集群的名称，名称一样的组成一个集群
+      - cluster.name=docker-es-cluster
       - bootstrap.memory_lock=true
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      # 设置允许跨域，方便head插件访问
+      - "http.cors.enabled=true"
+      - "http.cors.allow-origin=*"
+      # 这里的es-master,es-node1,es-node2是指的设置的container_name，容器内部可以通过container_name相互网络访问
+      - "discovery.zen.ping.unicast.hosts=es-master,es-node1,es-node2"
+      - node.name=elasticsearch
     ulimits:
       memlock:
         soft: -1
         hard: -1
     volumes:
+    #  - ./master/conf/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
       - ./master/data:/usr/share/elasticsearch/data
 	  - ./master/logs:/user/share/elasticsearch/logs
 	  - ./master/plugins:/usr/share/elasticsearch/plugins
@@ -99,15 +107,22 @@ services:
     container_name: es-node1
     hostname: es-node1
     environment:
-      - cluster.name=docker-cluster
+      # 集群的名称，名称一样的组成一个集群
+      - cluster.name=docker-es-cluster
       - bootstrap.memory_lock=true
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-      - "discovery.zen.ping.unicast.hosts=[es-master,es-node1,es-node2]"
+      # 设置允许跨域，方便head插件访问
+      - "http.cors.enabled=true"
+      - "http.cors.allow-origin=*"
+      # 这里的es-master,es-node1,es-node2是指的设置的container_name，容器内部可以通过container_name相互网络访问
+      - "discovery.zen.ping.unicast.hosts=es-master,es-node1,es-node2"
+      - node.name=elasticsearch
     ulimits:
       memlock:
         soft: -1
         hard: -1
     volumes:
+     # - ./node1/conf/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
       - ./node1/data:/usr/share/elasticsearch/data
       - ./node1/logs:/usr/share/elasticsearch/logs
 	  - ./node2/plugins:/usr/share/elasticsearch/plugins
@@ -118,15 +133,22 @@ services:
     container_name: es-node2
     hostname: es-node2
     environment:
-      - cluster.name=docker-cluster
+      # 集群的名称，名称一样的组成一个集群
+      - cluster.name=docker-es-cluster
       - bootstrap.memory_lock=true
       - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-      - "discovery.zen.ping.unicast.hosts=[es-master,es-node1,es-node2]"
+      # 设置允许跨域，方便head插件访问
+      - "http.cors.enabled=true"
+      - "http.cors.allow-origin=*"
+      # 这里的es-master,es-node1,es-node2是指的设置的container_name，容器内部可以通过container_name相互网络访问
+      - "discovery.zen.ping.unicast.hosts=es-master,es-node1,es-node2"
+      - node.name=elasticsearch
     ulimits:
       memlock:
         soft: -1
         hard: -1
     volumes:
+      #- ./node2/conf/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
       - ./node2/data:/usr/share/elasticsearch/data
       - ./node2/logs:/usr/share/elasticsearch/logs
   	  - ./node2/plugins:/usr/share/elasticsearch/plugins
@@ -141,7 +163,15 @@ services:
       - ELASTICSEARCH_URL=http://es-master:9200
     networks:
       - esnet
-
+  head:
+    image: mobz/elasticsearch-head:5-alpine
+    container_name: head
+    ports:
+      - 9100:9100
+    environment:
+      TZ: 'Asia/Shanghai'
+    networks:
+      - esnet
 volumes:
   esdata1:
     driver: local
@@ -151,6 +181,15 @@ volumes:
     driver: local  
 networks:
   esnet:
+```
+
+#### 2. elasticsearch.yml
+
+```yaml
+#transport.host: 0.0.0.0
+#discovery.zen.minimum_master_nodes: 1
+http.cors.enabled: true
+http.cors.allow-origin: "*"
 ```
 
 
@@ -177,7 +216,12 @@ memlock:
 
 配置`memlock`最大内存地址
 
+```sh
+      - http.cors.enabled=true
+      - http.cors.allow-origin=*
+```
 
+解决`es-head`连接时的跨域问题
 
 ### 3. 启动
 
@@ -203,6 +247,103 @@ docker-compose up -d
 * kibana:localhost:5601
 
 外部访问带上IP即可。
+
+
+
+
+
+```yaml
+version: '2.2'
+services:
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.3.2
+    container_name: es-master
+    environment:
+      - cluster.name=docker-cluster
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "http.cors.enabled=true"
+      - "http.cors.allow-origin=*"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - ./master/data:/usr/share/elasticsearch/data
+      - ./master/logs:/usr/share/elasticsearch/logs
+	  - ./master/plugins:/usr/share/elasticsearch/plugins
+    ports:
+      - 9200:9200
+    networks:
+      - esnet
+  elasticsearch2:
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.3.2
+    container_name: es-node1
+    environment:
+      - cluster.name=docker-cluster
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "discovery.zen.ping.unicast.hosts=es-master"
+      - "http.cors.enabled=true"
+      - "http.cors.allow-origin=*"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - ./node1/data:/usr/share/elasticsearch/data
+      - ./node1/logs:/usr/share/elasticsearch/logs
+	  - ./node1/plugins:/usr/share/elasticsearch/plugins
+    networks:
+      - esnet
+  elasticsearch3:
+    image: docker.elastic.co/elasticsearch/elasticsearch:6.3.2
+    container_name: es-node2
+    environment:
+      - cluster.name=docker-cluster
+      - bootstrap.memory_lock=true
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "discovery.zen.ping.unicast.hosts=es-master"
+      - "http.cors.enabled=true"
+      - "http.cors.allow-origin=*"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - ./node2/data:/usr/share/elasticsearch/data
+      - ./node2/logs:/usr/share/elasticsearch/logs
+	  - ./node2/plugins:/usr/share/elasticsearch/plugins
+    networks:
+      - esnet
+  kibana:
+    image: kibana
+    container_name: kibana
+    ports:
+      - 5601:5601
+    environment:
+      - ELASTICSEARCH_URL=http://es-master:9200
+    networks:
+      - esnet
+  elasticsearch-head:
+      image: wallbase/elasticsearch-head:6-alpine
+      container_name: es-head
+      environment:
+        TZ: 'Asia/Shanghai'
+      ports:
+        - '9100:9100'
+volumes:
+  esdata1:
+    driver: local
+  esdata2:
+    driver: local
+  esdata3:
+    driver: local
+networks:
+  esnet:
+```
+
+
 
 
 
