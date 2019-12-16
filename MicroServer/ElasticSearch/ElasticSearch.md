@@ -72,6 +72,219 @@ sysctl -w vm.max_map_count=262144
 
 
 ```yaml
+version: '3'
+services:
+  elasticsearch_n0:
+    image: elasticsearch:6.6.2
+    container_name: elasticsearch_n0
+    privileged: true
+    environment:
+      - cluster.name=elasticsearch-cluster
+      - node.name=node0
+      - node.master=true
+      - node.data=true
+      - bootstrap.memory_lock=true
+      - http.cors.enabled=true
+      - http.cors.allow-origin=*
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "discovery.zen.ping.unicast.hosts=elasticsearch_n0,elasticsearch_n1,elasticsearch_n2"
+      - "discovery.zen.minimum_master_nodes=2"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - ./data/node0:/usr/share/elasticsearch/data
+      - ./logs/node0:/usr/share/elasticsearch/logs
+    ports:
+      - 9200:9200
+  elasticsearch_n1:
+    image: elasticsearch:6.6.2
+    container_name: elasticsearch_n1
+    privileged: true
+    environment:
+      - cluster.name=elasticsearch-cluster
+      - node.name=node1
+      - node.master=true
+      - node.data=true
+      - bootstrap.memory_lock=true
+      - http.cors.enabled=true
+      - http.cors.allow-origin=*
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "discovery.zen.ping.unicast.hosts=elasticsearch_n0,elasticsearch_n1,elasticsearch_n2"
+      - "discovery.zen.minimum_master_nodes=2"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - ./data/node1:/usr/share/elasticsearch/data
+      - ./logs/node1:/usr/share/elasticsearch/logs
+    ports:
+      - 9201:9200
+  elasticsearch_n2:
+    image: elasticsearch:6.6.2
+    container_name: elasticsearch_n2
+    privileged: true
+    environment:
+      - cluster.name=elasticsearch-cluster
+      - node.name=node2
+      - node.master=true
+      - node.data=true
+      - bootstrap.memory_lock=true
+      - http.cors.enabled=true
+      - http.cors.allow-origin=*
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+      - "discovery.zen.ping.unicast.hosts=elasticsearch_n0,elasticsearch_n1,elasticsearch_n2"
+      - "discovery.zen.minimum_master_nodes=2"
+    ulimits:
+      memlock:
+        soft: -1
+        hard: -1
+    volumes:
+      - ./data/node2:/usr/share/elasticsearch/data
+      - ./logs/node2:/usr/share/elasticsearch/logs
+    ports:
+      - 9202:9200
+    networks:
+      - esnet
+  kibana:
+    image: kibana
+    container_name: kibana
+    ports:
+      - 5601:5601
+    environment:
+      - ELASTICSEARCH_HOSTS=http://es_node0:9200
+      # 需要将Kibana配置文件中的小写转换成大写，然后这个才能用于变量，才能被设置到
+      - I18N_LOCALE=zh-CN
+      - xpack.monitoring.ui.container.elasticsearch.enabled=false
+    networks:
+      - esnet
+  head:
+    image: mobz/elasticsearch-head:5-alpine
+    container_name: head
+    ports:
+      - 9100:9100
+    environment:
+      TZ: 'Asia/Shanghai'
+    networks:
+      - esnet
+volumes:
+  esdata1:
+    driver: local
+  esdata2:
+    driver: local
+  esdata3:
+    driver: local  
+networks:
+  esnet:
+```
+
+
+
+```yaml
+version: '2.2'
+services:
+ elasticsearch:
+   image: docker.elastic.co/elasticsearch/elasticsearch:6.2.4
+   container_name: elasticsearch
+   environment:
+     - cluster.name=docker-cluster
+     - bootstrap.memory_lock=true
+     - http.cors.enabled=true
+     - http.cors.allow-origin=*
+     - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+   ulimits:
+     memlock:
+       soft: -1
+       hard: -1
+   volumes:
+      - ./data/node1:/usr/share/elasticsearch/data
+	  - ./logs/node1:/user/share/elasticsearch/logs
+	  - ./plugins/node1:/usr/share/elasticsearch/plugins
+   ports:
+     - 9200:9200
+   networks:
+     - esnet
+ elasticsearch2:
+   image: docker.elastic.co/elasticsearch/elasticsearch:6.2.4
+   container_name: elasticsearch2
+   environment:
+     - cluster.name=docker-cluster
+     - bootstrap.memory_lock=true
+     - http.cors.enabled=true
+     - http.cors.allow-origin=*
+     - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+     - "discovery.zen.ping.unicast.hosts=elasticsearch"
+   ulimits:
+     memlock:
+       soft: -1
+       hard: -1
+   volumes:
+      - ./data/node2:/usr/share/elasticsearch/data
+	  - ./logs/node2:/user/share/elasticsearch/logs
+	  - ./plugins/node2:/usr/share/elasticsearch/plugins
+   networks:
+     - esnet
+ elasticsearch3:
+   image: docker.elastic.co/elasticsearch/elasticsearch:6.2.4
+   container_name: elasticsearch3
+   environment:
+     - cluster.name=docker-cluster
+     - bootstrap.memory_lock=true
+     - http.cors.enabled=true
+     - http.cors.allow-origin=*
+     - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+     - "discovery.zen.ping.unicast.hosts=elasticsearch"
+   ulimits:
+     memlock:
+       soft: -1
+       hard: -1
+   volumes:
+      - ./data/node3:/usr/share/elasticsearch/data
+	  - ./logs/node3:/user/share/elasticsearch/logs
+	  - ./plugins/node3:/usr/share/elasticsearch/plugins
+   networks:
+     - esnet
+ 
+ kibana:
+   image: 'docker.elastic.co/kibana/kibana:6.3.2'
+   container_name: kibana
+   environment:
+     SERVER_NAME: kibana.local
+     ELASTICSEARCH_URL: http://elasticsearch:9200
+   ports:
+     - '5601:5601'
+   networks:
+     - esnet
+ 
+ headPlugin:
+   image: 'mobz/elasticsearch-head:5'
+   container_name: head
+   ports:
+     - '9100:9100'
+   networks:
+     - esnet
+ 
+volumes:
+ esdata1:
+   driver: local
+ esdata2:
+   driver: local
+ esdata3:
+   driver: local
+ 
+networks:
+ esnet:
+```
+
+
+
+
+
+
+
+```yaml
 version: '2'
 services:
   elasticsearch:
@@ -95,9 +308,9 @@ services:
         hard: -1
     volumes:
     #  - ./master/conf/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
-      - ./master/data:/usr/share/elasticsearch/data
-	  - ./master/logs:/user/share/elasticsearch/logs
-	  - ./master/plugins:/usr/share/elasticsearch/plugins
+      - ./data/node1:/usr/share/elasticsearch/data
+	  - ./logs/node1:/user/share/elasticsearch/logs
+	  - ./plugins/node1:/usr/share/elasticsearch/plugins
     ports:
       - 9200:9200
     networks:
@@ -123,9 +336,9 @@ services:
         hard: -1
     volumes:
      # - ./node1/conf/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
-      - ./node1/data:/usr/share/elasticsearch/data
-      - ./node1/logs:/usr/share/elasticsearch/logs
-	  - ./node2/plugins:/usr/share/elasticsearch/plugins
+      - ./data/node1:/usr/share/elasticsearch/data
+      - ./logs/node1:/usr/share/elasticsearch/logs
+	  - ./plugins/node1:/usr/share/elasticsearch/plugins
     networks:
       - esnet
   elasticsearch3:
@@ -149,9 +362,9 @@ services:
         hard: -1
     volumes:
       #- ./node2/conf/elasticsearch.yml:/usr/share/elasticsearch/config/elasticsearch.yml
-      - ./node2/data:/usr/share/elasticsearch/data
-      - ./node2/logs:/usr/share/elasticsearch/logs
-  	  - ./node2/plugins:/usr/share/elasticsearch/plugins
+      - ./data/node2:/usr/share/elasticsearch/data
+      - ./logs/node2:/usr/share/elasticsearch/logs
+  	  - ./plugins/node2:/usr/share/elasticsearch/plugins
     networks:
       - esnet    
   kibana:
@@ -181,6 +394,7 @@ volumes:
     driver: local  
 networks:
   esnet:
+    driver: bridge
 ```
 
 #### 2. elasticsearch.yml
@@ -341,6 +555,25 @@ volumes:
     driver: local
 networks:
   esnet:
+```
+
+
+
+## 4. 问题
+
+### 1. 权限问题
+
+```sh
+ [0.001s][error][logging] Error opening log file 'logs/gc.log': Permission denied 
+```
+
+这个是权限问题
+
+```shell
+# 给data和logs目录775权限
+sudo chmod -R 775 /data
+# 修改文件归属者
+sudo chown -R 1000:1000 /data
 ```
 
 
