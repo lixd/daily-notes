@@ -1,5 +1,7 @@
 ## Elasticsearch
 
+
+
 ## 1. 概述
 
 单机下的3节点伪集群部署。
@@ -14,7 +16,7 @@
 
 ### 2. docker-compose
 
-基于`docker-compsoe`编排，所以需要`docker`+`docker-compsoe`
+基于`docker-compsoe`编排，所以需要`docker`+`docker-compose`
 
 ### 3. 创建目录
 
