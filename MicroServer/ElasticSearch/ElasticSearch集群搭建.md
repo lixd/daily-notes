@@ -83,6 +83,7 @@ services:
      - http.cors.enabled=true
      - http.cors.allow-origin=*
      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+     - "discovery.zen.ping.unicast.hosts=es1,es2,es3"
    ulimits:
      memlock:
        soft: -1
@@ -106,7 +107,7 @@ services:
      - http.cors.enabled=true
      - http.cors.allow-origin=*
      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-     - "discovery.zen.ping.unicast.hosts=es1"
+     - "discovery.zen.ping.unicast.hosts=es1,es2,es3"
    ulimits:
      memlock:
        soft: -1
@@ -130,7 +131,7 @@ services:
      - http.cors.enabled=true
      - http.cors.allow-origin=*
      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
-     - "discovery.zen.ping.unicast.hosts=es1"
+     - "discovery.zen.ping.unicast.hosts=es1,es2,es3"
    ulimits:
      memlock:
        soft: -1
