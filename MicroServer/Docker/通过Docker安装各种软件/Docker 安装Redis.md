@@ -155,7 +155,7 @@ slave-serve-stale-data yes
 # use a very strong password otherwise it will be very easy to break.
 # 设置Redis连接密码，如果配置了连接密码，客户端在连接Redis时需要通过auth <password>命令提供密码，默认关闭
 # requirepass foobared
-
+requirepass 123456
 # Command renaming.
 #
 # It is possilbe to change the name of dangerous commands in a shared

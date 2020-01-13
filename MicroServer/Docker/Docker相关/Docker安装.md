@@ -317,7 +317,7 @@ $ sudo sh get-docker.sh --mirror Aliyun
 
 在`/etc/docker/daemon.json`中新增以下内容（如果文件不存在请新建该文件）：
 
-推荐使用阿里云docker镜像
+>  推荐使用阿里云镜像加速器 登录阿里云-产品与服务-容器镜像服务-控制台-镜像加速器
 
 ```json
 {
@@ -395,6 +395,10 @@ Linux 系统请使用以下介绍的方法安装。
 在 Linux 上的也安装十分简单，从 [官方 GitHub Release](https://github.com/docker/compose/releases) 处直接下载编译好的二进制文件即可。
 
 例如，在 Linux 64 位系统上直接下载对应的二进制包。
+
+镜像地址
+
+> http://get.daocloud.io/
 
 ```bash
 $ curl -L https://github.com/docker/compose/releases/download/1.24.0/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose

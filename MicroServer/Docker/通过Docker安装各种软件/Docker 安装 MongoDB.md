@@ -29,6 +29,54 @@ auth=false
 
 `fork=false`是否后台运行 必须为false 否则无法启动容器
 
+```conf
+systemLog:
+    quiet: false
+    path: /data/logs/mongod.log
+    logAppend: false
+    destination: file
+processManagement:
+    fork: true
+    pidFilePath: /data/mongodb/mongod.pid
+net:
+    bindIp: 127.0.0.1
+    port: 27017
+    maxIncomingConnections: 65536
+    wireObjectCheck: true
+    ipv6: false   
+storage:
+    dbPath: /data/db
+    indexBuildRetry: true
+    journal:
+        enabled: true
+    directoryPerDB: false
+    engine: mmapv1
+    syncPeriodSecs: 60
+    mmapv1:
+        quota:
+            enforced: false
+            maxFilesPerDB: 8
+        smallFiles: true   
+        journal:
+            commitIntervalMs: 100
+    wiredTiger:
+        engineConfig:
+            cacheSizeGB: 1
+            journalCompressor: snappy
+            directoryForIndexes: false   
+        collectionConfig:
+            blockCompressor: snappy
+        indexConfig:
+            prefixCompression: true
+operationProfiling:
+    slowOpThresholdMs: 100
+    mode: off
+```
+
+
+
+
+
 ### 启动容器
 
 ```shell
