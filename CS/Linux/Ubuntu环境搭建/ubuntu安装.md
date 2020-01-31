@@ -619,8 +619,9 @@ vim /etc/profile
 export GOPATH=/home/illusory/golang/projects 
 # go 解压位置
 export GOROOT=/usr/local/go
-export GOARCH=386
-export GOOS=linux
+#这两个好像不需要配置
+#export GOARCH=386
+#export GOOS=linux
 export GOTOOLS=$GOROOT/pkg/tool
 export PATH=$PATH:$GOROOT/bin:$GOPATH/bin
 ```
