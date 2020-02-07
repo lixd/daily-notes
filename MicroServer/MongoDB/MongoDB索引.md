@@ -353,6 +353,10 @@ db.inventory.find(
 
 
 
+>  1."stage" : "IXSCAN",
+>
+>  2.nReturned、totalKeysExamined和totalDocsExamined这三个数是否相等,相等则说明索引没有问题，因为我们通过索引快速查找到了三个文档，且从磁盘上也是去取这三个文档，并返回三个文档。
+
 ## 参考
 
 `https://www.jianshu.com/p/2b09821a365d`
