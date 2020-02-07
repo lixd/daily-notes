@@ -65,3 +65,16 @@ db.orders.aggregate( [
 SELECT SUM(price) AS total  FROM orders
 ```
 
+
+
+## 写法
+
+多个`filter`条件时可以用`bson.M`直接添加
+
+```go
+var filter = bson.M{"_id": _id}
+filter["status"] = bson.M{"$ne": 1}
+filter["create"] = bson.M{"$gte": 1580292861}
+...
+```
+
