@@ -74,7 +74,7 @@ ls -lhS
 
 #### **5. 测量大小**
 
-ls可以通过使用-block-size=SIZE改单位大小。这里的SIZE是：
+ls可以通过使用–-block-size=SIZE改单位大小。这里的SIZE是：
 
 > K = Kilobyte
 >
@@ -94,7 +94,7 @@ ls可以通过使用-block-size=SIZE改单位大小。这里的SIZE是：
 
 比如，我们希望使用MB作为单位大小。所以语法就会像这样:
 
-` ls -l –block-size=M`
+` ls -l ––block-size=M`
 
 #### **6. 显示隐藏文件**
 
