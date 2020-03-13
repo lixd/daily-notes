@@ -21,16 +21,40 @@ go mod vendor将依赖包复制到项目下的 vendor目录。建议一些使用
 go list -m all显示依赖关系。go list -m -json all显示详细依赖关系。
 
 go mod download `<path@version>`下载依赖。参数`<path@version>`是非必写的，path是包的路径，version是包的版本。
+go mod why 解释为什么需要依赖
+go mod verify 验证依赖是否正确
+go mod
 ```
 
-在`gopath`外新建一个项目，单独开一个`cmd`设置`set GO111MODULE=on`(习惯性的和git初始化一样),然后初始化`go mod init <项目模块名称>（module名称可与文件名不同）`
+golang 提供了 `go mod`命令来管理包。
 
-> go: creating new go.mod: module xxxx
+go mod 有以下命令：
 
-在项目目录下执行`go mod tidy`
+| 命令     | 说明                                                         |
+| -------- | ------------------------------------------------------------ |
+| download | download modules to local cache(下载依赖包)                  |
+| edit     | edit go.mod from tools or scripts（编辑go.mod)               |
+| graph    | print module requirement graph (打印模块依赖图)              |
+| init     | initialize new module in current directory（在当前目录初始化mod） |
+| tidy     | add missing and remove unused modules(拉取缺少的模块，移除不用的模块) |
+| vendor   | make vendored copy of dependencies(将依赖复制到vendor下)     |
+| verify   | verify dependencies have expected content (验证依赖是否正确） |
+| why      | explain why packages or modules are needed(解释为什么需要依赖) |
 
->  下载完成后项目路径下会生成`go.mod`和`go.sum`
->
-> **go.mod文件必须要提交到git仓库**，但go.sum文件可以不用提交到git仓库(git忽略文件.gitignore中设置一下)。
+## 初始化
 
-go模块版本控制的下载文件及信息会存储到`GOPATH的pkg/mod文件夹`里。
+1.go版本1.11及其以上。
+
+2.在`gopath`外新建一个项目
+
+3.执行以下命令 初始化
+
+```sh
+# 打开Go Module
+set GO111MODULE=on
+#在当前目录初始化mod
+go mod init <项目模块名称>（module名称可与文件名不同）
+#go: creating new go.mod: module xxxx
+#处理依赖关系
+go mod tidy
+```

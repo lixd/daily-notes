@@ -39,12 +39,12 @@ const makeRequest = async () => {
 }
 
 makeRequest()
-// await getJSON()表示console.log会等到getJSON的promise成功reosolve之后再执行。
+// await getJSON()表示console.log会等到getJSON的promise成功resolve之后再执行。
 ```
 
 它们有一些细微不同:
 
-- 函数前面多了一个**aync关键字。await关键字只能用在aync定义的函数内。async函数会隐式地返回一个promise，该promise的reosolve值就是函数return的值**。(示例中reosolve值就是字符串”done”)
+- 函数前面多了一个**aync关键字。await关键字只能用在aync定义的函数内。async函数会隐式地返回一个promise，该promise的resolve值就是函数return的值**。(示例中resolve值就是字符串”done”)
 - 第1点暗示我们不能在最外层代码中使用await，因为不在async函数内。
 
 ## 3. 结论
