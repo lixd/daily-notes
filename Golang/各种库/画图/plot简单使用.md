@@ -22,7 +22,13 @@
 go get gonum.org/v1/plot/
 ```
 
+github
 
+>  https://github.com/gonum/plot 
+
+文档
+
+>  https://godoc.org/gonum.org/v1/plot 
 
 ### 2. 例子
 
