@@ -74,7 +74,7 @@ Docker 要求 CentOS 系统的内核版本高于 `3.10`，查看本页面的前�
 [root@localhost ~]#  systemctl enable docker
 ```
 
-9、验证安装是否成功(有client和service两部分表示docker安装启动都成功了)
+9、验证安装是否成功(有client和service两部分表示docker安装启动都成功了
 
 ```
 [root@localhost ~]# docker version
