@@ -1,8 +1,18 @@
 # linux设置静态ip
 
-> 这里说的是通过VMware虚拟机安装的情况
+## 1. 概述
 
-## centos7
+在VMware安装虚拟机来实现各种操作。
+
+
+
+## 2. 安装下载
+
+镜像下载地址` http://mirrors.aliyun.com/centos/7/isos/x86_64/ `
+
+安装就一直下一步就对了。
+
+### 静态IP
 
 默认安装好centos7之后只有`ip addr`命令可以用
 
@@ -23,6 +33,11 @@ vi /etc/sysconfig/network-scripts/ifcfg-ens33
 ```sh
 BOOTPROTO=static #设置网卡引导协议为 静态
 ONBOOT=yes #设置网卡启动方式为 开机启动 并且可以通过系统服务管理器 systemctl 控制网卡
+```
+
+新增如下内容
+
+```sh
 IPADDR=192.168.1.111 #IP
 NETMASK=255.255.255.0 #子网掩码
 GATEWAY=192.168.1.1 #网关
@@ -36,6 +51,30 @@ DNS2=114.114.114.114
 
 ```sh
 systemctl restart network
+```
+
+
+
+### ssh配置
+
+```sh
+vi /etc/ssh/sshd-config
+```
+
+修改如下内容
+
+```sh
+Port 22
+ListenAddress 0.0.0.0
+ListenAddress ::
+PermitRootLigin yes
+PasswordAuthentication yes
+```
+
+保存后重启ssh服务
+
+```sh
+systemctl restart sshd
 ```
 
 
