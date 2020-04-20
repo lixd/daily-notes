@@ -37,7 +37,15 @@ TYPE key
 ```sh
 # 可以在设置的同时指定过期时间
 SET key value (expire)
+#SET+Expire
+SETEX key second value
 GET key
+#设置新值返回旧值
+GETSET key value
+STRLEN key
+
+#返回 key 中字符串值的子字符
+GETRANGE key start end
 #key不存在才设置 分布式锁
 SETNX key value
 #所有key都不存在才设置
@@ -289,11 +297,8 @@ PFMERGE destkey sourcekey [sourcekey ...]
 
 ```go
 // 判定当前元素是否存在
-// 1.计算count
-// 2.把元素添加进去
-// 3.再计算一次count
-// 4.如果count增加了则说明元素之前是不存在的
-应该有其他方法吧。。
+PFADD 添加时如果基数估算值变化则会返回1 否则返回0
+根据返回值可以判断是否存在
 ```
 
 

@@ -25,7 +25,7 @@ $ make
 指定安装目录
 
 ```
-make install PREFIX=/usr/local/redis
+make PREFIX=/usr/local/redis install
 ```
 
 ### 修改配置文件
