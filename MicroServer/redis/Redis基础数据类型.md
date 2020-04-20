@@ -280,13 +280,19 @@ ZSCAN key cursor [MATCH pattern] [COUNT count]
 
 > 假如我要统计网页的UV（浏览用户数量，一天内同一个用户多次访问只能算一次），传统的解决方案是使用Set来保存用户id，然后统计Set中的元素数量来获取页面UV。但这种方案只能承载少量用户，一旦用户数量大起来就需要消耗大量的空间来存储用户id。我的目的是统计用户数量而不是保存用户，这简直是个吃力不讨好的方案！而使用Redis的HyperLogLog最多需要12k就可以统计大量的用户数，尽管它大概有0.81%的错误率，但对于统计UV这种不需要很精确的数据是可以忽略不计的。
 
-
+* 基数不大，数据量不大就用不上，会有点大材小用浪费空间
+* 有局限性，就是只能统计基数数量，而没办法去知道具体的内容是什么
+* 和bitmap相比，属于两种特定统计情况，简单来说，HyperLogLog 去重比 bitmap 方便很多
+* 一般可以bitmap和hyperloglog配合使用，bitmap标识哪些用户活跃，hyperloglog计数
+  
 
 ```sh
 #添加指定元素到 HyperLogLog 中
+#影响基数估值则返回1否则返回0
 PFADD key element [element ...]
 
 #返回给定 HyperLogLog 的基数估算值。
+#白话就叫做去重值 带有 0.81% 标准错误（standard error）的近似值
 PFCOUNT key [key ...]
 
 #将多个 HyperLogLog 合并为一个 HyperLogLog
@@ -297,8 +303,17 @@ PFMERGE destkey sourcekey [sourcekey ...]
 
 ```go
 // 判定当前元素是否存在
+<<<<<<< HEAD
 PFADD 添加时如果基数估算值变化则会返回1 否则返回0
 根据返回值可以判断是否存在
+=======
+// 1.计算count
+// 2.把元素添加进去
+// 3.再计算一次count
+// 4.如果count增加了则说明元素之前是不存在的
+应该有其他方法吧。。
+直接添加PFADD 如果影响基数估值则返回1否则返回0
+>>>>>>> 108e8b15901c9c2c584e33efda5a1775017a5b78
 ```
 
 
