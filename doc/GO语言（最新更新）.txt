@@ -1,0 +1,17 @@
+--职业发展
+千锋GO语言初识与职业发展https://pan.baidu.com/s/1sO-JPaHOi3E-wjr1rHCbFg 提取码：19zt
+--基础
+【录制视频】2019千锋GO语言超详细入门教程（笔记+课件+源码）https://pan.baidu.com/s/1KFxscu2v8BtrAfbqhJQ4gQ
+【随堂视频】2天玩转比特币教程 https://pan.baidu.com/s/1S6cm8ZI47gtbUdu3-pUReA
+【录制视频】区块链免费体验视频https://pan.baidu.com/s/1-9fjnuN-TZ6eQdGmfTSMeQ
+【录制视频】区块链从入门到精通（小白必看） https://pan.baidu.com/s/18zdsng51GQeqfe1cplpZ5Q
+--进阶
+【录制视频】2019Golang进阶实战编程(学完基础必看)【千锋GO语言】https://pan.baidu.com/s/1asZeo4xtpjGOfsMmVjV5-g 提取码：53r8
+【录制视频】Goweb开发之Iri框架实战【2019千锋】https://pan.baidu.com/s/1retiBdoYxDBS8QGmYsPW5A
+【录制视频】Goweb开发之Beego框架实战【2019千锋】https://pan.baidu.com/s/1_s7CrvL1De9dC7cTFeV5kA
+【录制视频】Goweb开发之Gin框架实战【2019千锋】https://pan.baidu.com/s/1R8H5k9LX39xKOZfYTGWFLw
+【录制视频】Go语言微服务从入门到大师【2019千锋】https://pan.baidu.com/s/1ynvzK2VvwYqLau_zoRjZNA
+【录制视频】Go语言微服务框架学习实践【2019千锋】https://pan.baidu.com/s/1lzi_eS8pyCArvb7teCK8zg
+【录制视频】3天精通Go密码学开发实战【2019千锋】https://pan.baidu.com/s/1yDFiaH9hmZ1LUcvY-HMRCw
+--工具
+GO语言相关软件 https://pan.baidu.com/s/1ODNmaXF9oGLm27UIBi9dgw
