@@ -14,7 +14,7 @@
 version: '3.1'
 services:
   db:
-    image: mysql:8
+    image: mysql
     restart: always
     environment:
       MYSQL_ROOT_PASSWORD: 123456

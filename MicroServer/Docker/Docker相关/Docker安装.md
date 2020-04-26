@@ -300,6 +300,8 @@ $ sudo sh get-docker.sh --mirror Aliyun
 >  推荐使用阿里云镜像加速器 登录阿里云-产品与服务-容器镜像服务-控制台-镜像加速器
 
 ```json
+vi /etc/docker/daemon.json
+
 {
   "registry-mirrors": [
     "https://registry.docker-cn.com"
@@ -366,6 +368,9 @@ Docker Compose 是 Docker 官方编排（Orchestration）项目之一，负责�
 $ curl -L https://github.com/docker/compose/releases/download/1.24.0/docker-compose-`uname -s`-`uname -m` -o /usr/local/bin/docker-compose
 
 $ chmod +x /usr/local/bin/docker-compose
+
+#查看版本号
+$ docker-compose version
 ```
 
 ### 3. 卸载
