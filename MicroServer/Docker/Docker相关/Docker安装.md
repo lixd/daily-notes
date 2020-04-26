@@ -297,7 +297,7 @@ $ sudo sh get-docker.sh --mirror Aliyun
 
 在`/etc/docker/daemon.json`中新增以下内容（如果文件不存在请新建该文件）：
 
->  推荐使用阿里云镜像加速器 登录阿里云-产品与服务-容器镜像服务-控制台-镜像加速器
+>  推荐使用阿里云镜像加速器 登录阿里云-控制台-产品与服务-容器镜像服务-镜像加速器
 
 ```json
 vi /etc/docker/daemon.json

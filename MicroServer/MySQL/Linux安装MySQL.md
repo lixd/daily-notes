@@ -148,7 +148,7 @@ pid-file=/usr/local/mysql/data/mysqld.pid
 登录修改密码 
 
 ```xml
-# mysql -uroot -p 上面初始化时的密码
+# mysql -u root -p 上面初始化时的密码
 ```
 
 如果出现错误 需要添加软连接 或者输入全路径`/usr/local/mysql/bin/mysql -uroot -p`,
