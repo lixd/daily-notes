@@ -385,3 +385,89 @@ SELECT first_name,list_name FROM president WHERE birth='1980-01-01';
 SELECT first_name,list_name FROM president WHERE MONTH(birth)=1 AND DAYOFMONTH(birth)=-1;
 ```
 
+
+
+#### 8. 模式匹配
+
+MySQL支持模式匹配，需要配合使用像`LIKE`和`NOT LIKE`那样的运算符。
+
+并且需要指定一个包含通配字符的字符串。下划线`_`可以匹配任何的单个字符，百分号`%`则能匹配任何字符序列。
+
+例如：
+
+下列语句可以匹配last_name中带有W或w开头的
+
+```mysql
+SELECT last_name,first_name FROM president WHERE last_name LIKE 'W%'
+```
+
+下列语句则是匹配last_name中包含W或w的
+
+```mysql
+SELECT last_name,first_name FROM president WHERE last_name LIKE '%W%'
+```
+
+下列语句则匹配刚好last_name是4个字的(每个下划线匹配一个字符 刚好4个)
+
+```mysql
+SELECT last_name,first_name FROM president WHERE last_name LIKE '____'
+```
+
+
+
+MySQL还提供了一种基于正则表达式和REGEXP运算符的模式匹配。
+
+
+
+#### 9. 自定义变量
+
+MySQL支持自定义变量。
+
+**使用语法为`@变量名` ,赋值语法为形如`@变量名:=值`的表达式。**
+
+例如：
+
+下列句子将`Jackson Andrew`的生日存到变量`Jackson_birth`中
+
+```mysql
+SELECT @Jackson_birth:=birth FROM president WHERE last_name='Jackson' AND first_name='Andrew';
+```
+
+然后使用上面的变量,查询生日比Jackson Andrew晚的总统。
+
+```mysql
+SELECT last_name,first_name,birth FROM president WHERE birth < @Jackson_birth ORDER BY birth;
+```
+
+也可以用`SET`赋值
+
+```mysql
+SET @today = CURDATE();
+SET @one_week_ago := DATA_SUB(@today,INTERVAL 7 DAY);
+SELECT @today,@one_week_ago;
+```
+
+结果如下
+
+```sh
+@today		@one_week_ago
+2020-04-27	2020-04-20
+```
+
+#### 10. 统计信息
+
+**DISTINCT**
+
+用于清除查询结果里重复出现的行。
+
+例如：以下句子可以查询出所有的state
+
+```mysql
+SELECT DISTINCT state FROM president ORDER BY state;
+```
+
+
+
+**COUNT()**
+
+count()函数用于计数。
