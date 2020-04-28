@@ -471,3 +471,140 @@ SELECT DISTINCT state FROM president ORDER BY state;
 **COUNT()**
 
 count()函数用于计数。
+
+`count(*)`将统计查询所选取到结果的行数。
+
+`count(列名)`只会统计非NULL的值的行数。
+
+```mysql
+SELECT COUNT(*),COUNT(email),COUNT(expiration) FROM member;
+```
+
+返回如下
+
+```mysql
+COUNT(*) COUNT(email) COUNT(expiration)
+  100		  98			95
+```
+
+可以看到COUNT(*)统计了所有行,COUNT(列名)只统计了该列不为NULL的行数。
+
+查看学生性别情况
+```mysql
+SELECT sex,COUNT(*) FROM student GROUP BY sex;
+```
+GROUP BY和COUNT(*)组合起来统计非常方便
+
+如果分组的列名是计算出来的，则需要为这个计算值取一个别名然后GROUP BY引用这个别名。
+
+```mysql
+SELECT MONTH(birth) AS Month,MONTHNAME(birth) AS Name,COUNT(*) AS count FROM president GROUP BY Name ORDER BY Month;
+```
+
+
+
+#### 11. 多表查询
+
+有两种类型的多表查询
+
+* 1.连接(join)
+* 2.子查询(subquery)
+
+
+
+##### 1. join
+
+```mysql
+SELECT student_id,date,score,category FROM grade_enent INNER JOIN score ON grade_event.event_id=score.event_id WHERE date='2012-09-23'
+```
+
+
+
+FROM 子句指定了多个表名，因为需要从多个表里检索信息
+
+```mysql
+FROM grade_enent INNER JOIN score 
+```
+
+ON子句指定了表`grade_enent`和`score`的连接条件,即event_id相同
+
+```mysql
+ON grade_event.event_id=score.event_id
+```
+
+为了防止二义性在使用列时最好写成`tbl_name.col_name`
+
+
+
+不一定必须连接其他表，也可以通过连接自身来实现一些特殊查询。
+
+例如查询在同一个州出生的总统
+
+```mysql
+SELECT p1.last_name,p1.first_name,p1.city,p1.state FROM president AS p1 INNER JOIN president AS p2 ON p1.city=p2.city AND p1.state=p2.state WHERE (p1.last_name<>p2.last_name OR p1.first_name<>p2.first_name) ORDER BY state,city,last_name;
+```
+
+连接自身
+
+```mysql
+FROM president AS p1 INNER JOIN president AS p2
+```
+
+指定连接条件
+
+> 出生地相同
+
+```mysql
+ON p1.city=p2.city AND p1.state=p2.state
+```
+
+检索过滤条件
+
+> 由于是连接自身所以需要过滤掉名字相同的记录
+
+```mysql
+WHERE (p1.last_name<>p2.last_name OR p1.first_name<>p2.first_name)
+```
+
+
+
+##### 2. 子查询
+
+把一条SELECT语句嵌套在另一条SELECT语句里。
+
+```mysql
+SELECT * FROM student WHERE student_id NOT IN (SELECT student_id FROM absence);
+```
+
+### 6. . 删除或更新
+
+**DELETE**
+
+DELETE语句格式如下
+
+```mysql
+DELETE FROM tbl_name WHERE which rows to delete;
+```
+
+注意DELETE语句必须跟上条件，否则很危险。
+
+
+
+**UPDATE**
+
+语法格式如下
+
+```mysql
+UPDATE tbl_name SET which cloumns to change WHERE which rows to update;
+```
+
+可以同时更新多个列,例如:
+
+```mysql
+UPDATE member SET expirationm='2013-7-20',email='jeromy@aol.com',city='Anytown' WHERE last_name='York' AND first_name='Jerome';
+```
+
+
+
+
+
