@@ -435,13 +435,31 @@ LIMIT count; #限制结果里的行数
 
 ### 1. 内连接
 
-`INNER JOIN`
+`INNER JOIN、JOIN、CROSS JOIN`都是一个意思。
 
 inner join可以理解为“**有效的连接”，就是根据on后面的关联条件，两张表中都有的数据才会显示** 
 
 ```mysql
 SELECT stu.name,stu.id,gra.score FROM student AS std INNER JOIN grade AS gra ON std.id=gra.student_id
 ```
+
+**USING**
+
+USING()子句要求两个表的列名必须相同
+
+例如
+
+```mysql
+SELECT mytb1.*,mytb2.* FROM mytb1 INNER JOIN mytb2 USING(b);
+```
+
+等价于
+
+```mysql
+SELECT mytb1.*,mytb2.* FROM mytb1 INNER JOIN mytb2 ON mytb1.b=mytb2.b;
+```
+
+
 
 ### 2. 左连接
 
@@ -472,3 +490,234 @@ SELECT stu.name,stu.id,gra.score FROM student AS std LEFT JOIN grade AS gra ON s
 `WHERE`条件则是对**连接后形成的新表**进行限制。
 
 > inner join时由于on同时可以限制左表和右表 所以on和where的效果是一样的
+
+
+
+## 6. 子查询实现多表检索
+
+```mysql
+SELECT * FROM score WHERE event_id IN (SELECT event_id FROM grad_event WHERE category='T');
+```
+
+子查询可以返回各种不同类型的信息：
+
+* 1.标量子查询返回一个值
+* 2.列子查询返回一个由一个值或多个值构成的列
+* 3.行子查询返回一个由一个值或多个值构成的行
+* 4.表子查询返回一个由一个行或多个行构成的表，而行则由一个列或多个列构成。
+* 5.可以用IN和NOT IN来检测给定制是否在子查询结果集里
+* 6.可以用ALL、ANY、SOME把某给定值与子查询结构集进行比较
+* 7.可以用EXISTS和NOT EXISTS检测子查询结果是否为空
+
+如果把子查询用在一个会改变表内容的语句里(如DELTE、UPDATE、INSERT等等)那么MySQL会强行限制这个子查询不能查询正在被修改的那个表。
+
+
+
+### 1. 带关系比较运算符的子查询
+
+运算符=，<>=,>,>=,<,<=等可用来对值直接的关系进行比较
+
+```mysql
+SELECT * FORM score WHERE event_id = (SELECT event_id FROM grade_event WHERE date='2012-09-23' AND category ='Q');
+```
+
+查询得分最低的学生可能会尝试写出如下查询
+
+```mysql
+SELECT * FROM score WHERE score=MIN(score);
+```
+
+不过where条件后不能跟聚合函数，聚合函数必须在查询结果出来之后才能使用，可以改为子查询
+
+```mysql
+SELECT * FROM score WHERE score=(SELECT MIN(score) FROM score);
+```
+
+**行构造器**
+
+如果子查询返回的结果是一个行，那么可以使用含构造器来实现一族值与子查询结果进行比较
+
+```mysql
+SELECT last_name,first_name,city,state FROm president WHERE (city,state)= (SELECT city,state FROM president WHERE last_name='Adams' AND first_name='John');
+```
+
+
+
+### 2. IN和NOT IN子查询
+
+查询在absence中没有缺勤记录的学生和有缺勤记录的学生。
+
+```mysql
+SELECT * FROM student WHERE student_id NOT IN(SELECT student_id FROM absence);
+```
+
+```mysql
+SELECT * FROM student WHERE student_id IN(SELECT student_id FROM absence);
+```
+
+返回多个列时也可以使用行构造器来比较
+
+```mysql
+SELECT last_name,first_name,city,state FROm president WHERE (city,state) IN (SELECT city,state FROM president WHERE last_name='Adams' AND first_name='John');
+```
+
+### 3. ALL、ANY和SOME子查询
+
+运算符ALL、ANY常与某个关系比较运算符结合在一起使用，以便测试列子查询的结果。
+
+例如:当比较值小于或等于子查询返回的每个值时<=ALL结果为真，比较值小于或等于子查询返回的任意值(某一个值)时<=ANY为真
+
+
+
+查询最早出生的总统:
+
+> 查询生日小于或等于表中所有生日的行，只有最早的那个出生日期才会满足这个条件(刚好等于自己)。
+
+```mysql
+SELECT last_name,first_name ,birth FROM president WHERE birth<=ALL(SELECT birth FROM president);
+```
+
+### 4. EXISTS和NOT EXISTS
+
+运算符EXISTS和NOT EXISTS只会检查某个子查询是否返回了行，如果又返回则EXISTS结果为真，NOT EXISTS结果为假。
+
+```mysql
+SELECT EXISTS (SELECT * FROM absence);
+SELECT NOT EXISTS (SELECT * FROM absence);
+```
+
+### 5. 相关子查询
+
+相关不相关指的是子查询和外层查询的关系。
+
+```mysql
+SLECT j FROM t2 WHERE (SELECT i FROm t1 WHERE i=j);
+```
+
+子查询中引用了外层查询的数据所以叫做相关子查询。
+
+```mysql
+SELECT student_id,name FROM student WHERE EXISTS(SELECT * FROM absence WHERE absence.student_id=student.student_id);
+```
+
+上述语句将查询出在缺勤名单中的学生。
+
+### 6. FROM子句中的子查询
+
+子查询可以用在FROM子句中以生产某些值。
+
+
+
+### 7. 将子查询改为连接
+
+有大部分使用了子查询的查询命令可以改写为连接，如果子查询需要花费很长时间那么可以尝试改成连接。
+
+查询score中的考试(不含测验)
+
+```mysql
+SELECT * FROM scroe WHERE event_id IN (SELECT event_id FROM grade_event WHERE category='T');
+```
+
+改成连接
+```mysql
+SELECT * FROM scroe INNER JOIN grade_event ON score.event_id=grade.event_id WHERE grade_event.category='T';
+```
+
+通常情况下符合如下所示形式的子查询
+```mysql
+SELECT * FROM table1
+WHERE column1 NOT IN(SELECT column2 FROM table2);
+```
+都可以改为这样的连接查询
+```mysql
+SELECT table1.* FROM table1 LEFT JOIN table2 ON table1.colunm1=table2.column2 WHERE table2.column2 IS NULL;
+```
+
+即左表全查询出来，右表没有的数据就会填成NULL，然后where条件过滤掉右表中为NULL的行。
+
+
+
+## 7. UNION实现多表检索
+
+union可以将多个检索结果合并再一起。
+
+有以下特性：
+
+* 1.列名和数据类型:union后的列名取决于第一个SELECT里的列名。union中的第二个及后面的SELECT必须选取相同个数的列，但是不必具有相同的名字和数据类型(如果不一样mysql会自动类型转换)。同时列是根据相对位置进行匹配的。
+
+例如：
+
+```mysql
+SELECT a,b FROM t1 UNION SELECT c,d FROM t2;
+```
+
+会把t1.a和t2.c作为一列，t1.b和t2.d作为一列
+
+* 处理重复行。默认情况下union会剔除掉结果集里的重复行.
+
+如果想保留重复行则需替换为UNION ALL。
+
+* ORDER BY和LIMIT处理
+
+如果想将UNION结果作为一个整体进行排序，那么需要用括号将每个SELECT语句括起来，并在最后一个SELECT后添加ORDER BY子句。因为UNION只会取第一个SELECT中的列名所以ORDER BY时也只能引用那些名字。
+
+```mysql
+#这里ORDER BY只能引用a或者b
+(SELECT a,b FROM t1) UNION (SELECT c,d FROM t2) ORDER BY a;
+```
+
+类似的LIMIT如下：
+```mysql
+(SELECT a,b FROM t1) UNION (SELECT c,d FROM t2) LIMIT 2;
+```
+
+
+
+ORDER BY和LIMIT也可以写在SELECT的括号里单独对每个查询做限制
+
+```mysql
+(SELECT a,b FROM t1 ORDER BY a LIMIT 2) UNION (SELECT c,d FROM t2 ORDER BY c LIMIT 3);
+```
+
+也可以一起写
+
+```mysql
+(SELECT a,b FROM t1 ORDER BY a LIMIT 2) UNION (SELECT c,d FROM t2 ORDER BY c LIMIT 3) ORDER BY a LIMIT 4;
+```
+
+## 8. 多表删除和更新
+
+有时需要根据某些行是否与另一个表里的行相匹配来删除它们，类似地也可能需要用一个表里的内容去更新另一个表。
+
+例如:
+
+删掉t表里id大于100的行
+
+```mysql
+DELETE FROM t WHERE id > 100;
+```
+
+多表时的情况
+
+将t1表的中id值可以在t2表中找到的行删除
+
+```mysql
+DELETE t1 FROM t1 INNER JOIN t2 ON t1.id=t2.id;
+```
+
+DELTE可以同时删除多个表中的行
+
+同时将t1表和t2表的中id值可以在t2表中找到的行删除
+
+```mysql
+DELETE t1,t2 FROM t1 INNER JOIN t2 ON t1.id=t2.id;
+```
+
+
+
+如果是InnoDB类型的表，那么最好的办法是在表之间建立一个外键关系，并让它包含约束条件`ON DELTE CASCADE`或者`ON UPDATE CASCADE`。
+
+
+
+## 9. 事务
+
