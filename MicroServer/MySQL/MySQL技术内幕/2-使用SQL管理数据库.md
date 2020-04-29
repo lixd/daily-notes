@@ -735,3 +735,114 @@ DELETE t1,t2 FROM t1 INNER JOIN t2 ON t1.id=t2.id;
 
 
 > InnoDB存储引擎支持事务，MyISAM则不支持。
+
+
+
+MySQL事务默认是自动提交,即执行一条语句后就自动提交了不会和后续语句组成一个事务。
+
+```mysql
+START TRANSACTION;#开启事务
+xxxxxx;#执行具体操作
+COMMIT;/ROLLBACK;#提交事务或者回滚
+```
+
+
+
+关闭自动提交模式
+
+```mysql
+SET autocommi=0;
+```
+
+关闭后则需要手动进行事务提交了，但是如果执行的是创建、修改、删除数据库或其中的对象的数据定义语言DLL语句时，在执行前会自动提交事务。
+
+```mysql
+ALTER TABLE
+CREATE INDEX
+DROP TABLE
+...等等
+```
+
+### 1. 事务保存点
+
+MySQL可以支持对事务进行部分回滚，具体做法是在事务里调用SAVEPOINT语句来设定一些命名标记，后续可以使用ROLLBACK来回滚到指定的标记处。
+
+例如:
+
+```mysql
+START TRANSACTION;
+INSERT INTO t VALUES(1);
+SAVEPOINT mu_savepoint;#设定标记点
+INSERT INTO t VALUES(2);
+ROLLBACK TO SAVEPOINT mu_savepoint;#回滚到指定标记点
+INSERT INTO t VALUES(3);
+COMMIT;
+```
+
+最后只有1和3会被执行 因为2已结被回滚了所以以上例子可以看成如下：
+```mysql
+START TRANSACTION;
+INSERT INTO t VALUES(1);
+INSERT INTO t VALUES(3);
+COMMIT;
+```
+
+### 2. 事务隔离
+
+为了防止多客户端同时更新数据产生错误，MyISAM之类的存储引擎提供了`表级锁定`机制,虽然能解决问题但是在大量更新操作时很难提供并发性能。`InnoDB`引擎则提供了底层的锁定方式`行级锁定`，多客户端修改同一行时只有先锁定的客户端可以进行修改。
+
+
+
+InnoDB存储引擎实现的事务隔离级别功能，能够让客户端对他们想要看到的由其他事务所做的修改类型进行控制，它提供了多种不同的隔离级别，可以允许或预防在多个事务同时运行时可能出现的各类问题。
+
+
+
+* 1.脏读：事务A读取了事务B更新的数据，然后B回滚操作，那么A读取到的数据是脏数据
+* 2.不可重复读：事务 A 多次读取同一数据，事务 B 在事务A多次读取的过程中，对数据作了更新并提交，导致事务A多次读取同一数据时，结果 不一致，**重点在于update和delete(锁行即可解决)**
+* 3.幻读：系统管理员A将数据库中所有学生的成绩从具体分数改为ABCDE等级，但是系统管理员B就在这个时候插入了一条具体分数的记录，当系统管理员A改结束后发现还有一条记录没有改过来，就好像发生了幻觉一样，这就叫幻读,**重点在于insert（需要锁表解决)**
+
+　**不可重复读和幻读最大的区别，就在于如何通过锁机制来解决他们产生的问题。 **
+
+为了解决这些问题，InnoDB存储引擎提供了4种事务隔离级别。
+
+| 事务隔离级别                 | 脏读 | 不可重复读 | 幻读 |
+| ---------------------------- | ---- | ---------- | ---- |
+| 读未提交（read-uncommitted） | 是   | 是         | 是   |
+| 不可重复读（read-committed） | 否   | 是         | 是   |
+| 可重复读（repeatable-read）  | 否   | 否         | 否   |
+| 串行化（serializable）       | 否   | 否         | 否   |
+
+InnoDB存储引擎默认的隔离级别是**可重复读（repeatable-read）**
+
+修改方式如下
+
+```mysql
+#修改全局隔离级别
+SET GLOBAL TRANSACTION ISOLATION LEVEL level;
+#修改自身回话隔离级别
+SET SESSION TRANSACTION ISOLATION LEVEL level;
+#修改下一次事务的隔离级别 一次性的
+SET GLOBAL TRANSACTION ISOLATION LEVEL level;
+```
+
+**事务表(InnoDB引擎)和非事务表(非InnoDB引擎)混用?**
+
+在某个事务中修改了一个非事务表，那么就真的修改的 无法还原，因为非事务表不支持事务都是处于自动提交模式的。
+
+## 10. 外键和引用完整性
+
+利用外键关系，你可以在一个表里声明与另一个不要的某个索引相关联的索引。也可以把想要施加在表上的约束条件放到外键关系里，数据库会根据这个关系中的规则来维护数据的引用完整性。
+
+
+
+比如把score表里的student_id定义为student表中的student_id列的外键。即可确保只把那些student_id存在于student表中的数据插入到score表中，可以防止为不存在的学生输入成绩的情况发生。
+外键不仅可以用于insert操作，还可以用于delete和update。使用级联删除`casaded delete`可以做到删除student中某一学生时自动删除score表中相关的行。级联更新同理，更新了student表中的student_id那么score表中对应的student_id也会自动更新。
+外键可以帮我们维护数据的一致性并且使用起来也很方便。
+
+MySQL里InnoDB存储引擎提供了对外键的支持。
+相关术语如下：
+* 1.父表 指包含原始键值的相关表。
+* 2.子表 指引用了父表中键的得相关表。
+父表中的键值可以用来关联两个表。
+
+
