@@ -110,7 +110,7 @@ SELCT * FROM tbl_name;
 # SELECT * FROM student;
 ```
 
-#### 1. insert
+#### 1. INSERT
 
 **1. 一次性指定全部列值**
 
@@ -132,9 +132,7 @@ INSERT INTO grade_event VALUES('2012-09-03','Q',NULL);
 INSERT INTO student VALUES('Avery','F',NULL),('Nathan','M',NULL);
 ```
 
-
-
-**2. 命名赋值列**
+### 2. 命名赋值列
 
 当创建的行只有少数几列需要赋值时，这种方式特别有用。
 
@@ -157,7 +155,7 @@ INSERT INTO student(name,sex) VALUES('Abby','F'),('Joseph','M');
 
 
 
-**3. 使用一系列的"列/值"形式进行赋值**
+### 3. 使用一系列的"列/值"形式进行赋值
 
 此语法使用SET子句实现，其中包含多个`clo_name=value`的赋值形式。
 

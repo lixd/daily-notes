@@ -843,6 +843,194 @@ MySQL里InnoDB存储引擎提供了对外键的支持。
 相关术语如下：
 * 1.父表 指包含原始键值的相关表。
 * 2.子表 指引用了父表中键的得相关表。
-父表中的键值可以用来关联两个表。
 
+父表中的键值可以用来关联**两个表**。
+
+外键约束（FOREIGN KEY）用来在两个表的数据之间建立链接，它可以是一列或者多列。一个表可以有一个或多个外键
+
+外键对应的是参照完整性，一个表的外键可以为空值，若不为空值，则每一个外键的值必须等于另一个表中主键的某个值。
+
+**外键是表的一个字段，不是本表的主键，但对应另一个表的主键。**定义外键后，不允许删除另一个表中具有关联关系的行。
+
+
+
+**子表(score)中的某一列(student_id)可以和主表(student)中的主键(student_id)建立外键约束关系。那么就把子表(score)中那一列(student_id)叫做外键。**
+
+### 1. 添加外键
+
+具体的语法规则如下：
+
+```mysql
+[CONSTRAINT constraint_name]
+FOREIGN KEY [fk_name] (index_columns)
+REFERENCES tbl_name (index_columns)
+[ON DELETE action]
+[ON UPDATE action]
+[MATCH FULL|MATCH PARTIAL|MATCH SIMPLE]
+```
+
+`[CONSTRAINT constraint_name]`指定外键约束名字，若省略InnoDB引擎会自动创建一个名字。
+
+`FOREIGN KEY[index_name] (index_col_name, ...)`子表索引列，值必须和父表索引值匹配。
+
+
+
+`REFERENCES tbl_name (index_col_name,...)`引用父表及其索引列的名字
+
+`[ON DELETE action] `指定在删除父表里的行时子表执行的操作。
+
+action值如下:
+
+默认action是拒绝从表里删除仍然被子表里的行所引用的那些行。
+
+
+
+
+* ON DELETE RESTRICT 限制操作 即拒绝删除 和默认action一样的
+
+* ON DELETE NO ACTION 无操作 即和默认action一样
+
+* ON DELETE CASCADE 级联删除
+* ON DELETE SET NULL 主表删除后子表置为NULl
+* ON DELETE SET DEFAULT 主表删除后子表置为默认值
+
+
+
+`[ON UPDATE action]`指定在更新父表里的行时子表执行的操作。
+
+默认action是拒绝从表里更新仍然被子表里的行所引用的那些行。
+
+可选action和DELETE一样。
+
+定义一个外键时，需要遵守下列规则：
+
+- 子表必须建立索引，且外键列需要放在首位。父表也必须建立索引，且REFERENCES子句里的列需要放在首位。
+- 子表和父表对应列必须类型兼容。
+- 不能对外键关系里的字符串列的前缀进行索引，必须整个列进行索引。
+
+
+
+```mysql
+CREATE TABLE parent( 
+	par_id INT NOT NULL,
+	PRIMARY KEY (par_id)
+) ENGINE = INNODB;
+CREATE TABLE child (
+	par_id INT NOT NULL,
+	child_id INT NOT NULL,
+	PRIMARY KEY (par_id, child_id ),
+FOREIGN KEY (par_id) REFERENCES parent (par_id) 
+	ON DELETE CASCADE 
+	ON UPDATE CASCADE 
+) ENGINE = INNODB;
+```
+
+
+
+## 11. FULLTEXT搜索
+
+MySQL具备全文搜索的能力，可以在不是有模板匹配操作的情况下进行单词或短语的查找。
+
+有3种类型:
+
+* 自然语言搜索(默认类型)：把字符串解析成一系列单词，然后搜索出包含这些单词的行
+* 布尔模式搜索：可以增加修饰符 比如必须包含(或不出现)给定的单词等
+* 查询扩展搜索：分两段，第一段是自然语言搜索，第二段是把原先字符串和第一段搜出来高度匹配的行连在一起再进行一次搜索，扩大了搜索范围。
+
+### 1. FULLTEXT索引
+
+全文搜索基于FULLTEXT索引,在FULLTEXT索引里只能包含`char`、`varchar`、`text`这几种类型的列。
+
+具有以下特点:
+
+* 1.会忽略掉那些常见的词，即至少在一半以上的行里都出现过的词。
+* 2.停用词(stopword)会被忽略，即内建单词如`the`、`after`、`other`等等。
+* 3.太短的词也会被忽略：少于4个字符的。
+* 4.可以为单个列或多个列创建FULLTEXT索引。
+
+创建方法和其他索引大同小异。
+
+可以在建表时CREATE TABLE语句里定义，也可以建表后用ALTER TABLE或CREATE INDEX语句创建。
+
+```mysql
+CREATE TABLE apothegm(
+	attribution VARCHAR(40),
+    phrase TEXT,
+    FULLTEXT(phrase),
+    FULLTEXT(attribution),
+    FULLTEXT(phrase,attribution)
+) ENGINE = MyISAM;
+```
+
+如果按照`名人`、`名言`、`名人+名言`来搜索则需要创建3个FULLTEXT索引。
+
+
+
+### 2. 自然语言搜索
+
+使用`MATCH`指定一个或多个用于搜索的列,`AGAINST`指定搜索字符串。
+
+```mysql
+SELECT * FROM apothegm WHERE MATCH(attribution) AGAINST('roosevelt');
+```
+
+
+
+### 3. 布尔模式搜索
+
+使用布尔模式可以实现对多单词搜索的更多控制。
+
+只需要在AGAINST()函数里搜索字符串后添加`IN BOOLEAN MODE`
+
+可以通过各种符号来进行控制
+
+`+` 表示必须包含
+`-` 表示必须不包含
+`空格` 表示OR
+`~` 表示异或 类似于`-`但是只降低权重不会排除掉
+
+
+
+通过在字符串前增加`+`或者`-`来指定必须存在或者不存在。
+
+布尔模式下可以使用通配符`*`
+
+
+
+* 1.`50%规则不起作用` 常见词也会被查询出来
+* 2.搜索结果不在按相关度排序
+* 3.可以指定所有单词必须按某种特性的顺序出现
+* 4.也可以对未被包括在FULLTEXT索引里的列进行搜索，只是会比较慢。
+
+```mysql
+SELECT * FROM apothegm WHERE MATCH(attribution) AGAINST('+roosevelt -hello' IN BOOLEAN MODE);
+```
+
+比如上例会查询出包含`roosevelt`且不包含`hello`的`attribution`。
+
+布尔模式下可以使用通配符`*`
+
+例如:
+
+一下查询会查询出soft开头的结果,但是比`soft`短的(如sof)则不会被查询出来
+
+```mysql
+SELECT * FROM apothegm WHERE MATCH(attribution) AGAINST('soft*' IN BOOLEAN MODE);
+```
+
+
+
+### 4. 扩展全文搜索
+
+使用该模式需要在搜索字符串后增加`WITH QUERY EXPANSION`
+
+```mysql
+SELECT * FROM apothegm WHERE MATCH(phrase) AGAINST('roose' WITH QUERY EXPANSION);
+```
+
+### 5. 配置全文搜索
+
+变量`ft_min_word_len`和`ft_max_word_len`指定了单词的最小和最大长度。
+
+修改后新创建的索引会自动使用新值，但是对于旧索引需要删除后重新创建才行。
 
