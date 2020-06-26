@@ -43,30 +43,17 @@ go get github.com/gogo/protobuf/protoc-gen-gogo
 go get github.com/gogo/protobuf/protoc-gen-gofast
 ```
 
-### 3. 安装proto
-
-proto是protobuf在golang中的接口模块
-
-```go
-go get github.com/golang/protobuf/proto
-```
-
-如果是使用的另外两个插件，则可以装下面的
-
-```go
-go get github.com/gogo/protobuf/proto
-go get github.com/gogo/protobuf/gogoproto
-```
 
 
-
-### 4. 编写一个proto文件
+### 3. 编写 proto 文件
 
 `derssbook.proto`
 
 ```protobuf
 syntax = "proto3";
 package go_protoc;
+// 新版插件中 必须 配置 option go_package = "xxx";
+option go_package = "/pb";
 
 message Person {
   string name = 1;
@@ -93,7 +80,7 @@ message AddressBook {
 }
 ```
 
-### 5. 编译
+### 4. 编译
 
 **编译命令**
 
@@ -110,8 +97,6 @@ $ protoc --proto_path=IMPORT_PATH --cpp_out=DST_DIR --java_out=DST_DIR --python_
   - `import_prefix=xxx` - 为所有`import`路径添加前缀，主要用于编译子目录内的多个proto文件，这个参数按理说很有用，尤其适用替代一些情况时的`M`参数，但是实际使用时有个蛋疼的问题导致并不能达到我们预想的效果，自己尝试看看吧
   - `import_path=foo/bar` - 用于指定未声明`package`或`go_package`的文件的包名，最右面的斜线前的字符会被忽略
   - 末尾 `:编译文件路径  .proto文件路径(支持通配符)`
-
-
 
 
 
@@ -132,22 +117,50 @@ protoc --gofast_out=. derssbook.proto
 
 ## 3. Linux
 
-#### 1.下载`protoc`
+### 1. 安装 protoc
+
+下载对应平台的二进制文件,配置环境变量即可。
+
+> 也可以选择编译安装
 
 ```sh
 https://github.com/protocolbuffers/protobuf/releases
 ```
 
-下载并解压后将`/bin`目录下的`protoc`复制到`/gopath/bin`目录下。
+`protoc-3.12.3-linux-x86_64.zip`
 
-输入`protoc --version`出现以下结果则成功。
-
-```sh
-illusory@illusory-virtual-machine:/mnt/hgfs/Share$ protoc --version
-libprotoc 3.10.0
+```shell
+unzip protoc-3.12.3-linux-x86_64.zip -d protoc-3.12.3-linux-x86_64
 ```
 
-#### 2.安装插件
+解压后配置环境变量
+
+```shell
+vim /etc/profile 
+```
+
+`path`中增加`protoc`文件所在路径
+
+```shell
+export PATH=$PATH:/home/lixd/17x/protoc-3.12.3-linux-x86_64/bin
+```
+
+我这里的路径是`/usr/local/17x/protoc-3.12.3-linux-x86_64/bin`
+
+使其生效
+
+```shell
+source /etc/profile
+```
+
+任意位置输入`protoc --version`出现以下结果则成功。
+
+```sh
+root@17x:/usr/local# protoc --version
+libprotoc 3.12.3
+```
+
+### 2. 安装插件
 
 `protoc-gen-go` 是用来将protobuf的的代码转换成go语言代码的一个插件
 
@@ -160,22 +173,13 @@ go get github.com/gogo/protobuf/protoc-gen-gofast
 
 其中`gofast`会比官方的性能好些，生成出来的问题也更复杂。
 
-#### 3.安装`proto`
-
-proto是protobuf在golang中的接口模块
-
-```sh
-# 官方
-go get github.com/golang/protobuf/proto
-# gofast
-go get github.com/gogo/protobuf/gogoproto
-```
-
-#### 4.编写proto文件测试
+### 3. 编写 proto 文件
 
 ```protobuf
 syntax = "proto3";
 package go_protoc;
+// 新版插件中 必须 配置 option go_package = "xxx";
+option go_package = "/pb";
 
 message Person {
   string name = 1;
@@ -202,7 +206,7 @@ message AddressBook {
 }
 ```
 
-#### 5.编译
+### 4. 编译
 
 ```sh
 #官方
@@ -210,7 +214,3 @@ protoc --go_out=. derssbook.proto
 #gofast
 protoc --gofast_out=. derssbook.proto
 ```
-
-#### 6.问题
-
-插件会自动安装到`/$gopath/bin`目录下。不过在ubuntu中安装到了`/$gopath/bin/linux_386`下面 导致使用的时候找不到文件，最后复制出来就能正常使用了。
