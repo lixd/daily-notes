@@ -229,6 +229,18 @@ SELECT * FROM tbl_name
 
 ## 3. 小结
 
+像
+
+```mysql
+select * from table where a = '1' and b > ‘2’  and c='3' 
+```
+
+这种类型的 sql 语句，在 a、b 走完索引后，c 肯定是无序了，所以 c 就没法走索引，因为此时数据库会觉得还不如全表扫描 c 字段来的快。
+
+
+
+
+
 一般来说，需保证查询至少达到`range`级别，最好能达到`ref`。
 
 explain（执行计划）包含的信息十分的丰富，着重关注以下几个字段信息。
