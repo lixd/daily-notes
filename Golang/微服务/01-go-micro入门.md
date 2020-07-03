@@ -4,6 +4,52 @@
 
 微服务框架
 
+最近 `go-micro`更新到了`v2`版本，变化挺大的，两个版本之间不兼容。要更新的话需要所有服务都更新。
+
+> 其中一个就是 发现 v2 版本注册的服务名格式和 v1 的不一样 导致无法互相调用
+
+![](assets/micro-v1-v2.png)
+
+其中 v1 是 `micro-registry` v2 是 `micro/registry`
+
+> 暂时没找到修改的方法
+
+还有就是升级 v2 版本后，如果是用 etcd 做注册中心，在写endpints的时候不要带上协议了。
+
+```shell
+# 错误
+http://127.0.0.1:2379
+# 正确
+127.0.0.1:2379
+```
+
+
+
+**常见错误**
+
+```shell
+{\"id\":\"go.micro.client\",\"code\":500,\"detail\":\"OK: HTTP status code 200; transport: missing content-type field\",\"status\":\"Internal Server Error\"}"
+```
+
+原因是创建服务的时候应该使用`grpc.NewService`,用了`micro.NewService`，导致无法解析content-type。
+
+```go
+	service := grpc.NewService(
+		micro.Name(c.FeatureModel),
+		micro.RegisterTTL(time.Second*30),
+		micro.RegisterInterval(time.Second*20),
+		micro.Registry(reg),
+	)
+	//service := micro.NewService(
+	//	micro.Name(c.FeatureModel),
+	//	micro.RegisterTTL(time.Second*30),
+	//	micro.RegisterInterval(time.Second*20),
+	//	micro.Registry(reg),
+	//)
+```
+
+
+
 ## 2. HelloWorld
 
 ### 2.1 环境准备

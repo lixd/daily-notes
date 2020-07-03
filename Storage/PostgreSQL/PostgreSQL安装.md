@@ -96,3 +96,49 @@ pwd:123456
 
 
 
+## 慢日志
+
+默认配置文件位置
+
+```shell
+/var/lib/pgsql/10/data/postgresql.conf
+```
+
+
+
+修改配置文件
+
+```shell
+log_statement = all  #需设置跟踪所有语句，否则只能跟踪出错信息，设置跟踪的语句类型，有4种类型：none(默认), ddl, mod, all。跟踪所有语句时可设置为 "all"。
+log_min_duration_statement = 5000   #milliseconds,记录执行5秒及以上的语句，跟踪慢查询语句，单位为毫秒。如设置 5000，表示日志将记录执行5秒以上的SQL语句
+```
+
+加载配置
+
+```shell
+postgres=# select pg_reload_conf();
+postgres=# show log_min_duration_statement;
+
+# 如下
+postgres=# select pg_reload_conf();
+ pg_reload_conf 
+----------------
+ t
+(1 row)
+
+postgres=# show log_min_duration_statement;
+ log_min_duration_statement 
+----------------------------
+ 100ms
+(1 row)
+```
+
+
+
+查询慢日志
+
+```mysql
+# 查询执行时间超过 100ms 的
+select * from pg_stat_activity where state<>'idle' and now()-query_start > interval '1 ms' order by query_start; 
+```
+
