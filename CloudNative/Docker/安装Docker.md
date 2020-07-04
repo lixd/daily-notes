@@ -200,9 +200,21 @@ docker version
 
 7) 添加当前用户到 docker 用户组，可以不用 sudo 运行 docker（可选）
 
+> Docker的守护线程绑定的是unix socket，而不是TCP端口，这个套接字默认属于root，其他用户可以通过sudo去访问这个套接字文件。所以docker服务进程都是以root账户运行。
+>
+> 解决的方式是创建docker用户组，把应用用户加入到docker用户组里面。只要docker组里的用户都可以直接执行docker命令。
+
 ```shell
+# 创建 docker 用户组 
+# 一般安装的时候就已经创建好了 会提示已存在
 sudo groupadd docker
+# 将自己加入到 docker 用户组
 sudo usermod -aG docker $USER
+sudo usermod -aG docker 17x
+# 重启 docker
+sudo systemctl restart docker
+# 给docker.sock添加权限
+sudo chmod a+rw /var/run/docker.sock
 ```
 
 
@@ -226,7 +238,7 @@ vi /etc/docker/daemon.json
 
 {
   "registry-mirrors": [
-    "https://registry.docker-cn.com"
+    "https://ekxinbbh.mirror.aliyuncs.com"
   ]
 }
 
