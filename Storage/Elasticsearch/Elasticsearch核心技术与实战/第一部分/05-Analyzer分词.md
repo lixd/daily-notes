@@ -2,15 +2,15 @@
 
 ## 1. 概述
 
-* Analysis - 文本分析是把全文本转换为一些列单词（term/token）的过程，也叫分词。
+* Analysis - 文本分析是把全文本转换为一系列单词（term/token）的过程，也叫分词。
 
 * Analysis 是通过 Analyzer 来实现的
   * 可使用 Elasticsearch 内置的分析器 / 或者按需定制化分析器
 * 除了在数据写入时转换词条，匹配 Query 语句时也需要用相同的分析器对查询语句进行分析
 * 分词器是专门处理分词的组件，Analyzer 由三部分组成
-  * Character Filters（针对初始文本处理，例如去除 html ）、Tokenizer（按照规则切分为单词）、Token Filter（将切分的单词进行加工，小写，删除 stopwords，增加同义词）
-
-
+  * Character Filters（针对初始文本处理，例如去除 html ）
+  * Tokenizer（按照规则切分为单词）
+  * Token Filter（将切分的单词进行加工，小写，删除 stopwords，增加同义词）
 
 
 
@@ -62,7 +62,7 @@ POST /_analyze
 
 
 
-## 中文分词
+## 4. 中文分词
 
 推荐 IK 分词器
 

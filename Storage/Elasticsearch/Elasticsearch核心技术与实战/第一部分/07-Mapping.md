@@ -18,8 +18,6 @@ Mapping  会把 JSON 文档映射成 Lucene 所需要的的扁平格式
 * 一个 Type 有一个 Mapping 定义
 * 7.0 开始，不需要在 Mapping 定义中指定 type 信息
 
-
-
 ## 2. 字段类型
 
 * 简单类型
@@ -33,10 +31,6 @@ Mapping  会把 JSON 文档映射成 Lucene 所需要的的扁平格式
 * 特殊类型
   * geo_point &geo_shape / percolator
 
-
-
-
-
 ## 3. Dynamic Mapping
 
 * 写入文档的时候，如果索引不存在，会自动创建索引
@@ -44,17 +38,12 @@ Mapping  会把 JSON 文档映射成 Lucene 所需要的的扁平格式
 * 但是有时候会推算的不对，例如地理位置信息
 * 当类型设置不对时，会导致一些功能无法正常使用，例如 Range 查询
 
-
-
 ```shell
+# 查看 movies 索引的 mapping 信息
 GET movies/_mapping
 ```
 
-
-
-### 类型自动识别
-
-
+### 1. 类型自动识别
 
 | JSON 类型 | Elasticsearch 类型                                           |
 | --------- | ------------------------------------------------------------ |
@@ -65,8 +54,6 @@ GET movies/_mapping
 | 对象      | Object                                                       |
 | 数组      | 由第一个非空数值的类型所决定                                 |
 | 空值      | 忽略                                                         |
-
-
 
 例子
 
@@ -104,9 +91,7 @@ GET mapping_test/_mapping
 
 ```
 
-
-
-### 能否更改 Mapping 的字段类型
+### 2. 能否更改 Mapping 的字段类型
 
 * 两种情况
   * 新增加字段
@@ -120,8 +105,6 @@ GET mapping_test/_mapping
   * 如果修改了字段的数据类型，会导致已经被索引的数据无法被搜索
   * 但是如果是增加新的字段，就不会有这样的影响
 
-
-
 Dynamic Mapping 值不同的情况下，写入新增字段文档的情况变化
 
 ```shell
@@ -133,9 +116,7 @@ PUT movies/_mapping
 
 ```
 
-
-
-|                | true | false | scrict |
+| \              | true | false | scrict |
 | -------------- | ---- | ----- | ------ |
 | 文档可索引     | YES  | YES   | NO     |
 | 字段可索引     | YES  | NO    | NO     |
@@ -218,7 +199,7 @@ PUT users
 
 
 
-### 自定义 Mapping
+### 1. 自定义 Mapping
 
 * 可以参考 API，纯手写
 * 为了减少输入的工作量，减少出错概率，可以依照以下步骤
@@ -229,9 +210,7 @@ PUT users
 
 
 
-### 控制当前字段是否被索引
-
-
+### 2. 控制当前字段是否被索引
 
 * Index - 控制当前字段是否被索引。 默认为 true
 
@@ -257,7 +236,7 @@ PUT users
 
 
 
-### Index Options
+### 3. Index Options
 
 * 四种不同级别的 Index Options 配置，可以控制倒排索引记录的内容
   * docs - 记录 doc id
@@ -269,9 +248,7 @@ PUT users
 
 
 
-### Null Value
-
-
+### 4. Null Value
 
 * 需要对 NULL 值实现搜索
 * 只有 Keyword 类型支持设定Null_Value
@@ -297,11 +274,7 @@ PUT users
 }
 ```
 
-
-
-
-
-### copy to
+### 5. copy to
 
 * _all 字段 在 elasticsearch 7 中 被 copy_to 替代
 * 用于满足一些特定的搜索需求
@@ -330,13 +303,9 @@ PUT users
 
 
 
-### 数组类型
-
-
+### 6. 数组类型
 
 * Elasticsearch 中不提供专门的数值类型。但是任何字段，都可以包含多个相同类型的数值	
-
-
 
 ```shell
 PUT users/_doc/1
@@ -355,7 +324,7 @@ PUT users/_doc/1
 
 
 
-### 练习
+### 7. 练习
 
 ```shell
 #设置 index 为 false
@@ -394,11 +363,7 @@ POST /users/_search
   }
 }
 
-
-
-
 #设定Null_value
-
 DELETE users
 PUT users
 {
@@ -444,8 +409,6 @@ GET users/_search
 
 }
 
-
-
 #设置 Copy to
 DELETE users
 PUT users
@@ -483,7 +446,6 @@ POST users/_search
   }
 }
 
-
 #数组类型
 PUT users/_doc/1
 {
@@ -506,10 +468,6 @@ POST users/_search
 
 GET users/_mapping
 ```
-
-
-
-## 5. 多字段特性
 
 
 

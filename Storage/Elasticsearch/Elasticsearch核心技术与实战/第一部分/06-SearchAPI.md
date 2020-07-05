@@ -1,6 +1,8 @@
 # Search API
 
-## 1. 概述
+## 1. 分类
+
+Elasticsearch 中一共有两种 Search API
 
 * URI Search
   * 在 URI 中使用查询参数
@@ -22,11 +24,12 @@
 
 * 使用`q`，指定查询字符串
 * `query string syntax`，KV 键值对
+* `q=field:value`
 
 ```shell
 GET kibana_sample_data_ecommerce/_search?q=customer_first_name:Eddie
 
-# 查询 customer_first_name 叫做 Eddie 的客户
+# 查询 customer_first_name 索引中叫做 Eddie 的客户
 ```
 
 ### 2. Request Body
@@ -114,10 +117,6 @@ POST kibana_sample_data_ecommerce/_search
 
 ```
 
-
-
-
-
 ## 4. URI Search
 
 * q 指定查询语句，使用 Query String Syntax
@@ -125,7 +124,7 @@ POST kibana_sample_data_ecommerce/_search
 * Sort 排序 、 from 和 size 用于分页
 * Profile 可以查看查询时如何被执行的
 
-
+**写法比较**
 
 * 指定字段 v.s 泛查询
   * q=title:2012 指定查询 title 字段为 2012
@@ -293,11 +292,9 @@ POST movies/_search
 
 ## 6. Query String Query & Simple Query String Query
 
-**Query String Query**
+### 1. Query String Query
 
-类似 URI Query
-
-
+> 类似 URI Query
 
 ```shell
 POST users/_search
@@ -312,11 +309,9 @@ POST users/_search
 
 ```
 
+### 2. Simple Query String Query
 
-
-**Simple Query String Query**
-
-类似  Query String ，但是会忽略错误的语法，同时只支持部分查询语法
+> 类似  Query String ，但是会忽略错误的语法，同时只支持部分查询语法
 
 * 不支持 AND OR NOT，会把这几个当做字符串处理
 * Term 之间默认关系是 OR,可以指定 Operator
@@ -324,8 +319,6 @@ POST users/_search
   * `+`加号代替AND
   * `|`代替 OR
   * `-`减号代替 NOT
-
-
 
 ```shell
 POST users/_search

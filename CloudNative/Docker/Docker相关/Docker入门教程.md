@@ -87,6 +87,11 @@ $ docker images
 $ docker image rm [选项] <镜像1> [<镜像2> ...]
 #或者
 $ docker rmi [选项] <镜像1> [<镜像2> ...]
+
+# 删除所有 Exited 状态的容器
+sudo docker rm $(sudo docker ps -qf status=exited)
+# 删除所有未运行的容器
+sudo docker rm $(sudo docker ps -a -q)
 ```
 
 ## 3. 定制docker镜像

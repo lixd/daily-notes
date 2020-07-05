@@ -10,25 +10,41 @@
 
 上传到服务器上，这里放在了`usr/software`目录下
 
+或者直接右键复制下载链接 用`wget`
+
+```shell
+wget http://nginx.org/download/nginx-1.19.0.tar.gz
+```
+
+
+
 ### 2. 环境准备
 
 **安装编译源码所需要的工具和库**:
 
 ```linux
-# yum install gcc gcc-c++ ncurses-devel perl 
+# yum install -y gcc gcc-c++
 ```
 
-**安装HTTP rewrite module模块**: 
+**安装pcre软件包（使nginx支持http rewrite模块）**
 
 ```linux
-# yum install pcre pcre-devel
+yum install -y pcre pcre-devel
 ```
 
-**安装HTTP zlib模块**: 
+**安装 openssl-devel（使 nginx 支持 ssl）**
 
 ```linux
-# yum install zlib gzip zlib-devel
+# yum install -y openssl openssl-devel 
 ```
+
+**安装zlib**
+
+```shell
+# yum install -y zlib zlib-devel gd gd-devel
+```
+
+
 
 ### 3. 解压安装
 

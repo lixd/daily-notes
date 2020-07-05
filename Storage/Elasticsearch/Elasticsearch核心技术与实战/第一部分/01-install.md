@@ -55,17 +55,13 @@ https://www.elastic.co/cn/downloads/elasticsearch
 | bin     |                   | 脚本文件，包括启动 Elasticsearch、安装插件，运行统计数据等。 |
 | config  | elasticsearch.yml | 集群配置文件                                                 |
 | JDK     |                   | Java 运行环境                                                |
-|         | path.data         | 数据文件                                                     |
-|         |                   | Java 类库                                                    |
-|         | path.logs         | 日志文件                                                     |
+| data    | path.data         | 数据文件                                                     |
+| lib     |                   | Java 类库                                                    |
+| logs    | path.logs         | 日志文件                                                     |
 | modules |                   | 包含所有 ES 模块                                             |
 | plugins |                   | 包含所有已安装插件                                           |
 
-
-
 ### 3. 配置
-
-
 
 修改 JVM 相关配置，配置文件在`config/jvm.options`
 
@@ -75,15 +71,11 @@ https://www.elastic.co/cn/downloads/elasticsearch
 
 ### 4. 插件
 
-安装 分词插件`analysis-icu`
-
 ```shell
+# 安装 分词插件`analysis-icu`
 /bin/elasticsearch-pluguns install analysis-icu
-```
 
-查看插件列表
-
-```shell
+# 查看插件列表
 /bin/elasticsearch-pluguns list
 ```
 
@@ -95,7 +87,6 @@ bin/elasticsearch -E node.name=node0 -E cluster.name=geektime -E path.data=node0
 
 #安装插件
 bin/elasticsearch-plugin install analysis-icu
-
 #查看插件
 bin/elasticsearch-plugin list
 #查看安装的插件
@@ -116,8 +107,6 @@ GET _cluster/health
 
 
 
-
-
 ## 2. Kibana
 
 ### 1. 安装
@@ -129,8 +118,6 @@ GET _cluster/health
 ```text
 https://www.elastic.co/cn/downloads/kibana
 ```
-
-
 
 运气`/bin/kibana` 即可
 
@@ -146,17 +133,11 @@ bin/kibana-plugin list
 bin/kibana-plugin remove
 ```
 
-
-
-
-
 ## 3. Docker 安装
 
 使用 docker-compose 快速安装
 
-docker-compose 安装 看这里
-
-cerebro 是一个简单的 ES 监控工具
+docker-compose 安装 [看这里](https://www.lixueduan.com/categories/Docker/)
 
 ### 1. 环境准备
 
@@ -170,13 +151,12 @@ $ sysctl -w vm.max_map_count=262144
 
 **安装这些 大概需要 4GB 内存，否则可能无法启动**。
 
-
-
 ### 2. docker-compose.yaml
 
 ```yaml
 version: '2.2'
 services:
+  # cerebro 是一个简单的 ES 监控工具
   cerebro:
     image: lmenezes/cerebro:0.9.2
     container_name: cerebro
@@ -237,7 +217,6 @@ services:
     networks:
       - es7net
 
-
 volumes:
   es7data1:
     driver: local
@@ -248,6 +227,3 @@ networks:
   es7net:
     driver: bridge
 ```
-
-
-

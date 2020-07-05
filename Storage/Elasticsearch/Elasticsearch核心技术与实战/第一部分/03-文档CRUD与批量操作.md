@@ -1,7 +1,5 @@
 # 文档的基本 CRUD 和批量操作
 
-
-
 ## 1. CRUD
 
 ### 1. Create
@@ -48,6 +46,8 @@ GET /users/_doc/1
 ### 3. Index
 
 Index 和 Create 不一样的地方: 如果文档不存在，就索引新的文档。否则现有文档会被删除然后新的文档被索引，且版本信息 +1
+
+> 感觉可以理解为 replace
 
 ```shell
 PUT users/_doc/1
