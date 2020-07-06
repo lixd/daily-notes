@@ -146,7 +146,12 @@ docker-compose 安装 [看这里](https://www.lixueduan.com/categories/Docker/)
 > 否则启动时可能会出现用户拥有的内存权限太小,至少需要262144的问题
 
 ```sh
+# 临时修改 重启后失效
 $ sysctl -w vm.max_map_count=262144
+
+# 永久修改 直接改配置文件
+grep vm.max_map_count /etc/sysctl.conf
+vm.max_map_count=262144
 ```
 
 **安装这些 大概需要 4GB 内存，否则可能无法启动**。

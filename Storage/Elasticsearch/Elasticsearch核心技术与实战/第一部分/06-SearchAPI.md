@@ -1,13 +1,47 @@
 # Search API
 
-## 1. 分类
+## 0. 概述
 
 Elasticsearch 中一共有两种 Search API
 
 * URI Search
   * 在 URI 中使用查询参数
+
 * Request Body Search
   * 使用 Elasticsearch 提供的，基于 JSON 格式的更加完备的 Query Domain Specific Language（DSL）
+
+
+
+## 1. 分类
+
+按照查询类型分，又可以分为词条（Term）查询和全文（Fulltext）查询。
+
+* 1）词条（Term）查询 - 不分词，完全匹配
+* 2）全文（Fulltext）查询
+  * 匹配（Match）查询
+    * 布尔（boolean）查询 - 多条件满足一个即可
+    * 短语（phrase）查询 - 单词之间必须按顺序排列 不能间隔其他单词
+    * 短语前缀（phrase_prefix）查询 - 除了把查询文本的最后一个分词只做前缀匹配之外，和match_phrase查询基本一样
+
+
+
+
+
+**查询端点**
+
+```shell
+# 查询
+GET /_search?q=user:kimchy 
+# 删除查询结果
+DELETE /_query?q=user:kimchy
+
+# 用于对查询参数进行分析，并返回分析的结果
+POST /_analyze?field=title -dElasticSearch Sever
+# 执行查询，获取满足查询条件的文档数量
+GET /_count?q=user:jim
+# 用于验证指定的文档是否满足查询条件
+GET index/type/1/_explain?q=message:search
+```
 
 ## 2. 详情
 
@@ -232,7 +266,7 @@ GET kibana_sample_data_ecommerce/_search
 }
 ```
 
-**查询表达式 Match**
+### Match 匹配查询
 
 ```shell
 # 这样会查询 last OR christmas
@@ -258,7 +292,7 @@ POST movies/_search
 }
 ```
 
-**短语查询 Match Phrase**
+### Match Phrase 短语查询 
 
 ```shell
 # 单词之间必须按顺序排列 不能间隔其他单词
@@ -285,8 +319,6 @@ POST movies/_search
   }
 }
 ```
-
-
 
 
 

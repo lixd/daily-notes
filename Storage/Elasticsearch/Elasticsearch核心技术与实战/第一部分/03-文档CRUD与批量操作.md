@@ -99,9 +99,49 @@ POST users/_update/1
 }
 ```
 
+### 5. DELETE
+
+通过 id 删除文档。
+
+```shell
+DELETE users/_doc/1
+```
+
+
+
+### 6. 练习
+
+```shell
+# Create
+PUT company/_doc/1
+{
+  "name": "China Mobile",
+  "phone": "10086"
+}
+
+# Update
+POST company/_update/1
+{
+  "doc": {
+      "name": "China Mobile 5G",
+      "phone": "1008611"
+  }
+}
+
+# Get
+GET company/_doc/1
+
+# Delete
+DELETE company/_doc/1
+```
+
+
+
 ## 2. 批量操作
 
 ### 1. Bulk API
+
+#### 1. 概述
 
 * 支持在一次 API 调用中，对不同的索引进行操作。
 
@@ -114,18 +154,64 @@ POST users/_update/1
 * 操作中单条操作失败，并不会影响其他操作
 * 返回结果包括了每一条操作的结果
 
+#### 2. 标准语法
 
+```shell
+action and meta_data \n
+optional source \n
+
+action and meta_data \n
+optional source \n
+
+action and meta_data \n
+optional source \n
+```
+
+两行数据构成一次操作。
+
+* 1）第一行是操作类型可以 index，create，update，或者delete
+* 2）metadata 就是文档的元数据
+* 2）第二行就是我们的可选的数据体，使用这种方式批量插入的时候，我们需要设置的它的Content-Type为application/json。
+
+
+
+> * 1）index 和 create  第二行是source数据体
+> * 2）delete 没有第二行
+> * 3）update 第二行可以是partial doc，upsert或者是script
+>
+> **注意**：由于每行必须有一个换行符，所以json格式只能在一行里面而不能使用格式化后的内容
+
+bulk请求的路径有三种和前面的mget的请求类似：
+
+* 1）`/_bulk` 
+* 2）`/{index}/_bulk`
+* 3）`/{index}/{type}/_bulk`
+
+上面的三种格式，如果提供了index和type那么在数据体里面的action就可以不提供，同理提供了index但没有type，那么就需要在数据体里面自己添加type。
+
+#### 3. 例子
 
 ```shell
 POST _bulk
+# 请求1
 { "index" : { "_index" : "test", "_id" : "1" } }
-{ "field1" : "value1" }
+# 请求体1
+{ "field1" : "value1" } 
+# 请求2 删除不需要请求体
 { "delete" : { "_index" : "test", "_id" : "2" } }
+# 请求3
 { "create" : { "_index" : "test2", "_id" : "3" } }
+# 请求体3
 { "field1" : "value3" }
+# 请求4
 { "update" : {"_id" : "1", "_index" : "test"} }
+# 请求体4
 { "doc" : {"field2" : "value2"} }
 ```
+
+
+
+
 
 ### 2. 批量读取 mget
 
@@ -137,15 +223,53 @@ GET /_mget
     "docs" : [
         {
             "_index" : "test",
-            "_id" : "1"
+            "_type" : "_doc",
+            "_id" : "1",
+            "_source" : false
         },
         {
             "_index" : "test",
-            "_id" : "2"
+            "_type" : "_doc",
+            "_id" : "2",
+            "_source" : ["field3", "field4"]
+        },
+        {
+            "_index" : "test",
+            "_type" : "_doc",
+            "_id" : "3",
+            "_source" : {
+                "include": ["user"],
+                "exclude": ["user.location"]
+            }
         }
     ]
 }
 ```
+
+_source 指定返回结果中需要哪些字段。
+
+```shell
+# false 直接一个都不保留
+ "_source" : false
+# 默认是 include
+"_source" : ["field3", "field4"]
+# include 和 exclude 分开写
+"_source" : {
+     "include": ["user"],
+     "exclude": ["user.location"]
+}
+```
+
+
+
+
+
+两种写法
+
+* 1）`GET /_mget`
+* 2）`GET /<index>/_mget`
+
+如果 这里指定了 index ，后续 docs 中就不用指定了。
 
 
 
