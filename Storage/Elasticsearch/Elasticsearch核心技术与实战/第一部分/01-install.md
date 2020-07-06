@@ -232,3 +232,64 @@ networks:
   es7net:
     driver: bridge
 ```
+
+
+
+
+
+## 4. 分词器安装
+
+分词器安装很简单，一条命令搞定
+
+```shell
+./elasticsearch-plugin install url
+```
+
+其中 url 为对应分词器的下载地址
+
+比如安装 ik 分词器
+
+```shell
+./elasticsearch-plugin install https://github.com/medcl/elasticsearch-analysis-ik/releases/download/v7.8.0/elasticsearch-analysis-ik-7.8.0.zip
+```
+
+
+
+****
+
+常用分词器列表
+
+* ​	IK 分词器
+  * https://github.com/medcl/elasticsearch-analysis-ik
+* 拼音分词器
+  * https://github.com/medcl/elasticsearch-analysis-pinyin
+
+
+
+**分词器版本需要和elasticsearch版本对应，并且安装完插件后需重启Es，才能生效**
+
+**分词器版本需要和elasticsearch版本对应，并且安装完插件后需重启Es，才能生效**
+
+**分词器版本需要和elasticsearch版本对应，并且安装完插件后需重启Es，才能生效**
+
+插件安装其实就是下载 zip 包然后解压到 plugins 目录下。
+
+Docker 安装的话可以通过 Volume 的方式放在宿主机，或者进入容器用命令行安装也是一样的。
+
+> 命令行安装的 IK 分词器，如果有 config 目录会移动到 elasticsearch 的config 中，新目录名和分词器名一致。如 /usr/share/elasticsearch/config/analysis-ik
+
+建议还是通过命令行安装。
+
+分词器测试 
+
+```shell
+#ik_max_word 会将文本做最细粒度的拆分
+#ik_smart 会做最粗粒度的拆分
+#pinyin 拼音
+POST _analyze
+{
+  "analyzer": "ik_max_word",
+  "text": ["剑桥分析公司多位高管对卧底记者说，他们确保了唐纳德·特朗普在总统大选中获胜"]
+} 
+```
+
