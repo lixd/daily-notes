@@ -94,7 +94,8 @@ cluster.initial_master_nodes:
 * 2）`Xms`、`Xmx`大小必须一致
 * 3）不能超过物理内存的 50%
 * 4）不能超过某个阈值 一般建议 26GB及以下。
-  *  JVM 阈值为 32GB，超过后压缩对象头大小会翻倍，可用内存甚至会减少。但是大部分系统都达不到 32GB阈值就会出现翻倍的情况。
+  *  JVM 阈值为 32GB，超过后对象指针大小会翻倍，可用内存甚至会减少。但是大部分系统都达不到 32GB阈值就会出现翻倍的情况。
+  *  详情`https://blog.csdn.net/bodouer7979/article/details/100958525`
 
 可以通过修改`jvm.options`文件设置,需要注意的是**不是直接修改 root `jvm.options`文件**，而是在`jvm.options.d/`目录下创建自己的 `jvm.options`文件，会覆盖掉 root `jvm.options`文件中的配置。
 

@@ -233,7 +233,7 @@ networks:
     driver: bridge
 ```
 
-
+> 如果是单节点 需要配置  discovery.type = single-node 
 
 
 
