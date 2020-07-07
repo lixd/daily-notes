@@ -217,6 +217,8 @@ POST _bulk
 
 批量操作，可以减少网络连接所产生的开销，提高性能。
 
+不需要全部放在一行了。
+
 ```shell
 GET /_mget
 {
@@ -244,6 +246,20 @@ GET /_mget
         }
     ]
 }
+# uri 中指定 index
+GET /company/_mget
+{
+  "docs":[
+      {"_id": 1},
+      {"_id": 2,
+        "_source": {
+           "include": ["name"],
+           "exclude": ["phone"]
+        }
+      },
+      {"_id": 3}
+    ]
+}
 ```
 
 _source 指定返回结果中需要哪些字段。
@@ -262,8 +278,6 @@ _source 指定返回结果中需要哪些字段。
 
 
 
-
-
 两种写法
 
 * 1）`GET /_mget`
@@ -271,14 +285,31 @@ _source 指定返回结果中需要哪些字段。
 
 如果 这里指定了 index ，后续 docs 中就不用指定了。
 
+> es 7.0 之后 type 只有一个了 就是 _doc 应该可以不用指定了
+
 
 
 ### 3. 批量搜索 msearch
 
+写法 `GET /<index>/_msearch`
+
+标准语法
+
+```shell
+header\n
+body\n
+header\n
+body\n
+```
+
+例如
+
 ```shell
 POST kibana_sample_data_ecommerce/_msearch
+# 未指定索引则会使用 URI 中的指定的索引
 {}
 {"query" : {"match_all" : {}},"size":1}
+# header中单独指定了索引则会覆盖 使用单独定义的
 {"index" : "kibana_sample_data_flights"}
 {"query" : {"match_all" : {}},"size":2}
 ```

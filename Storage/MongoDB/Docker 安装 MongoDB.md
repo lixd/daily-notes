@@ -15,7 +15,6 @@ docker pull mongo
 						├──data //数据
 						├──backup //备份
 						├──conf //配置文件
-
 ```
 
 ### 配置文件
@@ -209,3 +208,12 @@ db.createUser(
  exit
 ```
 
+
+
+## 4. MongoDB 提供的免费版本
+
+官网`www.mongodb.com/cloud/`
+
+MongoDB Atlas是MongoDB的云服务，构建在亚马逊的AWS上，MongoDB允许用户在上面创建一个免费集群作为学习使用。
+
+学习基本是够用了，不过就是国内访问延迟有点高。
