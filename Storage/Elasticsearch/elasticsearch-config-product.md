@@ -82,7 +82,25 @@ cluster.initial_master_nodes:
    - master-node-c
 ```
 
+其中`discovery.seed_hosts`节点列表也可以通过文件方式提供，如下：
 
+```shell
+discovery.seed_providers: file
+```
+
+文件具体目录`$ES_PATH_CONF/unicast_hosts.txt`,内容如下
+
+```shell
+10.10.10.5
+10.10.10.6:9305
+10.10.10.5:10005
+# an IPv6 address
+[2001:0db8:85a3:0000:0000:8a2e:0370:7334]:9301
+```
+
+对该文件的内容修改时实时生效的。
+
+**如果两种都配置了，则都会生效。**
 
 ### 6. Heap size
 

@@ -74,12 +74,48 @@ _You **can** combine them_
    1. Item 3a
    2. Item 3b
 
+### todo list
+
+```shell
+ - [ ] 不勾选
+ - [x] 勾选
+```
+
+ - [ ] 不勾选
+ - [x] 勾选
+
 ## 图片
 
 ```
 ![GitHub Logo](/images/logo.png)
 Format: ![Alt Text](url)
 ```
+
+另一种图片定义
+
+```shell
+![图片描述][图片id]
+```
+
+然后在其他地方定义图片id即可
+
+```shell
+[id]:url
+```
+
+例子
+
+```shell
+![测试图片][这是图片id]
+#定义图片 
+[这是图片id]:http://xxx.png
+```
+
+
+
+![图片描述][图片id]
+
+[图片id]:https://cdn.puug.com/qc/f3e0f5ec36d543c5920b9b536eb0a9f8.jpeg
 
 ## 链接
 
