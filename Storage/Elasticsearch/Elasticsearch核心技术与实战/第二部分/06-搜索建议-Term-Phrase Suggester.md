@@ -36,7 +36,7 @@ POST articles/_search?pretty
 ```
 
 * 每个建议都包含了一个算分，相似性是通过 Levensherin Edit Distance 算法实现。核心思想就是 一个词改动多少字符就可以和另外一个词一直。提供了很多可选参数来控制相似性的模糊程度，例如 max_edits
-* Missing MOde
+* Missing Mode
   * Missing - 只有索引中不存在时吗，才提供建议
   * Popular -推荐出现频率更高的词
   * Always -无论是否存在，都提供建议
