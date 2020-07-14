@@ -2,7 +2,14 @@
 
 ## 1. 概述
 
-在Go语言中interface是一个非常重要的概念，也是与其它语言相比存在很大特色的地方。interface也是一个Go语言中的一种类型，是一种比较特殊的类型，存在两种interface，一种是带有方法的interface，一种是不带方法的interface。Go语言中的所有变量都可以赋值给空interface变量，实现了interface中定义方法的变量可以赋值给带方法的interface变量，并且可以通过interface直接调用对应的方法，实现了其它面向对象语言的多态的概念。
+在Go语言中interface是一个非常重要的概念，也是与其它语言相比存在很大特色的地方。
+
+interface也是一个Go语言中的一种类型，是一种比较特殊的类型，存在两种interface，
+
+* 1）一种是带有方法的interface，
+* 2）一种是不带方法的interface。
+
+Go语言中的所有变量都可以赋值给空interface变量，实现了interface中定义方法的变量可以赋值给带方法的interface变量，并且可以通过interface直接调用对应的方法，实现了其它面向对象语言的多态的概念。
 
 
 
