@@ -55,7 +55,7 @@ func hello(w http.ResponseWriter, _ *http.Request) {
 # 源镜像
 FROM golang:latest
 # 作者
-MAINTAINER Razil "xueduanli@163.com"
+MAINTAINER 17x "xueduanli@163.com"
 
 # 为我们的镜像设置必要的环境变量
 ENV GO111MODULE=on \
