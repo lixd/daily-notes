@@ -2,7 +2,55 @@
 
 ## 1. CRUD
 
-### 1. Create
+### 1. Index
+
+```shell
+PUT /<index>/_doc/<_id>
+POST /<index>/_doc/
+
+PUT /<index>/_create/<_id>
+POST /<index>/_create/<_id>
+```
+
+两个参数分别为：
+
+* Index：指定索引，如果索引不存在会自动创建
+* _id：指定新建文档 Id
+
+两种 Method 的区别：
+
+* PUT
+  * 1）必须指定 id
+  * 2）若目标文档已存在也会以当前的文档去替换
+* POST
+  * 1）可以省略 id，elasticsearch 会自动生成
+
+两个 endpoint 的区别：
+
+* _doc : 可以创建或替换文档
+* _create：只能创建，文档已存在则会报错
+
+
+
+**参数**
+
+* routing
+
+默认会根据 DocumentId 进行路由，创建的时候也可以手动指定，如果这里指定了，后续其他操作也要指定才行。
+
+```shell
+POST twitter/_doc?routing=kimchy
+```
+
+* timeout 
+
+指定超时时长
+
+```shell
+POST twitter/_doc?timeout=5m
+```
+
+example：
 
 ```shell
 # POST 自动生成 id
@@ -22,17 +70,24 @@ PUT users/_create/1
 }
 ```
 
-* 支持自动生成文档 ID 和指定文档 ID 两种方式
-* 通过调用`POST users/_doc`系统会自动生成 文档 ID
-* 使用`PUT users/_create/1` 创建时，URI 中已经显式指定 `_create(新建文档)`，此时如果该 id 的文档已经存在，则操作失败
-
 
 
 ### 2. Get
 
 ```shell
-GET /users/_doc/1
+GET <index>/_doc/<_id>
+HEAD <index>/_doc/<_id>
+
+GET <index>/_source/<_id>
+HEAD <index>/_source/<_id>
 ```
+
+两种 Method 的区别：
+
+* GET：检索文档及内容
+* HEAD：检测文档是否存在
+
+
 
 * 找到文档，返回 HTTP 200
   * 文档元信息
@@ -43,52 +98,27 @@ GET /users/_doc/1
 
 
 
-### 3. Index
+**参数**
 
-Index 和 Create 不一样的地方: 如果文档不存在，就索引新的文档。否则现有文档会被删除然后新的文档被索引，且版本信息 +1
+* `_source`
 
-> 感觉可以理解为 replace
+默认会返回_source 字段，可以手动关闭。
 
 ```shell
-PUT users/_doc/1
-{
-	"tags":["guitar","skateboard","reading"]
-}
+GET twitter/_doc/0?_source=false
 ```
 
 
 
-例如:
+### 3. Update
 
-最开始 user 被 create 了，文档如下
-
-```json
-{
-	"firstName":"Jack",
-	"lastName":"Johnson",
-	"tags":["guitar","skateboard"]
-}
+```shell
+POST /<index>/_update/<_id>
 ```
 
-第一次被创建所以版本号为 1，
+这个才是真正的更新。
 
-现在执行 Index ，由于 id 为 1 的文档已经存在了，所以会先删除现有的文档，然后索引新的文档，且版本号 +1。 Index 执行后文档如下:
-
-```json
-{
-	"tags":["guitar","skateboard","reading"]
-}
-```
-
-**Index 会直接替换，并不是更新。**
-
-
-
-### 4. Update
-
-Update 方法不会删除原来的文档，而是实现真正的数据会更新。
-
-POST 方法 /Payload 需要包含在`doc`中
+example
 
 ```shell
 POST users/_update/1
@@ -99,17 +129,48 @@ POST users/_update/1
 }
 ```
 
+
+
+### 4. Update By Query
+
+```shell
+POST /<index>/_update_by_query
+```
+
 ### 5. DELETE
 
 通过 id 删除文档。
 
 ```shell
-DELETE users/_doc/1
+DELETE /<index>/_doc/<_id>
 ```
 
 
 
-### 6. 练习
+### 6. Delete By query
+
+删除查询到的文档。
+
+```shell
+POST /<index>/_delete_by_query
+```
+
+example
+
+```shell
+POST /twitter/_delete_by_query
+{
+  "query": {
+    "match": {
+      "message": "some message"
+    }
+  }
+}
+```
+
+
+
+### 7. 练习
 
 ```shell
 # Create
@@ -139,85 +200,19 @@ DELETE company/_doc/1
 
 ## 2. 批量操作
 
-### 1. Bulk API
 
-#### 1. 概述
-
-* 支持在一次 API 调用中，对不同的索引进行操作。
-
-* 支持四种类型操作
-  * Index
-  * Create
-  * Update
-  * Delete
-* 可以在 URI 中指定 Index，也可以在请求的 Payload 中指定
-* 操作中单条操作失败，并不会影响其他操作
-* 返回结果包括了每一条操作的结果
-
-#### 2. 标准语法
-
-```shell
-action and meta_data \n
-optional source \n
-
-action and meta_data \n
-optional source \n
-
-action and meta_data \n
-optional source \n
-```
-
-两行数据构成一次操作。
-
-* 1）第一行是操作类型可以 index，create，update，或者delete
-* 2）metadata 就是文档的元数据
-* 2）第二行就是我们的可选的数据体，使用这种方式批量插入的时候，我们需要设置的它的Content-Type为application/json。
-
-
-
-> * 1）index 和 create  第二行是source数据体
-> * 2）delete 没有第二行
-> * 3）update 第二行可以是partial doc，upsert或者是script
->
-> **注意**：由于每行必须有一个换行符，所以json格式只能在一行里面而不能使用格式化后的内容
-
-bulk请求的路径有三种和前面的mget的请求类似：
-
-* 1）`/_bulk` 
-* 2）`/{index}/_bulk`
-* 3）`/{index}/{type}/_bulk`
-
-上面的三种格式，如果提供了index和type那么在数据体里面的action就可以不提供，同理提供了index但没有type，那么就需要在数据体里面自己添加type。
-
-#### 3. 例子
-
-```shell
-POST _bulk
-# 请求1
-{ "index" : { "_index" : "test", "_id" : "1" } }
-# 请求体1
-{ "field1" : "value1" } 
-# 请求2 删除不需要请求体
-{ "delete" : { "_index" : "test", "_id" : "2" } }
-# 请求3
-{ "create" : { "_index" : "test2", "_id" : "3" } }
-# 请求体3
-{ "field1" : "value3" }
-# 请求4
-{ "update" : {"_id" : "1", "_index" : "test"} }
-# 请求体4
-{ "doc" : {"field2" : "value2"} }
-```
-
-
-
-
-
-### 2. 批量读取 mget
+### 1. 批量读取 mget
 
 批量操作，可以减少网络连接所产生的开销，提高性能。
 
-不需要全部放在一行了。
+```shell
+GET /_mget
+GET /<index>/_mget
+```
+
+
+
+> 内容也不需要全部放在一行了
 
 ```shell
 GET /_mget
@@ -278,14 +273,81 @@ _source 指定返回结果中需要哪些字段。
 
 
 
-两种写法
 
-* 1）`GET /_mget`
-* 2）`GET /<index>/_mget`
 
-如果 这里指定了 index ，后续 docs 中就不用指定了。
 
-> es 7.0 之后 type 只有一个了 就是 _doc 应该可以不用指定了
+### 2. Bulk API
+
+#### 1. 概述
+
+* 支持在一次 API 调用中，对不同的索引进行操作。
+
+* 支持四种类型操作
+  * Index
+  * Create
+  * Update
+  * Delete
+* 可以在 URI 中指定 Index，也可以在请求的 Payload 中指定
+* 操作中单条操作失败，并不会影响其他操作
+* 返回结果包括了每一条操作的结果
+
+#### 2. 标准语法
+
+```shell
+POST /_bulk
+POST /<index>/_bulk
+```
+
+
+
+```shell
+action and meta_data \n
+optional source \n
+
+action and meta_data \n
+optional source \n
+
+action and meta_data \n
+optional source \n
+```
+
+两行数据构成一次操作。
+
+* 1）第一行是操作类型可以 index，create，update，或者delete
+* 2）metadata 就是文档的元数据
+* 3）第二行就是我们的可选的数据体，使用这种方式批量插入的时候，我们需要设置的它的Content-Type为application/json。
+
+如果 URI 中提供了index和type那么在数据体里面的action就可以不提供，同理提供了index但没有type，那么就需要在数据体里面自己添加type。
+
+> * 1）index 和 create  第二行是source数据体
+> * 2）delete 没有第二行
+> * 3）update 第二行可以是partial doc，upsert或者是script
+>
+> **注意**：由于每行必须有一个换行符，所以json格式只能在一行里面而不能使用格式化后的内容
+
+
+
+#### 3. 例子
+
+```shell
+POST _bulk
+# 请求1
+{ "index" : { "_index" : "test", "_id" : "1" } }
+# 请求体1
+{ "field1" : "value1" } 
+# 请求2 删除不需要请求体
+{ "delete" : { "_index" : "test", "_id" : "2" } }
+# 请求3
+{ "create" : { "_index" : "test2", "_id" : "3" } }
+# 请求体3
+{ "field1" : "value3" }
+# 请求4
+{ "update" : {"_id" : "1", "_index" : "test"} }
+# 请求体4
+{ "doc" : {"field2" : "value2"} }
+```
+
+
 
 
 
