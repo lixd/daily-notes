@@ -18,7 +18,7 @@ Elasticsearch 默认是开发环境，就算存在异常也只是在日志中写
 
 如果配置了以上选择后 Elasticsearch 认为你要切换到生产环境了，同时上述警告会升级为异常，这些异常将阻止您的Elasticsearch节点启动。
 
-> 
+* 禁止 Dynamic Mapping 和自动创建索引。
 
 ## 2. ES 配置
 
