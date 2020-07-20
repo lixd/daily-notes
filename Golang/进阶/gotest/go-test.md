@@ -81,15 +81,15 @@ go test 的变量列表如下：
 
 参数解读：
 
-* -c : 编译 go tes t成为可执行的二进制文件，但是不运行测试。
-
-* -i : 安装测试包依赖的package，但是不运行测试。
-
 关于build flags，调用go help build，这些是编译运行过程中需要使用到的参数，一般设置为空
 
 关于packages，调用go help packages，这些是关于包的管理，一般设置为空
 
 关于flags for test binary，调用go help testflag，这些是go test过程中经常使用到的参数
+
+* -c : 编译 go tes t成为可执行的二进制文件，但是不运行测试。
+
+* -i : 安装测试包依赖的package，但是不运行测试。
 
 * **-v**: 是否输出全部的单元测试用例（不管成功或者失败），默认没有加上，所以只输出失败的单元测试用例。
 * **-run**=pattern: 只跑哪些单元测试用例
@@ -127,8 +127,6 @@ go test 的变量列表如下：
 * 2）方法必须是Test[^a-z]开头
 * 3）方法参数必须 t *testing.T
 * 4）使用go test执行单元测试
-
-
 
 
 
