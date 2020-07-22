@@ -34,7 +34,14 @@ ssh-keygen -t rsa -C "xueduanli@163.com"
 
 ### 2.1 生成秘钥
 
-- 执行`ssh-keygen -t rsa -C "你的邮箱地址" ` 命令 生成`ssh key`
+```shell
+ssh-keygen -t rsa -C "你的邮箱地址" 
+```
+
+- 执行 命令 生成`ssh key`
+  - -t = The type of the key to generate 密钥的类型
+  - -C = comment to identify the key 用于识别这个密钥的注释（好像一般都填的邮箱）
+  - 其他参数可以使用`ssh-keygen --help` 查看
 - 然后会叫你输入保存路径，直接按回车即可，保存在C盘用户目录下
 - 然后会提示输入密码和确认密码，不用输入直接按两下回车即可
 

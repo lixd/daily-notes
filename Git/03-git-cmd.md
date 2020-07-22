@@ -13,6 +13,29 @@ Git 常用命令。
 
 ## 1. 常用命令
 
+
+
+### 0. 基本操作
+
+```shell
+git clone <repository> <directory>
+git remote add <name> <url>
+# 添加标签
+git tag <tagname>
+# --decorate log 中显示标签信息
+git log --decorate
+# 注解标签 annotation 注解内容
+git tag -am "<annotation>" <tagname>
+# 查看 tag 列表
+git tag -n
+# 删除 tag
+git tag -d <tagname>
+```
+
+
+
+
+
 ### 1. 配置
 
 ```shell

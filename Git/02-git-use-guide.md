@@ -311,10 +311,25 @@ git reset [恢复等级] [commitId]
 
 `git reset`有三个参数，可以看做是三个恢复等级。
 
-`git reset –soft ` 仅仅将`commit`回退到了指定的提交 ，只修改`Repository`区域
-`git reset –mixed `用指定的`commit`覆盖`Repository`区域和`Index区`，之前所有暂存的内容都变为未暂存的状态 (`默认为该参数`)
+* `git reset –soft ` 仅仅将`commit`回退到了指定的提交 ，只修改`Repository`区域
+  * 可以看做是做了一个 `incommit` 操作
+* `git reset –mixed `用指定的`commit`覆盖`Repository`区域和`Index区`，之前所有暂存的内容都变为未暂存的状态 (`默认为该参数`)
+  * 可以看做是做了一个 `incommit` 操作和`inadd` 操作
+* `git reset –hard `使用指定的commit的内容覆盖`Repository`区域、`Index区`和`工作区`。(**危险！！！ 此操作会丢弃工作区所做的修改！需谨慎！！！**)
+  * 可以看做是做了一个 `incommit` 操作加`inadd` 操作和`inchange`操作
+  * 全部还原到上一次提交刚刚提交的那个时候
 
-`git reset –hard `使用指定的commit的内容覆盖`Repository`区域、`Index区`和`工作区`。(**危险！！！ 此操作会丢弃工作区所做的修改！需谨慎！！！**)
+```go
+// change <--> inchange
+// add <--> -- inadd 不同于 git rm --cache 彻底移除追踪 inadd 可以看做只移除新的修改
+// commit <--> --incommit
+
+// --soft = incommit
+// --mixed = incommit + inadd
+// --hard = incommit + inadd + inchange
+```
+
+
 
 具体如图：
 
