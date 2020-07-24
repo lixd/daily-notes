@@ -18,7 +18,6 @@ package main
 
 import (
    "net/http"
-
    "github.com/gin-gonic/gin"
 )
 
@@ -196,6 +195,22 @@ if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
 
 这样就好多了。
 
+甚至还可以自定义 tag 返回中文也可以。
+
+```go
+type SignUpParam struct {
+	Email      string `comment:"邮箱" json:"email" binding:"required,email"`
+}
+
+if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
+    v.RegisterTagNameFunc(func(field reflect.StructField) string {
+        return field.Tag.Get("comment")
+    })
+}
+```
+
+
+
 
 
 ## 4. 自定义
@@ -305,66 +320,40 @@ if v, ok := binding.Validator.Engine().(*validator.Validate); ok {
 }
 ```
 
+测试一下
 
+```shell
+curl -H "Content-type: application/json" -X POST -d '{"name":"q1mi","age":18,"email":"123@qq.com","password":"123", "re_password": "123", "date":"2020-01-02"}' http://127.0.0.1:8999/signup
+```
+
+结果如下
+
+```text
+{"msg":{"date":"Key: 'SignUpParam.date' Error:Field validation for 'date' failed on the 'checkDate' tag"}}
+```
+
+默认是英文的，需要翻译一下。
 
 ### 3. 自定义翻译方法
 
 我们现在需要为自定义字段校验方法提供一个自定义的翻译方法，从而实现该字段错误提示信息的自定义显示。
 
-```
-// registerTranslator 为自定义字段添加翻译功能
-func registerTranslator(tag string, msg string) validator.RegisterTranslationsFunc {
- return func(trans ut.Translator) error {
-  if err := trans.Add(tag, msg, false); err != nil {
-   return err
-  }
-  return nil
- }
-}
-
-// translate 自定义字段的翻译方法
-func translate(trans ut.Translator, fe validator.FieldError) string {
- msg, err := trans.T(fe.Tag(), fe.Field())
- if err != nil {
-  panic(fe.(error).Error())
- }
- return msg
-}
-```
-
-定义好了相关翻译方法之后，我们在`InitTrans`函数中通过调用`RegisterTranslation()`方法来注册我们自定义的翻译方法。
-
-```
-// InitTrans 初始化翻译器
-func InitTrans(locale string) (err error) {
- // ...liwenzhou.com...
- 
-  // 注册翻译器
-  switch locale {
-  case "en":
-   err = enTranslations.RegisterDefaultTranslations(v, trans)
-  case "zh":
-   err = zhTranslations.RegisterDefaultTranslations(v, trans)
-  default:
-   err = enTranslations.RegisterDefaultTranslations(v, trans)
-  }
-  if err != nil {
-   return err
-  }
-  // 注意！因为这里会使用到trans实例
-  // 所以这一步注册要放到trans初始化的后面
-  if err := v.RegisterTranslation(
-   "checkDate",
-   trans,
-   registerTranslator("checkDate", "{0}必须要晚于当前日期"),
-   translate,
-  ); err != nil {
-   return err
-  }
-  return
- }
- return
-}
+```go
+		// 注册自定义字段翻译器
+		err = v.RegisterTranslation("checkDate",
+			trans,
+			func(ut ut.Translator) error {
+				return trans.Add("checkDate", "{0}必须要晚于当前日期", false)
+			},
+			func(ut ut.Translator, fe validator.FieldError) string {
+				//t, _ := ut.T("required", fe.Field())
+				//return t
+				msg, _ := trans.T(fe.Tag(), fe.Field())
+				return msg
+			})
+		if err != nil {
+			return err
+		}
 ```
 
 这样再次尝试发送请求，就能得到想要的错误提示信息了。
@@ -372,3 +361,33 @@ func InitTrans(locale string) (err error) {
 ```
 {"msg":{"date":"date必须要晚于当前日期"}}
 ```
+
+这里也可以把两个方法提取出来。
+
+一个是`RegisterTranslationsFunc`另一个则是`TranslationFunc`。
+
+```go
+// registerTranslator 为自定义字段添加翻译功能
+func registerTranslator(key string, text string) validator.RegisterTranslationsFunc {
+	return func(trans ut.Translator) error {
+		return trans.Add(key, text, false)
+	}
+}
+
+// translate 自定义字段的翻译方法
+func translate(trans ut.Translator, fe validator.FieldError) string {
+	msg, _ := trans.T(fe.Tag(), fe.Field())
+	return msg
+}
+```
+
+
+
+## 5. 来源
+
+```shell
+https://mp.weixin.qq.com/s/mb2vc53FCzVc0VBi0brAow
+https://github.com/go-playground/validator
+https://godoc.org/github.com/go-playground/validator
+```
+

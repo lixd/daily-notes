@@ -42,6 +42,8 @@ go test命令是一个按照一定约定和组织的测试代码的驱动程序�
 
 在**使用显式包参数**调用 `go test` 时发生（例如 `go test math` ， `go test ./...` 甚至是 `go test .` ）。
 
+> 该模式下会使用 cache 来避免不必要的重复测试。
+
 在此模式下，go 测试编译并测试在命令上列出的每个包。如果一个包测试通过， `go test` 只打印最终的 ok 总结行。如果一个包测试失败， `go test` 将输出完整的测试输出。如果使用 `-bench` 或 `-v` 标志，则 `go test` 会输出完整的输出，甚至是通过包测试，以显示所请求的基准测试结果或详细日志记录。
 
 
@@ -59,6 +61,10 @@ go test [-c] [-i] [build flags] [packages] [flags for test binary]
 
 
 #### 2. 变量
+
+```shell
+go help testflag
+```
 
 go test 的变量列表如下：
 
@@ -179,10 +185,11 @@ go test 会将打印的内容与 下面的注释`Output`对比，相同则通过
 
 `t.Run()`开启子测试。
 
-```
+```go
 		t.Run(tt.name, func(t *testing.T) {
 			if got := Fib(tt.args.n); got != tt.want {
 				t.Errorf("Fib() = %v, want %v", got, tt.want)
 			}
 		})
 ```
+

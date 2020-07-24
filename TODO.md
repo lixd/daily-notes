@@ -1,12 +1,25 @@
 # TODO
 
-gRPC
 
-Go 微服务
 
-elasticsearch
-
-docker
-
-k8s
-
+* 1）基础
+  * 数据结构与算法
+  * 操作系统 + 计算机组成原理
+  * 计算机网络
+* 编程范式
+  
+* 2）常用技术
+  * 数据库 - MySQL、MongoDB
+  * 协议  - tcp/ip http
+  * 架构 - 分布式
+  * 存储
+  * 缓存 - Redis
+  * 安全、隐私
+  * 消息队列 - RabbitMQ、KafKa、Nats
+  * API设计
+* 3）代码风格
+  * 设计模式
+  * 单元测试
+  * 规范与重构
+* 4）学习能力
+* 5）解决问题
