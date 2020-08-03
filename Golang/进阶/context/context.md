@@ -23,6 +23,10 @@ type Context interface {
 }
 ```
 
+`Done()` 返回一个 channel，可以表示 context 被取消的信号：当这个 channel 被关闭时，说明 context 被取消了。注意，这是一个只读的channel。 我们又知道，**读一个关闭的 channel 会读出相应类型的零值**。并且**源码里没有地方会向这个 channel 里面塞入值**。换句话说，**这是一个 `receive-only` 的 channel。因此在子协程里读这个 channel，除非被关闭，否则读不出来任何东西**。也正是利用了这一点，子协程从 channel 里读出了值（零值）后，就可以做一些收尾工作，尽快退出。
+
+
+
 同时包中也定义了提供cancel功能需要实现的接口。这个主要是后文会提到的“取消信号、超时信号”需要去实现。
 
 ```go
@@ -65,6 +69,78 @@ func WithCancel(parent Context) (ctx Context, cancel CancelFunc) {
 	return &c, func() { c.cancel(true, Canceled) }
 }
 ```
+
+cancel 方法如下
+
+```go
+func (c *cancelCtx) cancel(removeFromParent bool, err error) {
+    // 必须要传 err
+	if err == nil {
+		panic("context: internal error: missing cancel error")
+	}
+	c.mu.Lock()
+	if c.err != nil {
+		c.mu.Unlock()
+		return // 已经被其他协程取消
+	}
+	// 给 err 字段赋值
+	c.err = err
+	// 关闭 channel，通知其他协程
+	if c.done == nil {
+		c.done = closedchan
+	} else {
+		close(c.done)
+	}
+	
+	// 遍历它的所有子节点
+	for child := range c.children {
+	    // 递归地取消所有子节点
+		child.cancel(false, err)
+	}
+	// 将子节点置空
+	c.children = nil
+	c.mu.Unlock()
+
+	if removeFromParent {
+	    // 从父节点中移除自己 
+		removeChild(c.Context, c)
+	}
+}
+```
+
+主要就是关闭 channel（c.done ），然后遍历 cancel 掉所有的子节点。
+
+还注意到一点，调用子节点 cancel 方法的时候，传入的第一个参数 `removeFromParent` 是 false。但是 WithCancel 返回的 cancel 第一个参数确实 true
+
+当 `removeFromParent` 为 true 时，会将当前节点的 context 从父节点 context 中删除：
+
+```go
+func removeChild(parent Context, child canceler) {
+	p, ok := parentCancelCtx(parent)
+	if !ok {
+		return
+	}
+	p.mu.Lock()
+	if p.children != nil {
+		delete(p.children, child)
+	}
+	p.mu.Unlock()
+}
+```
+
+最关键的一行：
+
+```go
+delete(p.children, child)
+```
+
+什么时候会传 true 呢？答案是调用 `WithCancel()` 方法的时候，也就是新创建一个可取消的 context 节点时，返回的 cancelFunc 函数会传入 true。这样做的结果是：当调用返回的 cancelFunc 时，会将这个 context 从它的父节点里“除名”，因为父节点可能有很多子节点，你自己取消了，所以我要和你断绝关系，对其他人没影响。
+
+![](./assets/context-cancel.png)
+
+
+
+例子：
 
 ```go
 func main(){
