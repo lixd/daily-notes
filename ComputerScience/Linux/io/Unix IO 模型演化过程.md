@@ -13,10 +13,8 @@ IO 是主存和外部设备 ( 硬盘、终端和网络等 ) 拷贝数据的过�
 * 1）阻塞式I/O：blocking IO
 * 2）非阻塞式I/O： nonblocking IO
 * 3）I/O复用（select，poll，epoll...）：IO multiplexing
-
-4、信号驱动式I/O（SIGIO）：signal driven IO
-
-5、异步I/O（POSIX的aio_系列函数）：asynchronous IO
+* 4）信号驱动式I/O（SIGIO）：signal driven IO
+* 5）异步I/O（POSIX的aio_系列函数）：asynchronous IO
 
 在这里，我们以一个网络IO来举例，对于一个network IO (以read举例)，它会涉及到两个系统对象：一个是调用这个IO的进程，另一个就是系统内核(kernel)。当一个read操作发生时，它会经历两个阶段：
 
@@ -27,10 +25,6 @@ IO 是主存和外部设备 ( 硬盘、终端和网络等 ) 拷贝数据的过�
 ![](assets/user-kernel.png)
 
 当进程请求 I/O 操作的时候，它执行一个系统调用 syscall 将控制权移交给内核。当内核以这种方式被调用，它随即采取任何必要步骤，找到进程所需数据，并把数据传送到用户空间内的指定缓冲区。内核试图对数据进行高速缓存或预读取，因此进程所需数据可能已经在内核空间里了。如果是这样，该数据只需简单地拷贝出来即可。如果数据不在内核空间，则进程被挂起，内核着手把数据读进内存。
-
-
-
-
 
 ## 2. BIO
 
@@ -91,10 +85,6 @@ recvfrom fd6
 ```
 
 会发生很多 syscall 系统调用。
-
-
-
-
 
 **问题**
 
