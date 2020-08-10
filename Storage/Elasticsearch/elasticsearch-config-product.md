@@ -13,12 +13,11 @@
 * 7）Heap dump path
 * 8）GC logging
 * 9）Temp directory
+* 10）禁止 Dynamic Mapping 和自动创建索引。
 
 Elasticsearch 默认是开发环境，就算存在异常也只是在日志中写入警告，节点照样可以启动。
 
 如果配置了以上选择后 Elasticsearch 认为你要切换到生产环境了，同时上述警告会升级为异常，这些异常将阻止您的Elasticsearch节点启动。
-
-* 禁止 Dynamic Mapping 和自动创建索引。
 
 ## 2. ES 配置
 
@@ -233,61 +232,20 @@ JVM 致命错误日志，默认是和其他日志放在一起的。
 
 ## 3. 系统配置
 
+* 1）最大文件描述符
+* 2）Disable swapping
+* 3）Virtual memory
+* 4） Number of threads
+* 5）DNS cache settings
+* 6）JNA temporary directory not mounted with `noexec`
+
 除了 Elasticsearch 本身的配置之外，Elasticsearch 投入生产环境还需要对系统进行一些设置。
 
-具体在哪里配置，还是和安装方式有关。
-
-通过`.zip`、`.tar.gz`安装的直接修改系统配置即可。
-
-**最大文件描述符**
-
-临时修改 - 只对当前会话有效
-
-```shell
-sudo ulimit -n 65535 
-```
-
-永久修改
-
-修改`/etc/security/limits.conf` 配置文件。
-
-> 这里也有一个 limits.conf.d/ 目录 相信你已经知道该怎么操作了
-
-```shell
-vi /etc/security/limits.conf
-# 增加以下内容
-# elasticsearch 表示只对这个用户修改限制
-# - 代表同时修改 soft 和 hard 限制
-# nofile max number of open file descriptors
-elasticsearch  -  nofile  65535
-```
-
-elasticsearch 用户打开新会话就修改就会生效。
-
-> Ubuntu ignores the `limits.conf` file for processes started by `init.d`. To enable the `limits.conf` file, edit `/etc/pam.d/su` and uncomment the following line:
+> 具体在哪里配置，还是和安装方式有关。
 >
-> ```sh
-> # session    required   pam_limits.so
-> ```
-
-
-
-如果是通过`RAM`和`Debian`软件包发行版安装，并且通过 `systemd`启动的，则需要修改 systemd service 文件。
-
-一般是叫做`/usr/lib/systemd/system/elasticsearch.service`
-
-可以直接修改这个文件，同样的也可以新建一个文件来覆盖里面的配置，例如`/etc/systemd/system/elasticsearch.service.d/override.conf`。具体修改如下
-
-```shell
-[Service]
-LimitMEMLOCK=infinity
-```
-
-修改后重新加载服务
-
-```shell
-sudo systemctl daemon-reload
-```
+> 通过`.zip`、`.tar.gz`等二进制方式安装的直接修改系统配置即可。
+>
+> 通过`RAM`和`Debian`软件包发行版安装，并且通过 `systemd`启动的，则需要修改 systemd service 文件。
 
 
 
@@ -370,6 +328,23 @@ elasticsearch 用户打开新会话就修改就会生效。
 GET _nodes/stats/process?filter_path=**.max_file_descriptors
 ```
 
+如果是通过`RAM`和`Debian`软件包发行版安装，并且通过 `systemd`启动的，则需要修改 systemd service 文件。
+
+一般是叫做`/usr/lib/systemd/system/elasticsearch.service`
+
+可以直接修改这个文件，同样的也可以新建一个文件来覆盖里面的配置，例如`/etc/systemd/system/elasticsearch.service.d/override.conf`。具体修改如下
+
+```shell
+[Service]
+LimitMEMLOCK=infinity
+```
+
+修改后重新加载服务
+
+```shell
+sudo systemctl daemon-reload
+```
+
 ### 3. Virtual memory
 
 Elasticsearch 使用 mmapfs 目录存储索引，但是默认操作系统对 mmap 计数限制太低了（一般都不够用），会导致内存不足。
@@ -438,6 +413,8 @@ Elasticsearch 中 使用 Java Native Access (JNA) 来执行某些跨平台代码
 **问题：**在某些加固的 Linux 上会通过`noexec`方式来挂载 JNA，导致 JNA无法使用。JNA 启动时会报错`java.lang.UnsatisfiedLinkerError`。
 
 此时需要重新以非`noexec`方式来挂载。
+
+
 
 ## 4. Bootstrap-checks
 
