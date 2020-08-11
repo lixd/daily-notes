@@ -96,7 +96,8 @@ http://localhost:9200
 > 修改 elasticsearch/config/elasticsearch.yml
 >
 > ```shell
-> network.host: 0.0.0.0  #改为0.0.0.0对外开放，如对特定ip开放则改为指定ip
+> network.host: 0.0.0.0  # 改为0.0.0.0对外开放，如对特定ip开放则改为指定ip
+> discovery.seed_hosts: ["127.0.0.1"] # 修改network.host后需要同步修改这个
 > ```
 
 #### 1. 目录文件结构
@@ -105,8 +106,8 @@ http://localhost:9200
 | ------- | ----------------- | ------------------------------------------------------------ |
 | bin     |                   | 脚本文件，包括启动 Elasticsearch、安装插件，运行统计数据等。 |
 | config  | elasticsearch.yml | 集群配置文件                                                 |
-| JDK     |                   | Java 运行环境                                                |
 | data    | path.data         | 数据文件                                                     |
+| jdk     |                   | Java 运行环境                                                |
 | lib     |                   | Java 类库                                                    |
 | logs    | path.logs         | 日志文件                                                     |
 | modules |                   | 包含所有 ES 模块                                             |
