@@ -1,5 +1,7 @@
 # SQL JOIN 详解
 
+https://mp.weixin.qq.com/s/LfbSmwwDy5QkxXsicjMjLA
+
 ## 1. 概述
 
 > 最近发现对 JOIN 概念并不是很清楚，于是网上查了查资料，看个一些博客，最后整理了一下。
