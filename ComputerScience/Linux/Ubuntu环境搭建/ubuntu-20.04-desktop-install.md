@@ -156,9 +156,9 @@ tty -s&&mesg n || true
 打开终端执行以下命令
 
 ```sh
- # 切换语言为英文即可
- export LANG=en_US
- xdg-user-dirs-gtk-update
+# 切换语言为英文即可
+export LANG=en_US
+xdg-user-dirs-gtk-update
 ```
 
 执行后会弹出对话框询问是否将目录转化为英文路径,同意并关闭. 
