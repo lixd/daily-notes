@@ -7,11 +7,11 @@
 数据格式
 
 ```shell
-data1|data2|...datan|trx_id|roll_pointer
+data1|data2|...datan|TRX_ID|ROLL_PTR
 ```
 
-* trx_id：事务ID
-* roll_pointer：回滚指针，指向前一个版本
+* TRX_ID：事务ID
+* ROLL_PTR：回滚指针，指向前一个版本
 
 
 
