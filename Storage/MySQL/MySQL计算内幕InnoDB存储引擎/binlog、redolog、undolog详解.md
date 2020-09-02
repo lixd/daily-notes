@@ -34,7 +34,7 @@ MySQL中有六种日志文件，分别是：
 
 redolog是固定大小的（如下图），所以它只能循环记录做了什么修改，`write pos`为当前记录的位置，`checkpoint`为当前可以擦除的位置，代表更新的行已经完成数据库的磁盘更改,可以覆盖掉了。
 
-![](images/mysql-innodb-redolog-file-sync.png)
+![](images/redolog-cycle.jpg)
 
 如果此时宕机了， 内存中更改后的行数据已经不再了， 但是redolog还是存在的，是可以恢复，这也就是mysql的crash-safe特性。
 

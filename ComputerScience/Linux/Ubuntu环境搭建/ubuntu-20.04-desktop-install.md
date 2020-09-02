@@ -286,7 +286,7 @@ exec -a "$0" "$HERE/chrome" "$@" --user-data-dir --no-sandbox
 sudo dpkg -i ussr-amd64-0.1.5.deb
 ```
 
-安装之后下载`ssr-local` 并赋予可以行权限。 然后在 ussr 界面指定该目录。
+安装之后下载`ssr-local` **并赋予可执行权限**。 然后在 ussr 界面指定该目录。
 
 > 这里试了下只能在输入框里填目录  后面那个选择目录按钮好像有点问题。
 
@@ -301,7 +301,13 @@ https://github.com/ShadowsocksR-Live/shadowsocksr-native
 
 > ubuntu 20.04 正常使用
 
+上面那个不能用的话可以试一下这个 repository
 
+> 第二次装的时候第一个不知道什么情况，也不能用了，所以找到了下面这个
+>
+> https://github.com/qingshuisiyuan/electron-ssr-backup
+>
+> ubuntu 20.04 也是正常使用
 
 **虚拟机**
 
@@ -405,7 +411,7 @@ https://www.pling.com/s/Gnome/browse/cat/135/order/latest/
 这里下载的是macOS的主题
 
 ```sh
-https://www.pling.com/s/Gnome/p/1275087/
+https://www.pling.com/p/1241688/
 ```
 
 有`light`和`dark`等多个版本选中，这里下载的是` Mc-OS-CTLina-Gnome-Dark-1.3.2.tar.xz ` 然后解压出来
@@ -448,7 +454,7 @@ xz -d Cupertino.tar.xz
 tar xvf Cupertino.tar
 ```
 
-同样的,解压后复制到`/usr/share/icons`目录下
+同样的,解压后复制到`/usr/share/icons`目录或者`/home/用户名/.icons`目录下
 
 ```sh
 cp -r Cupertino /usr/share/icons/
@@ -538,14 +544,15 @@ sudo apt install git
 下载
 
 ```sh
-https://golang.org/d
+https://golang.org/dl
 https://studygolang.com/dl
 ```
 
 解压
 
 ```sh
-$ sudo tar -zxvf go1.14.4.linux-amd64.tar.gz  -C /usr/local
+# 可以解压到任意位置
+$ sudo tar -zxvf go1.14.4.linux-amd64.tar.gz  -C /home/lixd/17x/
 ```
 
 配置环境变量

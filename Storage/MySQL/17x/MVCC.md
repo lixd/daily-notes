@@ -15,7 +15,7 @@ data1|data2|...datan|TRX_ID|ROLL_PTR
 
 
 
-查询时会有一个 read_view，由查询时所有未提交事务的id数组（其中最小的记作min_id）和当前已创建的最大事务id（记作max_id）组成。
+查询时会有一个 read_view，由查询时所有未提交事务的id数组（其中最小的记作min_id）和当前已创建的最大事务id+1（记作max_id）组成。
 
 版本链比较规则：
 
