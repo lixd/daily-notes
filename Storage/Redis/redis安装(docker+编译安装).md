@@ -131,7 +131,7 @@ services:
     volumes:
       - /etc/localtime:/etc/localtime:ro # 设置容器时区与宿主机保持一致
       - ./data:/data
-      - ./conf/redis.conf:/etc/redis/redis.conf
+      - ./conf/redis.conf:/etc/redis.conf
     ports:
         - "6379:6379"
 ```
@@ -141,6 +141,8 @@ services:
 去官网上下载一份最新的配置文件 然后改一改就好了。
 
 >  官网地址:`https://redis.io/topics/config `
+>
+>  wget https://raw.githubusercontent.com/redis/redis/6.0/redis.conf
 
 **`daemonize yes`必须改成`daemonize no` **
 
@@ -161,3 +163,11 @@ docker-compose up -d
 #停止
 docker-compose down
 ```
+
+问题
+
+> Fatal error, can't open config file '/etc/redis.conf
+>
+> 出现该问题是应该配置文件目录权限问题 修改一下即可
+>
+> chmod 666 /conf -R
