@@ -67,7 +67,7 @@ func main() {
 
 **说明**
 
-首先 listen 监听端口，然后在一个死循环中 等待 accept（accept 过程是阻塞的），也就是说每次只能在处理某个请求或者阻塞在 accept。于是每次请求都开一个新的 goroutine 来处理`go handleConnection(conn)`。
+首先 listen 监听端口，然后在一个死循环中 等待 accept（accept 过程是阻塞的），也就是说每次只能在处理某个请求或者阻塞在 accept。于是每次请求都开一个新的 goroutine 来处理。`go handleConnection(conn)`。
 
 具体的调用
 
@@ -94,7 +94,7 @@ recvfrom fd6
 * 2）cpu 对这么多 goroutine 调度也会浪费资源
 * 3）最大问题是 这个 accept 是阻塞的，所以才需要开这么多 goroutine 
 
-当前了 goroutine 协程 相对于 线程 是非常轻量级的，调度也是有自己的 GPM 模型，goroutine 的切换也全是在用户态，相较之下已经比线程好很多了。
+当然了 goroutine 协程 相对于 线程 是非常轻量级的，调度也是有自己的 GPM 模型，goroutine 的切换也全是在用户态，相较之下已经比线程好很多了。
 
 但是一旦涉及到系统调用 就会很慢，那么能不能让 accept 不阻塞呢？
 
@@ -114,7 +114,7 @@ linux下，可以通过设置socket使其变为non-blocking。当对一个non-bl
 
 **所以，用户进程第一个阶段不是阻塞的,需要不断的主动询问kernel数据好了没有；第二个阶段依然总是阻塞的。**
 
-
+> C10K 问题 每次都要主动询问kernel数据好了没有，连接过多的话效率很低、
 
 使用 sock_nonblock 使得该过程非阻塞
 
@@ -301,3 +301,5 @@ Nginx 则不需要处理其他事情，有连接来了就处理，没有就等�
 `http://www.tianshouzhi.com/api/tutorials/netty/221`
 
 `https://www.bilibili.com/video/BV11z4y1Q7ns`
+
+`《UNIX网络编程：卷一》`
