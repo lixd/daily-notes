@@ -109,3 +109,25 @@ scrape_configs:
 
 Prometheus自带了UI界面，但是官方也推荐使用 grafana。
 
+
+
+## grafana
+
+```yml
+version: '3.2'
+services:
+  grafana:
+    image: grafana/grafana
+    container_name: grafana
+    restart: always
+    ports:
+      - "3000:3000"
+networks:
+  default:
+    external:
+      name: prometheus
+
+# 默认账号密码都为admin
+
+```
+
