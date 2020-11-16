@@ -134,17 +134,18 @@ $ sudo apt-get remove docker docker-engine docker.io containerd runc
 
 1) 更新 apt 包索引。
 
-```
+```shell
 $ sudo apt-get update
 ```
 
 2) 安装依赖包，用于通过HTTPS来获取仓库:
 
 ```sh
-$ sudo apt-get -f install \
+$ sudo apt-get install \
     apt-transport-https \
     ca-certificates \
     curl \
+    gnupg-agent \
     software-properties-common
 ```
 
@@ -174,12 +175,13 @@ $ sudo add-apt-repository \
    "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
   $(lsb_release -cs) \
   stable"
+  
 ```
 
 如果安装慢的话可以换国内的源,下面是中国科技大学的：
 
 ```sh
-sudo add-apt-repository "deb [arch=amd64] https://mirrors.ustc.edu.cn/docker-ce/linux/ubuntu \
+$ sudo add-apt-repository "deb [arch=amd64] https://mirrors.ustc.edu.cn/docker-ce/linux/ubuntu \
 $(lsb_release -cs) stable"
 ```
 
