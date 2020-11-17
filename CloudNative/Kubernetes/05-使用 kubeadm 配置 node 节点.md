@@ -2,25 +2,22 @@
 
 ## 概述
 
-将 slave 节点加入到集群中很简单，只需要在 slave 服务器上安装 kubeadm，kubectl，kubelet 三个工具，然后使用 `kubeadm join` 命令加入即可。准备工作如下：
-
-- 修改主机名
-- 配置软件源
-- 安装三个工具 slave 节点不需要执行 kubeadm init 命令了
+将 node节点加入到集群中很简单，只需要在 node 节点上安装 kubeadm，kubectl，kubelet 三个工具，然后使用 `kubeadm join` 命令加入即可。
 
 ## 将 slave 加入到集群
 
 ```bash
 # 这就是前面安装Master节点时日志中的提示
-kubeadm join 192.168.1.113:6443 --token abcdef.0123456789abcdef \
-    --discovery-token-ca-cert-hash sha256:3b1342f04bc6e151f67774862aea997614c5b63b9a6b635d2378d04f59d9b212 
+kubeadm join 192.168.2.110:6443 --token abcdef.0123456789abcdef \
+    --discovery-token-ca-cert-hash sha256:1a76f9a88d7aa3a0def97ec7f57c2d4c5f342be4270e96f08a0140eddf0b4e1f 
 
 # 安装成功将看到如下信息
+root@docker:/usr/local/k8s# kubeadm join 192.168.2.110:6443 --token abcdef.0123456789abcdef \
+>     --discovery-token-ca-cert-hash sha256:1a76f9a88d7aa3a0def97ec7f57c2d4c5f342be4270e96f08a0140eddf0b4e1f
 [preflight] Running pre-flight checks
 	[WARNING IsDockerSystemdCheck]: detected "cgroupfs" as the Docker cgroup driver. The recommended driver is "systemd". Please follow the guide at https://kubernetes.io/docs/setup/cri/
 [preflight] Reading configuration from the cluster...
 [preflight] FYI: You can look at this config file with 'kubectl -n kube-system get cm kubeadm-config -oyaml'
-[kubelet-start] Downloading configuration for the kubelet from the "kubelet-config-1.18" ConfigMap in the kube-system namespace
 [kubelet-start] Writing kubelet configuration to file "/var/lib/kubelet/config.yaml"
 [kubelet-start] Writing kubelet environment file with flags to file "/var/lib/kubelet/kubeadm-flags.env"
 [kubelet-start] Starting the kubelet
@@ -31,7 +28,6 @@ This node has joined the cluster:
 * The Kubelet was informed of the new secure connection details.
 
 Run 'kubectl get nodes' on the control-plane to see this node join the cluster.
-
 ```
 
 说明：
@@ -46,22 +42,28 @@ Run 'kubectl get nodes' on the control-plane to see this node join the cluster.
 
 ## 验证是否成功
 
-回到 master 服务器
+在 master 节点执行如下命令：
 
 ```bash
 kubectl get nodes
 
-# 可以看到 slave 成功加入 master
+# 可以看到 两个node节点 成功加入集群
+root@docker:/usr/local/k8s# kubectl get nodes
 NAME                STATUS     ROLES    AGE   VERSION
-kubernetes-master   NotReady   master   19m   v1.18.3
-kubernetes-slave1   NotReady   <none>   45s   v1.18.3
-kubernetes-slave2   NotReady   <none>   50s   v1.18.3
-
+kubernetes-master   NotReady   master   15m   v1.19.4
+kubernetes-node1    NotReady   <none>   49s   v1.19.4
+kubernetes-node2    NotReady   <none>   43s   v1.19.4
 ```
 
 ## 查看 pod 状态
 
+
+
+
+
 ```bash
+$ kubectl get pod -n kube-system -o wide
+
 root@kubernetes-master:/usr/local/docker/kubernetes# kubectl get pod -n kube-system -o wide
 NAME                                        READY   STATUS    RESTARTS   AGE   IP              NODE                NOMINATED NODE   READINESS GATES
 coredns-7ff77c879f-g8s2r                    0/1     Pending   0          19m   <none>          <none>              <none>           <none>

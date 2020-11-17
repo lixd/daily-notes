@@ -17,15 +17,21 @@ sudo vi 50-cloud-init.yaml
 
 ```yaml
 network:
-    ethernets:
-        ens33: #配置的网卡名称 ip addr 命令查看
-          dhcp4: false
-          dhcp6: false
-          addresses: [192.168.1.99/24] #设置本机IP及掩码
-          gateway4: 192.168.1.1 #设置网关 和宿主机相同
-          nameservers:
-            addresses: [114.114.114.114] #设置DNS
-    version: 2
+  ethernets: 
+    ens33: 
+      # 关闭DHCP服务
+      dhcp4: false
+      dhcp6: false
+      # IP
+      addresses:
+        - 192.168.2.99/24
+      # 网关  
+      gateway4: 192.168.2.2
+      # DNS
+      nameservers:
+        addresses:
+          - 114.114.114.114 
+  version: 2
 ```
 
 使配置生效 `netplan apply`

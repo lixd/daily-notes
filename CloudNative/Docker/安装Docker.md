@@ -4,6 +4,8 @@
 
 ### 1. CentOS
 
+> 官方文档 https://docs.docker.com/engine/install/centos/
+
 Docker 要求 CentOS 系统的内核版本高于 `3.10`。
 
 通过 **uname -r** 命令查看你当前的内核版本
@@ -121,6 +123,8 @@ For more examples and ideas, visit:
 若能正常输出以上信息，则说明安装成功。
 
 ### 2. Ubuntu
+
+> 官方文档 https://docs.docker.com/engine/install/ubuntu/
 
 Docker 的旧版本被称为 docker，docker.io 或 docker-engine 。如果已安装，请卸载它们：
 
@@ -266,6 +270,7 @@ vi /etc/docker/daemon.json
 在命令行执行 `docker info`，如果从结果中看到了如下内容，说明配置成功。
 
 ```bash
+$ docker info
 Registry Mirrors:
  https://registry.docker-cn.com/
 ```

@@ -1,6 +1,6 @@
 # 网络配置
 
-
+> [calico官方文档](https://docs.projectcalico.org/getting-started/kubernetes/quickstart)
 
 ## 1. 概述
 
@@ -19,7 +19,7 @@ CNI(Container Network Interface) 是一个标准的，通用的接口。在容�
 
 
 
-## 3. Kubernetes 中的 CNI 插件
+## 3.  CNI 插件列表
 
 CNI 的初衷是创建一个框架，用于在配置或销毁容器时动态配置适当的网络配置和资源。插件负责为接口配置和管理 IP 地址，并且通常提供与 IP 管理、每个容器的 IP 分配、以及多主机连接相关的功能。容器运行时会调用网络插件，从而在容器启动时分配 IP 地址并配置网络，并在删除容器时再次调用它以清理这些资源。
 
@@ -44,16 +44,19 @@ Calico 还提供网络安全规则的动态实施。使用 Calico 的简单策�
 
 参考官方文档安装：`https://docs.projectcalico.org/getting-started/kubernetes/quickstart`
 
-> 当前最新版本号为 3.14.1
+> 当前最新版本号为 3.16.5
 
 **只需要安装在 master 节点即可。**
 
 ```shell
-# -f 表示指定配置文件路径
-kubectl apply -f https://docs.projectcalico.org/manifests/calico.yaml
+# 第一步
+$ kubectl create -f https://docs.projectcalico.org/manifests/tigera-operator.yaml
 
 # 输出如下
-configmap/calico-config created
+root@docker:/usr/local/k8s# kubectl create -f https://docs.projectcalico.org/manifests/tigera-operator.yaml
+namespace/tigera-operator created
+podsecuritypolicy.policy/tigera-operator created
+serviceaccount/tigera-operator created
 customresourcedefinition.apiextensions.k8s.io/bgpconfigurations.crd.projectcalico.org created
 customresourcedefinition.apiextensions.k8s.io/bgppeers.crd.projectcalico.org created
 customresourcedefinition.apiextensions.k8s.io/blockaffinities.crd.projectcalico.org created
@@ -69,15 +72,24 @@ customresourcedefinition.apiextensions.k8s.io/ippools.crd.projectcalico.org crea
 customresourcedefinition.apiextensions.k8s.io/kubecontrollersconfigurations.crd.projectcalico.org created
 customresourcedefinition.apiextensions.k8s.io/networkpolicies.crd.projectcalico.org created
 customresourcedefinition.apiextensions.k8s.io/networksets.crd.projectcalico.org created
-clusterrole.rbac.authorization.k8s.io/calico-kube-controllers created
-clusterrolebinding.rbac.authorization.k8s.io/calico-kube-controllers created
-clusterrole.rbac.authorization.k8s.io/calico-node created
-clusterrolebinding.rbac.authorization.k8s.io/calico-node created
-daemonset.apps/calico-node created
-serviceaccount/calico-node created
-deployment.apps/calico-kube-controllers created
-serviceaccount/calico-kube-controllers created
+customresourcedefinition.apiextensions.k8s.io/installations.operator.tigera.io created
+customresourcedefinition.apiextensions.k8s.io/tigerastatuses.operator.tigera.io created
+clusterrole.rbac.authorization.k8s.io/tigera-operator created
+clusterrolebinding.rbac.authorization.k8s.io/tigera-operator created
+deployment.apps/tigera-operator created
 ```
+
+
+
+```shell
+# 第二步
+$ kubectl create -f https://docs.projectcalico.org/manifests/custom-resources.yaml
+
+root@docker:/usr/local/k8s# kubectl create -f https://docs.projectcalico.org/manifests/custom-resources.yaml
+installation.operator.tigera.io/default created
+```
+
+
 
 
 
@@ -86,29 +98,35 @@ serviceaccount/calico-kube-controllers created
 **必须等到所有 container 都变成 running 状态才算安装完成**
 
 ```shell
-watch kubectl get pods --all-namespaces
+$ watch kubectl get pods --all-namespaces
 
 # 输出如下
 root@kubernetes-master:~# watch kubectl get pods --all-namespaces
-Every 2.0s: kubectl get pods --all-namespaces                                                       kubernetes-master: Wed Jun 10 10:49:13 2020
+Every 2.0s: kubectl get pods --all-namespaces                                                                                                                                                          kubernetes-master: Tue Nov 17 14:09:15 2020
 
-NAMESPACE     NAME                                        READY   STATUS              RESTARTS   AGE
-kube-system   calico-kube-controllers-76d4774d89-ls55d    0/1     ContainerCreating   0          97s
-kube-system   calico-node-4q2nf                           1/1     Running             0          97s
-kube-system   calico-node-k9jws                           0/1     PodInitializing     0          97s
-kube-system   calico-node-npgnz                           0/1     PodInitializing     0          97s
-kube-system   coredns-7ff77c879f-g8s2r                    0/1     ContainerCreating   0          22h
-kube-system   coredns-7ff77c879f-l6grx                    0/1     ContainerCreating   0          22h
-kube-system   etcd-kubernetes-master                      1/1     Running             0          22h
-kube-system   kube-apiserver-kubernetes-master            1/1     Running             0          22h
-kube-system   kube-controller-manager-kubernetes-master   1/1     Running             0          22h
-kube-system   kube-proxy-wlpfh                            1/1     Running             0          22h
-kube-system   kube-proxy-zckm2                            1/1     Running             0          22h
-kube-system   kube-proxy-zhc7s                            1/1     Running             0          22h
-kube-system   kube-scheduler-kubernetes-master            1/1     Running             0          22h
-
+NAMESPACE         NAME                                        READY   STATUS    RESTARTS   AGE
+calico-system     calico-kube-controllers-85ff5cb957-qdb8t    0/1     Running   0          83s
+calico-system     calico-node-cm8jh                           1/1     Running   0          84s
+calico-system     calico-node-kgj8l                           0/1     Running   0          84s
+calico-system     calico-node-ttxw6                           1/1     Running   0          84s
+calico-system     calico-typha-5675bccdcd-kllkb               1/1     Running   0          84s
+kube-system       coredns-6d56c8448f-64djh                    1/1     Running   0          2m36s
+kube-system       coredns-6d56c8448f-qr4xv                    1/1     Running   0          2m36s
+kube-system       etcd-kubernetes-master                      1/1     Running   0          2m51s
+kube-system       kube-apiserver-kubernetes-master            1/1     Running   0          2m51s
+kube-system       kube-controller-manager-kubernetes-master   1/1     Running   0          2m51s
+kube-system       kube-proxy-5dmvp                            1/1     Running   0          2m34s
+kube-system       kube-proxy-96x77                            1/1     Running   0          2m32s
+kube-system       kube-proxy-gpnc5                            1/1     Running   0          2m36s
+kube-system       kube-scheduler-kubernetes-master            1/1     Running   0          2m51s
+tigera-operator   tigera-operator-5f668549f4-84kgn            1/1     Running   0          99s
 ```
 
 
 
 至此基本环境已部署完毕。
+
+
+
+> 如果 coredns 一直处于 Pending 状态 可能是因为前面忘记设置 podSubnet 了，暂时只能重置集群，没有找到好的解决办法。
+
