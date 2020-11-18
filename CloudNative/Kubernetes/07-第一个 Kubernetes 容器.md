@@ -12,6 +12,8 @@ controller-manager   Healthy     Get "http://127.0.0.1:10251/healthz": dial tcp 
 ```
 
 > 出现这种情况，是 `/etc/kubernetes/manifests`下的 `kube-controller-manager.yaml` 和 `kube-scheduler.yaml` 设置的默认端口是0，在文件中注释掉就可以了。
+>
+> [参考](https://blog.csdn.net/cymm_liu/article/details/108458197)
 
 
 
