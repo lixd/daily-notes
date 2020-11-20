@@ -28,12 +28,6 @@ services:
       - 3306:3306
     volumes:
       - ./data:/var/lib/mysql
-
-  adminer:
-    image: adminer
-    restart: always
-    ports:
-      - 9090:8080
 ```
 
 #### MySQL5.7

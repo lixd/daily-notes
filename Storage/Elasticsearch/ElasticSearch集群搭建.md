@@ -241,8 +241,6 @@ services:
 
 `docker-compose.yml`文件的一些简单说明。
 
-> 网上查到大部分都是直接给一个`docker-compose.yml`文件 什么说明都没有 关键还有很多错的 emmm 萌新表示瑟瑟发抖 
-
 ```yaml
 version: '2' 
 ```
@@ -487,15 +485,7 @@ Kibana的设置es地址的字段好像有两个。`ELASTICSEARCH_URL`和`ELASTIC
 
 
 
-## 5. Other
-
-网上文章真的大部分都是一样的,你抄我 我抄你。但是这样也不是不能接受， 这样说不定能让更多人看到。
-
-但是有的完全都是错的，自己都没跑过就放上去真的好嘛..
-
-
-
-## 6. 参考
+## 5. 参考
 
 `https://www.jianshu.com/p/fdfead5acc23`
 
