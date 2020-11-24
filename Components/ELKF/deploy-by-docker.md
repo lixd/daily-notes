@@ -4,7 +4,7 @@
 
 ELK 是由 Elasticsearch、Logstash、Kibana、Filebeat 等开源软件组成的一个组合体。
 
-
+![](./assets/elkf.png)
 
 **Elasticsearch**
 
@@ -30,7 +30,9 @@ App 将日志输出到各自的日志文件中，由 Filebeat 进行采集，并
 
 ## 2. 部署
 
-> 本文基于 docker compose 部署一个最基本的 ELK 平台。
+> 本文基于 docker compose 部署一个最基本的 ELK 平台，生成环境则建议使用集群模式。
+>
+> [docker 环境安装点这里](https://www.lixueduan.com/post/docker/02-install/)
 
 为了简单起见，这里将分别启动 4 个软件，并使其运行在同一个 docker 网络中，通过容器名进行通信。
 
@@ -98,7 +100,7 @@ networks:
 
 > logstash 由管道组成，而一个管道由 input、output 和 filter 三个元素组成
 
-```json
+```yml
 input {
     # 来源beats
     beats {
@@ -217,7 +219,7 @@ output.logstash:
 cd /var/log
 mkdir elk
 cd elk/
-echo test >> elk.log
+echo 333 INFO >> elk.log
 ```
 
 不出意外的话 10s 左右就可以在 Kibana 中看到自己写的日志了。
@@ -226,3 +228,6 @@ echo test >> elk.log
 
 
 
+日志内容如下所示：
+
+![](./assets/log.png)
