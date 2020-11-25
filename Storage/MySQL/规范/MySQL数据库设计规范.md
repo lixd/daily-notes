@@ -114,7 +114,7 @@ Create database db1 default character set utf8;
 
 详细存储大小参加下图：
 
-![MySQL数据类型](https://github.com/illusorycloud/daily-notes/raw/master/MicroServer/MySQL/img/MySQL数据类型大小.png)
+![MySQL数据类型](assets/MySQL数据类型大小.png)
 
 ### 2.4 索引设计
 
