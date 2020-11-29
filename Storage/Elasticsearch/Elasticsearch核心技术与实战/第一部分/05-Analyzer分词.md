@@ -8,16 +8,16 @@
   * 可使用 Elasticsearch 内置的分析器 / 或者按需定制化分析器
 * 除了在数据写入时转换词条，匹配 Query 语句时也需要用相同的分析器对查询语句进行分析
 * 分词器是专门处理分词的组件，Analyzer 由三部分组成
-  * Character Filters（针对初始文本处理，例如去除 html ）
-  * Tokenizer（按照规则切分为单词）
-  * Token Filter（将切分的单词进行加工，小写，删除 stopwords，增加同义词）
+  * **Character Filters**：针对初始文本进行过滤，例如去除 html 标签等等。
+  * **Tokenizer**：按照规则将文本切分为单词。
+  * **Token Filter**：将切分的单词进行再加工，例如字母转小写，删除 stopwords，增加同义词等等。
 
 
 
 ## 2. Elasticsearch 内置分词器
 
 * Standard Analyzer - 默认分词器，按词切分，小写处理
-* SimPIe Analyzer - 按照非字母切分（符号被过滤），小写处理
+* SimpIe Analyzer - 按照非字母切分（符号被过滤），小写处理
 * Stop Analyzer - 小写处理，停用词过滤（the，a，is）
 * Whitespace Analyzer - 按照空格切分，不转小写
 * Keyword Analyzer - 不分词，直接将输入当作输出

@@ -1,18 +1,29 @@
 # Search API
 
-## 0. 概述
+## 1. APIs
 
-Elasticsearch 中一共有两种 Search API
+### 1. Request
 
-* URI Search
-  * 在 URI 中使用查询参数
+```http
+GET /<index>/_search
+```
 
-* Request Body Search
-  * 使用 Elasticsearch 提供的，基于 JSON 格式的更加完备的 Query Domain Specific Language（DSL）
+支持指定 不指定索引、指定单个索引、多个索引和模糊匹配索引。
 
+| 语法                   | 范围                |
+| ---------------------- | ------------------- |
+| /_search               | 集群上的所有索引    |
+| /index1/_search        | index1              |
+| /index1,index2/_search | index1 和 index2    |
+| /index*/_search        | 以 index 开头的索引 |
 
+### 2. Payload
 
-## 1. 分类
+根据 Payload 有无可以分为两类：
+
+* **URI Search**：Payload 为空，在 URI 中使用查询参数
+
+* **Request Body Search**：使用 Elasticsearch 提供的，基于 JSON 格式的更加完备的 Query Domain Specific Language（DSL）
 
 按照查询类型分，又可以分为词条（Term）查询和全文（Fulltext）查询。
 
@@ -23,9 +34,7 @@ Elasticsearch 中一共有两种 Search API
     * 短语（phrase）查询 - 单词之间必须按顺序排列 不能间隔其他单词
     * 短语前缀（phrase_prefix）查询 - 除了把查询文本的最后一个分词只做前缀匹配之外，和match_phrase查询基本一样
 
-
-
-
+ 
 
 **查询端点**
 
@@ -43,33 +52,12 @@ GET /_count?q=user:jim
 GET index/type/1/_explain?q=message:search
 ```
 
-## 2. 详情
 
-### 0. 指定索引
-
-| 语法                   | 范围                |
-| ---------------------- | ------------------- |
-| /_search               | 集群上的所有索引    |
-| /index1/_search        | index1              |
-| /index1,index2/_search | index1 和 index2    |
-| /index*/_search        | 以 index 开头的索引 |
-
-### 1. URI 查询
-
-* 使用`q`，指定查询字符串
-* `query string syntax`，KV 键值对
-* `q=field:value`
-
-```shell
-GET kibana_sample_data_ecommerce/_search?q=customer_first_name:Eddie
-
-# 查询 customer_first_name 索引中叫做 Eddie 的客户
-```
 
 ### 2. Request Body
 
 ```shell
-POST kibana_sample_data_ecommerce/_search
+POST users/_search
 {
 	"profile": true,
 	"query": {
@@ -78,48 +66,28 @@ POST kibana_sample_data_ecommerce/_search
 }
 ```
 
+## 2. 返回结果与相关性
 
-
-### 3. 返回结果
+### 返回结果
 
 ```shell
 {
   "took" : 12, # 本次请求耗时 ms
-  "timed_out" : false,
-  "_shards" : {
-    "total" : 1,
-    "successful" : 1,
-    "skipped" : 0,
-    "failed" : 0
-  },
   "hits" : {
     "total" : {
       "value" : 4675, # 符合条件的总文档数
-      "relation" : "eq"
     },
     "max_score" : 1.0,
-    "hits":[
-    	{
-        "_index" : "kibana_sample_data_ecommerce",
-        "_type" : "_doc",
-        "_id" : "JQ-W83IBZKoskNHA_XXX",
+    "hits":[ # 结果集，默认前 10 个
+    	{    
         "_score" : 1.0, # 相似度得分
-        "_source" : {
-          "category" : [
-            "Men's Shoes",
-            "Men's Clothing"
-          ]
-          },
       },
-    ] # 结果集，默认前 10 个
+    ]
   },
-    "profile":[]
 }
 ```
 
-
-
-### 4. 相关性
+### 相关性
 
 Information Retrieval
 
@@ -129,76 +97,53 @@ Information Retrieval
   * 返回的相关文档数 / 应该返回的文档数
 * Ranking - 是否能够按照相关度进行排序？
 
+ 
 
-
-## 3. 练习
-
-```shell
-#URI Query
-GET kibana_sample_data_ecommerce/_search?q=customer_first_name:Eddie
-GET kibana*/_search?q=customer_first_name:Eddie
-GET /_all/_search?q=customer_first_name:Eddie
-
-
-#REQUEST Body
-POST kibana_sample_data_ecommerce/_search
-{
-	"profile": true,
-	"query": {
-		"match_all": {}
-	}
-}
-
-```
-
-## 4. URI Search
+## 3. URI Search
 
 * q 指定查询语句，使用 Query String Syntax
-* df 默认自动，不指定时，会对所有字段进行查询
+* df 默认要查询的字段，不指定时，会对所有字段进行查询，在范查询时使用
 * Sort 排序 、 from 和 size 用于分页
 * Profile 可以查看查询时如何被执行的
 
-**写法比较**
+### syntax
 
 * 指定字段 v.s 泛查询
-  * q=title:2012 指定查询 title 字段为 2012
-  * q=2012 查询所有为 2012 的
+  * **q=user:意琦行** 指定查询 user字段为 意琦行的
+  * **q=意琦行&df=user** 另一种写法的指定字段查询
+  * **q=意琦行** 所有字段中查询为 意琦行 的
 * Term v.s Phrase
   * Beautiful Mind 等效于 Beautiful OR Mind。
   * “Beautiful Mind” 等效于 Beautiful AND Mind，Phrase 查询，还要求前后顺序保持一致
-  * 引号引起来之后代表这是一个词了，查询时不会在进行分词
+  * **添加引号后代表这是一个词，查询时 ES 不会对其进行分词**，所以会有上面的差异情况
 * 分组与引号
-  * title:(Beautiful AND Mind) Term Query 需要加括号
-  * title:"Beautiful Mind" Phrase Query 则加引号
+  * q=user:意 琦 行---第一个 意 会查询 user 字段，后续的 琦 行则是全字段查询
+  * q=user:(意 琦 行）加括号则当做一个分组，即 意 琦 行 都只会查询 user 字段
+  * 因为 URI Search 中2.参数以KV 键值对形式拼接,**键值对以空格分隔，**所以空格之后的内容就被当做另外的 value 处理了
 * 布尔操作
-  * AND / OR / NOT 或者 && /||/
-    * 必须大写
-    * title:(matrix NOT reloaded)
-* 分组
-  * `+`加号 表示 must
-  * `-`减号 表示 must_not
-  * title:(+matrix -reloaded)
+  * AND / OR / NOT 必须大写
+  * AND 和 NOT 也可以用 `+`加号`-`减号代替，但是需要URL编码，加号为`%2B`减号就是`-`
+  * q=user:(意琦行 OR 剑子仙迹)
 * 范围查询
   * 区间表示：[] 闭区间，{} 开区间
-    * year:{2019 TO 2018}
-    * year:[* TO 2018]
+  * q=year:{2019 TO 2018}
+  * q=year:[* TO 2018]
 * 算数符号
-  * year:>2010
-  * year:(>2010 && <=2018)
-  * year:(+>2010 +<=2018) 同样的 可以和加号一起使用 
-* 通配符查询（效率低，占用内存大，不建议使用，特别是放在最前面的情况）
+  * q=year:>2010
+  * q=user:(>2010 AND <=2018) 
+* 通配符查询
+  * 效率低，占用内存大，不建议使用（特别是用作第一个条件的时候）
   * `？`问号代表 1 个字符，`*`星号代表 0 或多个字符
-    * title:mi?d
-    * title:be*
-* 正则表达式
-  * title:[bt]oy
+  * q=user:"意琦?"
+  * q=user:"意*"
 * 模糊匹配与近似查询
-  * title:befutifl~1 单词写错了也能查询出来
-  * title:"lord rings"~2 单词不一定需要连续在一起也能查询出来
+  * q=user:"意行"~N 允许单词间可以隔 N 个单词，
+  * q:title:beautifl~1 单词拼写错误也能查询出来
+* 正则表达式
 
 
 
-## 5. Request Body Search
+## 4. Request Body Search
 
 将查询语句通过 HTTP Request Body  发送给 Elasticsearch
 
@@ -322,7 +267,7 @@ POST movies/_search
 
 
 
-## 6. Query String Query & Simple Query String Query
+## 5. Query String Query & Simple Query String Query
 
 ### 1. Query String Query
 

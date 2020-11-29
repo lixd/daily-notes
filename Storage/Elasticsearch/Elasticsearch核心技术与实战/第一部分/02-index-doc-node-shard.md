@@ -1,17 +1,14 @@
 # Elasticsearch 基本概念
 
+本文主要记录了 Elasticsearch 中的基本概念，包括 文档、索引、节点、分片等。
+
+
+
 ## 1. 文档
 
 * Elasticsearch 是面向文档的，文档是所有可搜索数据的最小单位。
 
-  * 日志文件中的日志项
-  * 一张唱片的详细信息
-  * 一篇 PDF 文档中的具体内容
-
 * 文档会被序列化成 JSON 格式，保存在 Elasticsearch 中
-
-  * JSON 对象由字段组成
-  * 每个字段都有对应的字段类型（字符串/数值/布尔/日期/二进制 等等）
 
 * 每个文档都有一个 Unique ID
 
@@ -44,7 +41,7 @@
   * Shard 体现了物理空间的概念：索引中的数据分散在 Shard 上
 * 索引的 Mapping 与 Setting
   * Mapping 定义文档字段的类型
-  * Setting 定义不同的数据分布
+  * Setting 定义不同的数据分布（例如分片数配置）
 
 **索引的不同语义**
 
@@ -67,21 +64,7 @@
 
 
 
-## 3. 分布式特性
-
-* Elasticsearch 分布式架构的好处
-  * 存储的水平扩容
-  * 提高系统的可用性，部分节点停止服务，整个集群的服务不受影响
-* Elasticsearch 的分布式架构
-  * 不同的集群通过不同的名字来区分，默认名字为 elasticsearch
-  * 通过配置文件修改，或者在命令行中`-E cluster.name=xxx`来进行设定
-  * 一个集群可以有一个或多个节点
-
-
-
-## 4. 节点
-
-### 1. 概述
+## 3. 节点
 
 * 节点是一个 Elasticsearch 的实例
   * 本质上就是一个 Java 进程
@@ -91,15 +74,28 @@
 
 
 
-### 2. 节点区分
+### 1. 角色
+
+ES 中节点按角色不同可以分为多种类型。
+
+1. Master-eligible nodes
+2. Master Node
+3. Data Node
+4. Coordinating Node
+5. Hot Node
+6. Warm Node
+7. Machine Learning Node、
+
+
 
 **Master-eligible nodes & Master Node**
 
+* Master-eligible 节点可以参加选主流程，成为 Master 节点
+
 * 每个节点启动后，默认就是一个 Master-eligible 节点
   * 可以设置 node.master:false 来禁止
-* Master-eligible 节点可以参加选主流程，成为 Master 节点
 * 当第一个节点启动的时候，它会将自己选举成为 Master 节点
-* 每个节点上都保存了集群的状态，只有 Master 节点才能修改集群的状态信息
+* 每个节点上都保存了集群的状态，但**只有 Master 节点才能修改集群的状态信息**
   * 任意节点都能修改信息会导致数据的不一致性
   * 集群状态（Cluster State）维护了一个集群中必要的信息
     * 所有的节点信息
@@ -109,7 +105,8 @@
 **Data Node & CoordinatingNode**
 
 * Data Node
-  * 可以保存数据的节点叫做 Data Node。负责保存分片数据，在数据扩展上起到了至关重要的作用
+  * 可以保存数据的节点叫做 Data Node
+  * 负责保存分片数据，在数据扩展上起到了至关重要的作用
 * CoordinatingNode
   * 负责接受 Client 的请求，将请求分发到合适的节点，最终把结果汇集到一起
   * 每个节点都默认起到了 Coordinating Node 的职责
@@ -121,14 +118,15 @@
 * Machine Learning Node
   * 负责跑机器学习的 Job，用来做异常检测
 * Tribe Node
-  * （5.3 开始使用 Cross Cluster Search） Tribe Node 连接到不同的 Elasticsearch 集群，并且支持将这些集群当成一个单独的集群处理
+  *  Tribe Node 连接到不同的 Elasticsearch 集群，并且支持将这些集群当成一个单独的集群处理
+  * 5.3 开始使用 Cross Cluster Search 代替该类型节点
 
 ​	
 
-### 3. 配置节点类型
+### 2. 节点角色配置
 
 * 开发环境中一个节点可以承担多种角色
-* 生产环境中，应该设置单一的角色的节点（dedicate node）
+* **生产环境中，应该设置单一的角色的节点（dedicate node）**
 
 **配置选项**
 
@@ -138,37 +136,60 @@
 | data              | node.data   | true                                                         |
 | ingest            | node.ingest | true                                                         |
 | coordinating only | 无          | 每个节点默认都是 coordinating 节点，设置其他类型全部为 false |
-| machine learning  | node.ml     | true(需 enable x-pack)                                       |
+| machine learning  | node.ml     | true (需 enable x-pack)                                      |
 
 
 
-## 5. 分片
+## 4. 分片
 
-Primary Shard & Replica Shard
+分片又可分为 Primary Shard 和 Replica Shard。
 
-* 主分片（Primary Shard），用以解决数据水平扩展的问题。通过主分片，可以将数据分布到集群内的所有节点之上
-  * 一个分片是一个运行的 Lucene 的实例
-  * 主分片数在索引创建时指定，后续不允许修改，除非 Reindex
-* 副本（Replica Shard），用以解决数据高可用的问题，是主分片的拷贝
-  * 副本分片数可以动态地调整
-  * 增加副本数，还可以在一定程度上提高服务的可用性（读取的吞吐）
+**Primary Shard**
 
-**分片的设定**
+主分片（Primary Shard），用以解决数据水平扩展的问题。通过主分片，可以将数据分布到集群内的所有节点之上
 
-* 对于生产环境中分片的设定，需要提前做好容量规划
-  * 分片数设置过小
-    * 导致后续无法增加节点实现水平扩展
-    * 当个分片的数据量太大，导致数据重新分配耗时
-  * 分片数设置过大，（7.0 开始默认主分片设置成1 ，解决了 over-sharding 的问题）
-    * 影响搜索结果的相关性打分，影响统计结果的准确性
-    * 单个节点上过多的分片，会导致资源浪费，同时也会影响性能
+* 一个分片是一个运行的 Lucene 的实例
+* 主分片数在索引创建时指定，后续不允许修改，除非 Reindex
 
+**Replica Shard**
 
+副本（Replica Shard）用以解决数据高可用的问题，是主分片的拷贝
 
-**查看集群的健康状况**
+* 副本分片数可以动态地调整
+* 增加副本数，还可以在一定程度上提高服务的可用性（读取的吞吐）
 
-```shell
+**分片配置**
+
+对于生产环境中分片的设定，需要提前做好容量规划，7.0 开始默认主分片设置成1 ，解决了 over-sharding 的问题。
+
+* 分片数设置过小
+  * 导致后续无法增加节点实现水平扩展
+  * 当个分片的数据量太大，导致数据重新分配耗时
+* 分片数设置过大
+  * 影响搜索结果的相关性打分，影响统计结果的准确性
+  * 单个节点上过多的分片，会导致资源浪费，同时也会影响性能
+
+**集群的健康状况**
+
+```http
 GET _cluster/health
+{
+  "cluster_name" : "myes",
+  "status" : "green",
+  "timed_out" : false,
+  "number_of_nodes" : 3,
+  "number_of_data_nodes" : 3,
+  "active_primary_shards" : 9,
+  "active_shards" : 18,
+  "relocating_shards" : 0,
+  "initializing_shards" : 0,
+  "unassigned_shards" : 0,
+  "delayed_unassigned_shards" : 0,
+  "number_of_pending_tasks" : 0,
+  "number_of_in_flight_fetch" : 0,
+  "task_max_waiting_in_queue_millis" : 0,
+  "active_shards_percent_as_number" : 100.0
+}
 ```
 
 * Green - 主分片与副本都正常分配
@@ -177,47 +198,3 @@ GET _cluster/health
 
 * Red - 有主分片未能分配
   * 例如。在服务器的磁盘容量超过 85% 时，去创建了一个新的索引
-
-
-
-## 6. REST API
-
-Index 相关 API
-
-```shell
-#查看索引相关信息
-GET kibana_sample_data_ecommerce
-
-#查看索引的文档总数
-GET kibana_sample_data_ecommerce/_count
-
-#查看前10条文档，了解文档格式
-POST kibana_sample_data_ecommerce/_search
-{
-}
-
-#_cat indices API
-#查看indices
-GET /_cat/indices/kibana*?v&s=index
-
-#查看状态为绿的索引
-GET /_cat/indices?v&health=green
-
-#按照文档个数排序
-GET /_cat/indices?v&s=docs.count:desc
-
-#查看具体的字段
-GET /_cat/indices/kibana*?pri&v&h=health,index,pri,rep,docs.count,mt
-
-#How much memory is used per index?
-GET /_cat/indices?v&h=i,tm&s=tm:desc
-```
-
-
-
-官网
-
-```text
-https://www.elastic.co/guide/en/elasticsearch/reference/7.8/index.html
-```
-

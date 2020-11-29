@@ -1,0 +1,192 @@
+# Index
+# 创建文档 已存在则删除旧文档后再创建
+PUT users/_doc/1
+{
+  "user": "剑子仙迹",
+  "title": "三先天之一",
+  "summary": "何须剑道争锋？千人指，万人封，可问江湖鼎峰；三尺秋水尘不染，天下无双。"
+}
+
+# 自动生成ID
+POST users/_doc
+{
+  "user": "剑子仙迹",
+  "title": "三先天之一",
+  "summary": "何须剑道争锋？千人指，万人封，可问江湖鼎峰；三尺秋水尘不染，天下无双。"
+}
+# 只会创建
+PUT users/_create/1
+{
+  "user": "剑子仙迹",
+  "title": "三先天之一",
+  "summary": "何须剑道争锋？千人指，万人封，可问江湖鼎峰；三尺秋水尘不染，天下无双。"
+}
+
+# 同上
+POST users/_create/1
+{
+  "user": "剑子仙迹",
+  "title": "三先天之一",
+  "summary": "何须剑道争锋？千人指，万人封，可问江湖鼎峰；三尺秋水尘不染，天下无双。"
+}
+
+
+# 使用建议
+
+PUT users/_doc/2
+{
+  "user": "意琦行",
+  "title": "绝代剑宿",
+  "summary": "古岂无人，孤标凌云谁与朋。高冢笑卧，天下澡雪任琦行。"
+}
+
+PUT users/_doc/1?op_type=create
+{
+  "user": "意琦行",
+  "title": "绝代剑宿",
+  "summary": "古岂无人，孤标凌云谁与朋。高冢笑卧，天下澡雪任琦行。"
+}
+
+# 查询
+GET users/_doc/1
+
+GET users/_doc/1?_source=false
+
+GET users/_doc/1?_source_includes=title
+
+GET users/_source/1
+
+HEAD users/_doc/2
+
+GET users/_search
+{
+  "query": {
+    "match": {
+      "user": "剑"
+    }
+  }
+  
+}
+# 删除
+
+DELETE users/_doc/2
+
+# 更新
+
+POST users/_update/1
+{
+   "doc": {},
+   "upsert": {}, 
+   "script": {},
+   "scripted_upsert": true
+}
+
+POST users/_update/1
+{
+   "doc": {
+      "title": "尘外孤标",
+      "arms": "澡雪"
+   }
+}
+
+POST users/_update/2
+{
+  "doc": {}, 
+   "upsert": {
+     "user": "意琦行",
+     "title": "绝代剑宿",
+     "summary": "古岂无人，孤标凌云谁与朋。高冢笑卧，天下澡雪任琦行。"
+   }
+}
+
+POST users/_update/1
+{
+  "script" : "ctx._source.remove(\"arms\")"
+}
+
+### 批量操作
+
+GET /_mget
+{
+    "docs" : [
+        {
+            "_index" : "users",
+            "_id" : "1"
+        },
+        {
+            "_index" : "users",
+            "_id" : "2",
+            "_source" : ["user", "title"]
+        }
+    ]
+}
+
+GET /users/_mget
+{
+  "docs":[
+      {"_id": 1},
+      {"_id": 2,
+        "_source": {
+           "exclude": ["summary"]
+        }
+      }
+    ]
+}
+
+
+POST /_bulk
+POST /<index>/_bulk
+
+POST /_bulk
+{ "create" : { "_index" : "users", "_id" : "3" } }
+{"user" : "剑子仙迹","title":"道教顶峰", "summary":"何须剑道争锋？千人指，万人封，可问江湖鼎峰；三尺秋水尘不染，天下无双。"}
+{ "create" : { "_index" : "users", "_id" : "4" } }
+{"user" : "疏楼龙宿","title":"儒门龙首","summary":"华阳初上鸿门红，疏楼更迭，龙麟不减风采；紫金箫，白玉琴，宫灯夜明昙华正盛，共饮逍遥一世悠然。"}
+{ "create" : { "_index" : "users", "_id" : "5" } }
+{ "user" : "佛剑分说", "title":"圣行者",  "summary":"杀生为护生，斩业非斩人。"}
+
+
+
+
+POST /users/_delete_by_query
+{
+  "query": {
+    "match": {
+     "title" : "尘外孤标"
+    }
+  }
+}
+
+GET /users/_doc/2
+POST /users/_update_by_query
+{
+  "query": {
+    "match": {
+      "user": "意琦行"
+    }
+  },
+  "script": {
+    "source": "ctx._source['user']='瑰意琦行'",
+    "lang": "painless"
+  }
+}
+
+POST _reindex
+{
+  "source": {
+    "index": "users"
+  },
+  "dest": {
+    "index": "user"
+  }
+}
+
+
+
+
+
+
+
+
+
+
