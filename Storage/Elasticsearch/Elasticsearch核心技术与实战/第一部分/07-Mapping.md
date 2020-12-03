@@ -96,16 +96,16 @@ GET mapping_test/_mapping
 * 两种情况
   * 新增加字段
     * Dynamic 设置为 true 时，一旦有新增字段的文档写入，Mapping 也同时被更新
-    * Dynamic 设置为 false 时，Mapping 不会被更新，新增字段的数据无法被索引，但是信息会出现在`_sourcez`中
+    * Dynamic 设置为 false 时，Mapping 不会被更新，新增字段的数据无法被索引，但是信息会出现在`_source`字段中
     * Dynamic 设置为 Strict 时，文档写入会失败
-  * 对已有字段，一旦已经有数据写入，就不再支持修改字段定义
+  * 修改已有字段，一旦已经有数据写入，就不再支持修改字段定义
     * 因为 Lucene 实现的倒排索引，一旦生成后，就不允许修改
   * 如果希望改变字段类型，必须调用 Reindex API，重建索引
 * 原因
   * 如果修改了字段的数据类型，会导致已经被索引的数据无法被搜索
   * 但是如果是增加新的字段，就不会有这样的影响
 
-Dynamic Mapping 值不同的情况下，写入新增字段文档的情况变化
+
 
 ```shell
 # 修改 Dynamic Mapping 值
@@ -116,7 +116,9 @@ PUT movies/_mapping
 
 ```
 
-| \              | true | false | scrict |
+Dynamic Mapping 值不同的情况下，写入**新增字段**文档的情况变化
+
+| DynamicMapping | true | false | scrict |
 | -------------- | ---- | ----- | ------ |
 | 文档可索引     | YES  | YES   | NO     |
 | 字段可索引     | YES  | NO    | NO     |
@@ -201,12 +203,14 @@ PUT users
 
 ### 1. 自定义 Mapping
 
-* 可以参考 API，纯手写
-* 为了减少输入的工作量，减少出错概率，可以依照以下步骤
-  * 创建一个临时的 Index，写入一些样本数据
-  * 通过 访问 Mapping API 获得该临时文件的动态 Mapping 定义
-  * 修改自动创建的 Mapping（比如自动推断的类型可能不正确等），使用该配置创建你的索引
-  * 删除临时索引
+可以参考 API，纯手写
+
+为了减少输入的工作量，减少出错概率，可以依照以下步骤
+
+1. 创建一个临时的 Index，写入一些样本数据
+2. 通过 访问 Mapping API 获得该临时文件的动态 Mapping 定义
+3. 修改自动创建的 Mapping（比如自动推断的类型可能不正确等），使用该配置创建你的索引
+4. 删除临时索引
 
 
 
@@ -284,6 +288,7 @@ PUT users
 
 
 ```shell
+# 这里的 fullName 字段会同时包含 firstName 和 lastName
 PUT users
 {
   "mappings": {
@@ -319,7 +324,6 @@ PUT users/_doc/1
   "name":"twobirds",
   "interests":["reading","music"]
 }
-
 ```
 
 
