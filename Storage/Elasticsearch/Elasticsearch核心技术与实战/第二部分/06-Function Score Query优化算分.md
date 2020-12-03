@@ -1,7 +1,5 @@
 # Function Score Query 优化算分
 
-## 1. 算分与排序
-
 * elasticsearch 默认会以文档的相关度算分进行排序
 * 可以通过指定一个或者多个字段进行排序
 * 使用相关度算分（score）排序，不能满足某些特定条件
@@ -9,17 +7,23 @@
 
 
 
-## 2. Function Score Query
+## 1. Function Score Query
 
-* 可以在查询结束后，对每一个匹配的文档进行一系列的重新算分，根据新生成的分数进行排序。
-* 提供了机制默认的计算分值的函数
-  * Weight - 为每一个文档设置一个简单而不被规范化的权重
-  * Field Value Factor - 使用该数值来修改 _score，例如将 `热度` 和 `点赞数` 作为算分的参考因素
-  * Random Score - 为每一个用户使用一个不同的，随机算分结果
-  * 衰减函数 - 以某个字段的值为标准，距离某个值越接近，得分越高
-  * Script Score - 自定义脚本完全控制所需逻辑
+在查询结束后，对每一个匹配的文档进行一系列的**重新算分**，根据新生成的分数**重新排序**。
 
-## 3. 例子
+
+
+## 2. 算分函数
+
+* Weight - 为每一个文档设置一个简单而不被规范化的权重
+* Field Value Factor - 使用该数值来修改 _score，例如将 `热度` 和 `点赞数` 作为算分的参考因素
+  * Modifier 控制曲线平滑度
+  * Factor 
+* Random Score - 为每一个用户使用一个不同的，随机算分结果
+* 衰减函数 - 以某个字段的值为标准，距离某个值越接近，得分越高
+* Script Score - 自定义脚本完全控制所需逻辑
+
+**例子**
 
 将投票数作为算分的参考因素，能够将点赞多的 blog ，放在搜索列表相对靠前的位置。同时搜索的评分，还是要作为排序的主要依据。
 
@@ -49,9 +53,9 @@ POST /blogs/_search
 }
 ```
 
-### 使用Modifier 平滑曲线
+### 使用 Modifier 平滑曲线
 
-* 新的算分 = 旧算分 * log(投票数)
+` modifier=log1p `表示新的算分 = 旧算分 * log(1+投票数)
 
 ```shell
 POST /blogs/_search
@@ -75,7 +79,7 @@ POST /blogs/_search
 
 ### 引入 Factor
 
-* 新的算分 = 旧算分 * log(1+factor*投票数)
+新的算分 = 旧算分 * log(1+factor*投票数)
 
 ```shell
 POST /blogs/_search
@@ -100,7 +104,7 @@ POST /blogs/_search
 
 
 
-### Boost Mode 和 Max Boost
+## 3. Boost Mode 和 Max Boost
 
 * Boost Mode
   * Multiply - 算分与函数值的乘积
@@ -134,10 +138,11 @@ POST /blogs/_search
 
 
 
-### 一致性随机函数
+## 4. 一致性随机函数
 
-* 使用场景 - 网站的广告需要提高展现率
-* 具体需求 - 让每个用户能看到不同的随机排名，但是也希望同一个用户访问时，结果的相对顺序，保持一致（Consistently Random）
+提供一个随机函数生成随机算分，当提供的 seed 值一致时随机算分也一致。
+
+例如：让每个用户能看到不同的随机排名，但是也希望同一个用户访问时，结果的相对顺序，保持一致（Consistently Random）
 
 ```shell
 # seed 变化后结果就会变化 seed 保持一致则结果也一致
