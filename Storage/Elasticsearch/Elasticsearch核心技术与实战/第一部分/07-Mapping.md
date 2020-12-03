@@ -2,23 +2,18 @@
 
 ## 1. 定义
 
-Mapping 类似数据库中的 schema 的定义，作用如下
+* Mapping 类似数据库中的 schema 的定义，作用如下
+  * 定义索引中的字段名称
+  * 定义字段的数据类型，例如字符串，数字，布尔...
+  * 字段，倒排索引的相关配置，（Analyzed or Not Analyzed，Analyzer）
 
-* 定义索引中的字段名称
-* 定义字段的数据类型，例如字符串，数字，布尔...
-* 字段，倒排索引的相关配置，（Analyzed or Not Analyzed，Analyzer）
+* Mapping  会把 JSON 文档映射成 Lucene 所需要的的扁平格式
 
+* 一个 Mapping 属于一个索引的 Type
+  * ES7.0开始规定一个索引只能有一个 type（默认就是_doc），所以不需要指定 type 了
+  * 即一个索引一个 Mapping
 
-
-Mapping  会把 JSON 文档映射成 Lucene 所需要的的扁平格式
-
-一个 Mapping 属于一个索引的 Type
-
-* 每个文档都属于一个 Type
-* 一个 Type 有一个 Mapping 定义
-* 7.0 开始，不需要在 Mapping 定义中指定 type 信息
-
-## 2. 字段类型
+**字段类型**
 
 * 简单类型
   * Text / Keyword
@@ -31,10 +26,10 @@ Mapping  会把 JSON 文档映射成 Lucene 所需要的的扁平格式
 * 特殊类型
   * geo_point &geo_shape / percolator
 
-## 3. Dynamic Mapping
+## 2. Dynamic Mapping
 
-* 写入文档的时候，如果索引不存在，会自动创建索引
-* Dynamic Mapping 机制，使得我们无需手动定义 Mapping，Elasticsearch 会自动根据文档信息，推算出字段的类型
+* 写入文档的时候，如果索引不存在，会自动创建索引。
+* Dynamic Mapping 机制，使得我们无需手动定义 Mapping，Elasticsearch 会自动根据文档信息，推算出字段的类型。
 * 但是有时候会推算的不对，例如地理位置信息
 * 当类型设置不对时，会导致一些功能无法正常使用，例如 Range 查询
 
@@ -93,6 +88,7 @@ GET mapping_test/_mapping
 
 ### 2. 能否更改 Mapping 的字段类型
 
+<<<<<<< HEAD
 * 两种情况
   * 新增加字段
     * Dynamic 设置为 true 时，一旦有新增字段的文档写入，Mapping 也同时被更新
@@ -101,6 +97,17 @@ GET mapping_test/_mapping
   * 修改已有字段，一旦已经有数据写入，就不再支持修改字段定义
     * 因为 Lucene 实现的倒排索引，一旦生成后，就不允许修改
   * 如果希望改变字段类型，必须调用 Reindex API，重建索引
+=======
+
+* 新增加字段
+  * Dynamic 设置为 true 时，一旦有新增字段的文档写入，Mapping 也同时被更新
+  * Dynamic 设置为 false 时，Mapping 不会被更新，新增字段的数据无法被索引，但是信息会出现在`_sourcez`中
+  * Dynamic 设置为 Strict 时，文档写入会失败
+* 对已有字段，一旦已经有数据写入，就不再支持修改字段定义
+  * **因为 Lucene 实现的倒排索引，一旦生成后，就不允许修改**
+* 如果希望改变字段类型，必须调用 **Reindex API，重建索引**
+
+>>>>>>> 17e4fda6f68f52015eae9244a46239680c6ea95c
 * 原因
   * 如果修改了字段的数据类型，会导致已经被索引的数据无法被搜索
   * 但是如果是增加新的字段，就不会有这样的影响
@@ -116,9 +123,13 @@ PUT movies/_mapping
 
 ```
 
+<<<<<<< HEAD
 Dynamic Mapping 值不同的情况下，写入**新增字段**文档的情况变化
 
 | DynamicMapping | true | false | scrict |
+=======
+| dynamic        | true | false | scrict |
+>>>>>>> 17e4fda6f68f52015eae9244a46239680c6ea95c
 | -------------- | ---- | ----- | ------ |
 | 文档可索引     | YES  | YES   | NO     |
 | 字段可索引     | YES  | NO    | NO     |
@@ -188,7 +199,7 @@ DELETE dynamic_mapping_test
 
 
 
-## 4. 显式 Mapping 定义
+## 3. 显式 Mapping 定义
 
 ```shell
 PUT users
@@ -214,7 +225,9 @@ PUT users
 
 
 
-### 2. 控制当前字段是否被索引
+### 2. Index 
+
+**控制当前字段是否被索引**
 
 * Index - 控制当前字段是否被索引。 默认为 true
 
@@ -238,24 +251,24 @@ PUT users
 }
 ```
 
-
-
-### 3. Index Options
+**Index Options**
 
 * 四种不同级别的 Index Options 配置，可以控制倒排索引记录的内容
   * docs - 记录 doc id
   * freqs - 记录 doc id 和 term frequencies
   * positions - 记录 doc id 、term frequencies、term positions
   * offsets -  doc id 、term frequencies、term positions、character offsets
-* Text 类型默认记录 positions，其他默认为 docs
-* 记录内容越多，占用存储空间越大
+* text 类型默认记录 positions，其他默认为 docs，记录内容越多，占用存储空间越大
 
 
 
-### 4. Null Value
+### 3. 特殊值
 
-* 需要对 NULL 值实现搜索
-* 只有 Keyword 类型支持设定Null_Value
+**Null Value**
+
+ES默认会忽略掉空值，如果需要对空值进行搜索（比如搜索手机号为空值的用户）则可以设置 Null Value，只有 Keyword 类型支持设定 Null_Value。
+
+> 只是搜素时特殊处理，_source 字段中还是 null。
 
 ```shell
 PUT users
@@ -270,20 +283,19 @@ PUT users
         },
         "mobile" : {
           "type" : "keyword",
-          "null_value": "NULL" #设定 Null_Value
+          "null_value": "NULL" # 可以是任意字符串
         }
-
       }
     }
 }
+#搜索的时候只需要搜索 phone="empty" 就能找到手机号为空的用户了
 ```
 
-### 5. copy to
+**copy_to**
 
-* _all 字段 在 elasticsearch 7 中 被 copy_to 替代
-* 用于满足一些特定的搜索需求
-* copy_to 将字段的数值拷贝到目标字段，实现类似 _all 的作用
-* copy_to 的目标字段不出现在 _source 中
+copy_to 将字段的数值拷贝到目标字段，同时**copy_to 的目标字段不会存在 _source 中**，只有搜索时可以使用。
+
+用于满足一些特定的搜索需求，比如名和姓分开存的时候，需要搜索完整的姓名就可以通过 copy_to 将其拷贝到一起，用于搜索
 
 
 
@@ -308,21 +320,23 @@ PUT users
 
 
 
-### 6. 数组类型
+**数组类型**
 
-* Elasticsearch 中不提供专门的数值类型。但是任何字段，都可以包含多个相同类型的数值	
+Elasticsearch 中不提供专门的数组类型。但是任何字段，都可以包含多个相同类型的数值。
+
+>  Mapping 中还是用的 text 类型，没有数组类型。	
 
 ```shell
-PUT users/_doc/1
+PUT /users/_doc/7?op_type=create
 {
-  "name":"onebird",
-  "interests":"reading"
+  "user": "意琦行",
+  "title": "绝代天骄"
 }
 
-PUT users/_doc/1
+PUT /users/_doc/8?op_type=create
 {
-  "name":"twobirds",
-  "interests":["reading","music"]
+  "user": "意琦行",
+  "title": ["绝代天骄","剑宿"]
 }
 ```
 

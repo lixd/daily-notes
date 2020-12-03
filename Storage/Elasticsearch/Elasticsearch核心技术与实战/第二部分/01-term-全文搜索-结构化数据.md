@@ -4,24 +4,22 @@
 
 ### 1. 概念
 
-* Term 的重要性
-  * **Term 是表达语意的最小单位**
-  * 搜索和利用统计语言模型进行自然语言处理都需要处理 Term
-* 特点
-  * Term Level Query
-    * Term Query
-    * Range Query
-    * Exists Query
-    * Prefix Query
-    * Wildcard Query
-  * 在 ES 中，Term 查询，对输入**不做分词**。会将输入作为一个整体，在倒排索引中查找准确的词项，并且使用相关度算分公式为每个包含该词项的文档进行**相关度算分**
-  * 可以通过 Constant Score 将查询**转换成一个 Filtering，避免算分，并利用缓存**，提高性能
+**Term 是表达语意的最小单位**
 
-### 2. keyword
+* 在 ES 中，Term 查询，对输入 **不做 analyze**，会将输入作为一个整体，在倒排索引中**精确查找**。
+  * 但文档写入时会进行 analyze，这也就是为什么有时候明明有却无法搜索到内容
+  * 这时候就需要使用 keyword，**keyword** 在写入时不会进行 analyze，**原样写入**
+* 可以通过 Constant Score 将查询**转换成一个 Filtering，避免算分，并利用缓存**，提高性能。
 
-keyword 写入的时候也是不会做分词的。
+**Term Level Query 分类**
 
-例子
+* Term Query
+* Range Query
+* Exists Query
+* Prefix Query
+* Wildcard Query
+
+**例子**
 
 ```shell
 # 存入 3 条数据
@@ -93,10 +91,9 @@ POST /products/_search
     }
   }
 }
-
 ```
 
-### 3. Constant Score
+### 2. Constant Score
 
 * 将 Query 转换为 Filter，忽略 TF-IDF 计算，避免相关性算分的开销
 * Filter 可以有效利用缓存
@@ -121,43 +118,38 @@ POST /products/_search
 
 ## 2. 全文查询
 
-* 基于全文本的查找
-  * Match Query
-  * Match Phrase Query
-  * Query String Query
-* 特点
-  * 索引和搜索时都会进行分词，查询字符串先传递到一个合适的分词器，然后生成一个供查询的词项列表
-  * 查询的时候，先**会对输入的查询进行分词**，然后每个词项逐个进行底层的查询，最终将结果进行合并。并为每个文档生成一个算分，
+查询的时候，先**会对输入的查询进行分词**，然后每个词项逐个进行底层的查询，最终将结果进行合并。并为每个文档生成一个算分。
+
+全文本查询分类
+
+* Match Query
+* Match Phrase Query
+* Query String Query
 
 
 
 ## 3. 结构化搜索
 
-**结构化数据**，在Elasticsearch中叫Structured Data，用于表示**一个不可分割的值**。相对于全文本的分词处理，结构化数据本身可看成一个整体。
+**结构化数据**，在Elasticsearch 中叫 Structured Data，用于表示**一个不可分割的值**。相对于全文本的分词处理，结构化数据本身可看成一个整体。
 
-结构化数据包括：
+结构化数据可以做精准匹配（Term）或者部分匹配（Prefix）。
+
+**结构化搜索的结果只有`是`和`否`两个结果。**
+
+结构化数据例子：
 
 * 1）日期
 * 2）布尔类型
 * 3）数字
-* 4）分词无意义的文本，包括可枚举的文本
+* 4）分词无意义的文本（包括可枚举的文本）
   * 1）颜色的种类，如：红、黄、蓝、绿、黑
   * 2）博客的标签，如：Java、Elasticsearch、C语言
   * 3）性别，如：男性、女性、保密、未知
   * 4）订单的id
 
-因此，结构化数据的搜索叫做结构化搜索：可以做精准匹配或者部分匹配。
-
-* 1）精准匹配使用Term查询
-* 2）部分匹配使用Prefix前缀查询。
-
-**结构化搜索的结果只有`是`和`否`两个结果。**
-
-实际场景中，我们根据需要，可以选择是否对搜索的结果进行相关性算分。
 
 
-
-### 练习
+**Examples**
 
 准备数据
 
@@ -190,7 +182,6 @@ POST products/_search
   }
 }
 
-
 #对布尔值，通过constant score 转成 filtering，没有算分
 POST products/_search
 {
@@ -206,7 +197,6 @@ POST products/_search
     }
   }
 }
-
 
 #数字类型 Term
 POST products/_search
@@ -254,7 +244,6 @@ GET products/_search
     }
 }
 
-
 # 日期 range
 POST products/_search
 {
@@ -270,8 +259,6 @@ POST products/_search
         }
     }
 }
-
-
 
 #exists查询
 POST products/_search
@@ -294,7 +281,6 @@ POST /movies/_bulk
 { "index": { "_id": 2 }}
 { "title" : "Dave","year":1993,"genre":["Comedy","Romance"] }
 
-
 #处理多值字段，term 查询是包含，而不是等于
 POST movies/_search
 {
@@ -308,7 +294,6 @@ POST movies/_search
     }
   }
 }
-
 
 #字符类型 terms
 POST products/_search
@@ -327,8 +312,6 @@ POST products/_search
   }
 }
 
-
-
 POST products/_search
 {
   "profile": "true",
@@ -339,7 +322,6 @@ POST products/_search
     }
   }
 }
-
 
 POST products/_search
 {
@@ -362,9 +344,6 @@ POST products/_search
     }
   }
 }
-
-
-
 
 POST products/_search
 {
@@ -442,7 +421,6 @@ POST products/_search
   }
 }
 
-
 POST products/_search
 {
   "query": {
@@ -459,6 +437,5 @@ POST products/_search
     }
   }
 }
-
 ```
 

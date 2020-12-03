@@ -54,18 +54,6 @@ GET index/type/1/_explain?q=message:search
 
 
 
-### 2. Request Body
-
-```shell
-POST users/_search
-{
-	"profile": true,
-	"query": {
-		"match_all": {}
-	}
-}
-```
-
 ## 2. 返回结果与相关性
 
 ### 返回结果
@@ -147,43 +135,68 @@ Information Retrieval
 
 将查询语句通过 HTTP Request Body  发送给 Elasticsearch
 
+### 基本语法
+
 **简单例子**
 
-```shell
-POST /movies,404_idx/_search
+```http
+POST /users/_search
 {
   "profile": true,
 	"query": {
 		"match_all": {}
 	}
 }
-
 ```
 
 **分页**
 
-```shell
-POST /kibana_sample_data_ecommerce/_search
+```http
+POST /users/_search
 {
-  "from":10,
-  "size":20,
-  "query":{
-    "match_all": {}
-  }
+  "profile": true,
+  "from": 0,
+  "size": 2, 
+	"query": {
+		"match_all": {}
+	}
 }
 ```
 
+排序 sort
+
+```http
+POST /users/_search
+{
+  "profile": true,
+  "sort": [
+    {
+      "level": {
+        "order": "desc"
+      }
+    }
+  ], 
+	"query": {
+		"match_all": {}
+	}
+}
+```
+
+
+
 **指定返回字段** 可以使用通配符
 
-```shell
-POST kibana_sample_data_ecommerce/_search
-{
-  "_source":["order_date","name*"],
-  "query":{
-    "match_all": {}
-  }
-}
+> 比如某些字段太大了不想返回就可以过滤掉
 
+```http
+POST /users/_search
+{
+  "profile": true,
+  "_source": ["user","title"], 
+	"query": {
+		"match_all": {}
+	}
+}
 ```
 
 
@@ -192,44 +205,53 @@ POST kibana_sample_data_ecommerce/_search
 
 对返回结果进行处理后形成一个新的字段
 
-比如以下就是对 `order_date`字段后拼接上`hello`字符形成新字段`new_field`
+比如以下就是对 `level`字段后加一后生成新字段`newlevel`
 
 ```shell
-GET kibana_sample_data_ecommerce/_search
+POST /users/_search
 {
-  "script_fields": {
-    "new_field": {
-      "script": {
-        "lang": "painless",
-        "source": "doc['order_date'].value+'hello'"
-      }
-    }
-  },
-  "query": {
-    "match_all": {}
-  }
+  "profile": true,
+	"query": {
+		"match": {
+		  "user": "意琦行"
+		}
+	},
+	"script_fields": {
+	  "newlevel": {
+	    "script": {
+	      "lang": "painless",
+	       "source": "doc['level'].value+1"
+	    }
+	  }
+	}
 }
 ```
 
-### Match 匹配查询
+### 查询表达式
+
+**Match 匹配查询**
 
 ```shell
-# 这样会查询 last OR christmas
-POST movies/_search
+
+# 这样会查询 意 OR 琦
+POST /users/_search
 {
+  "profile": "true", 
   "query": {
     "match": {
-      "title": "last christmas"
+      "user": "意琦"
     }
   }
 }
-# 指定操作符即可 
-POST movies/_search
+# 指定操作符即可  意 AND 琦
+# 这样会查询 
+POST /users/_search
 {
+  "profile": "true", 
   "query": {
     "match": {
-      "title": {
-        "query": "last christmas",
+      "user": {
+        "query": "意琦",
         "operator": "and"
       }
     }
@@ -237,27 +259,25 @@ POST movies/_search
 }
 ```
 
-### Match Phrase 短语查询 
+**Match Phrase 短语查询 **
 
 ```shell
 # 单词之间必须按顺序排列 不能间隔其他单词
-POST movies/_search
+POST /users/_search
 {
   "query": {
     "match_phrase": {
-      "title":{
-        "query": "one love"
-      }
+      "user":"意行"
     }
   }
 }
 # slop:1 表示中间可以间隔一个单词
-POST movies/_search
+POST /users/_search
 {
   "query": {
     "match_phrase": {
-      "title":{
-        "query": "one love",
+      "user":{
+        "query": "意行",
         "slop": 1
       }
     }
@@ -265,11 +285,9 @@ POST movies/_search
 }
 ```
 
+**Others**
 
-
-## 5. Query String Query & Simple Query String Query
-
-### 1. Query String Query
+**Query String**
 
 > 类似 URI Query
 
@@ -278,32 +296,27 @@ POST users/_search
 {
   "query": {
     "query_string": {
-      "default_field": "name",
-      "query": "Ruan AND Yiming"
+      "default_field": "user",
+      "query": "意 AND 行"
     }
   }
 }
-
 ```
 
-### 2. Simple Query String Query
+**Simple Query String**
 
 > 类似  Query String ，但是会忽略错误的语法，同时只支持部分查询语法
 
-* 不支持 AND OR NOT，会把这几个当做字符串处理
+* 不支持 AND OR NOT，使用 `+`加号，`-`减号，`|`竖线代替
 * Term 之间默认关系是 OR,可以指定 Operator
-* 支持部分逻辑
-  * `+`加号代替AND
-  * `|`代替 OR
-  * `-`减号代替 NOT
 
 ```shell
 POST users/_search
 {
   "query": {
     "simple_query_string": {
-      "query": "Ruan Yiming",
-      "fields": ["name"],
+      "query": "意琦行",
+      "fields": ["user"],
       "default_operator": "AND"
     }
   }
