@@ -3,7 +3,7 @@
 ## Ingest Node
 
 * ES 5.0 后，引入了一种新的节点类型。默认配置下，每个节点都是Ingest Node
-  * 具有预处理数据的能力，可拦截 Index 或 Bulk API 的请求
+  * 具有**预处理数据**的能力，可拦截 Index 或 Bulk API 的请求
   * 对数据进行转换，并重新返回给 Index 或 Bulk API
 * 无需 Logstash，就可以进行数据的预处理，例如
   * 为某个字段设置默认值；重命名某个字段的字段名；对字段值进行 Split 操作
@@ -137,7 +137,7 @@ PUT tech_blogs/_doc/2?pipeline=blog_pipeline
 
 #### 内置 processor
 
-* Split Processor（将给定字段值分成一个数组)
+* Split Processor（将给定字段值拆分后组成一个数组)
 * Remove / Rename Processor (移除 / 重命名字段)
 * Append（增加新的值）
 * Convert（类型转换）
@@ -163,12 +163,11 @@ PUT tech_blogs/_doc/2?pipeline=blog_pipeline
 
 ### Painless
 
-* 自 ES 5.X 后引入，专门为 ES 设计，扩展了 Java 的语法
-* 6.0开始，ES 只支持 Painless。Grovy，JavaScript和Python 都不再支持
-* Painless 支持所有 Java 的数据类型及 Java API 子集。
-* Painless Script 具备以下特性
-  * 高性能 / 安全
-  * 支持显式类型或者动态定义类型
+Painless 支持所有 Java 的数据类型及 Java API 子集。
+
+Painless Script 具备以下特性
+* 高性能 / 安全
+* 支持显式类型或者动态定义类型
 
 
 
@@ -278,7 +277,5 @@ POST tech_blogs/_update/1
     }
   }
 }
-
-
 ```
 

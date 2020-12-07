@@ -74,7 +74,7 @@ POST employees/_search
   * stats，extended stats
     * stats同时输出多个单值分析，包好 count，min，max，avg，sum等
   * percentile，percentile rank
-  * top hits（排在前面的示例 ）
+  * top hits（查询topN ）
 
 
 

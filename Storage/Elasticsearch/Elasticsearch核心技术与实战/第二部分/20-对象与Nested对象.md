@@ -68,7 +68,7 @@ POST my_movies/_search
   "size": 0,
   "aggs": {
     "actors": {
-      "nested": {
+      "nested": { # Nested Aggregation
         "path": "actors"
       },
       "aggs": {
@@ -87,8 +87,6 @@ POST my_movies/_search
 
 
 ## 文档的父子关系
-
-
 
 ### Parent / Child
 
@@ -112,12 +110,9 @@ PUT my_blogs
   "mappings": {
     "properties": {
       "blog_comments_relation": {
-      	# join 类型表明是父子关系
-        "type": "join",
-        # blog 为父文档名
-        # comment 为子文档名
-        "relations": {
-          "blog": "comment"
+        "type": "join", # 指定join 类型
+        "relations": { # 声明父子关系
+          "blog": "comment"   # blog 为父文档名  comment 为子文档名
         }
       },
       "content": {
@@ -134,14 +129,13 @@ PUT my_blogs
 ### 索引父文档
 
 ```shell
-#索引父文档
-PUT my_blogs/_doc/blog1
+#blog1 为父文档ID
+PUT my_blogs/_doc/blog1 
 {
   "title":"Learning Elasticsearch",
   "content":"learning ELK @ geektime",
-  # 这里的 blog 就是 Mapping 中定义的父文档 叫 blog
   "blog_comments_relation":{
-    "name":"blog"
+    "name":"blog"   # 这里的 blog 就是 Mapping 中定义的父文档 叫 blog
   }
 }
 ```
@@ -149,16 +143,14 @@ PUT my_blogs/_doc/blog1
 ### 索引子文档
 
 ```shell
-#索引子文档 指定routing=blog1 确保父子文档索引到同一个分片上
+#指定 routing=blog1 确保父子文档索引到同一个分片上
 PUT my_blogs/_doc/comment1?routing=blog1
 {
   "comment":"I am learning ELK",
   "username":"Jack",
-  # comment 也是 Mapping 中定义的 子文档 
-  # parent 指定具体哪个文档是该文档的父文档
   "blog_comments_relation":{
-    "name":"comment",
-    "parent":"blog1"
+    "name":"comment",   # comment 也是 Mapping 中定义的 子文档 
+    "parent":"blog1" # 这里 blog1 为父文档ID
   }
 }
 ```
@@ -169,6 +161,74 @@ PUT my_blogs/_doc/comment1?routing=blog1
   * 确保查询 join 的性能
 * 当指定子文档的时候，必须指定它的父文档 id
   * 使用 route参数来保证，分片到相同分片
+
+
+
+### 查询
+
+* parent_id 根据父文档ID查询子文档
+
+* has_child 查询子文档信息查询父文档
+
+* has_parent 根据父文档信息查询子文档
+
+```shell
+# 查询所有文档
+POST my_blogs/_search
+{
+
+}
+
+
+#根据父文档ID查看
+GET my_blogs/_doc/blog2
+
+# Parent Id 查询
+POST my_blogs/_search
+{
+  "query": {
+    "parent_id": {
+      "type": "comment",
+      "id": "blog2"
+    }
+  }
+}
+
+# Has Child 查询,返回父文档
+POST my_blogs/_search
+{
+  "query": {
+    "has_child": {
+      "type": "comment",
+      "query" : {
+                "match": {
+                    "username" : "Jack"
+                }
+            }
+    }
+  }
+}
+
+
+# Has Parent 查询，返回相关的子文档
+POST my_blogs/_search
+{
+  "query": {
+    "has_parent": {
+      "parent_type": "blog",
+      "query" : {
+                "match": {
+                    "title" : "Learning Hadoop"
+                }
+            }
+    }
+  }
+}
+```
+
+
+
+
 
 ### 嵌套对象 v.s 父子文档
 
