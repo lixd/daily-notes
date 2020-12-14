@@ -236,3 +236,37 @@ EXPOSE 8080
 ENTRYPOINT  ["./hello"]
 ```
 
+
+
+## 6. FAQ
+
+### 问题一
+
+```
+panic: qtls.ConnectionState not compatible with tls.ConnectionState
+
+goroutine 1 [running]:
+github.com/lucas-clemente/quic-go/internal/handshake.init.1()
+	/go/pkg/mod/github.com/lucas-clemente/quic-go@v0.13.1/internal/handshake/unsafe.go:17 +0x12e
+[root@iZ2ze9ebgot9h2acvk4uabZ vaptcha-go]# go version
+```
+
+go1.15 可能会出现该问题。
+
+> 具体查看[Issue7597](https://github.com/ipfs/go-ipfs/issues/7597)
+
+解决
+
+切换 go版本，这里切换成 go1.14 后就没有该问题了。
+
+
+
+### 问题二
+
+镜像中打包的是一个微服务，运行起来后发现注册到注册中心的地址是内网IP，172.x ，这样其他服务肯定是不能访问的。
+
+
+
+解决
+
+启动的时候指定网络模式为 host，默认的是 bridge，直接使用宿主机网络，这样注册的就是宿主机IP。
