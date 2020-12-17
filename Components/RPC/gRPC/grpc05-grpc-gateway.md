@@ -14,7 +14,7 @@ gRPC-Gateway 是Google protocol buffers compiler(protoc)的一个**插件**。�
 
 当 HTTP 请求到达 gRPC-Gateway 时，它将 JSON 数据解析为 Protobuf 消息。然后，它使用解析的 Protobuf 消息发出正常的 Go gRPC 客户端请求。Go gRPC 客户端将 Protobuf 结构编码为 Protobuf 二进制格式，然后将其发送到 gRPC 服务器。gRPC 服务器处理请求并以 Protobuf 二进制格式返回响应。Go gRPC 客户端将其解析为 Protobuf 消息，并将其返回到 gRPC-Gateway，后者将 Protobuf 消息编码为 JSON 并将其返回给原始客户端。
 
-> 简单来说就是生成了一个 HTTP 服务用于请求 gRPC。
+> 简单来说就是生成了一个 HTTP 服务，在具体处理逻辑中去请求 gRPC 服务。
 
 ## 2. 环境准备
 
@@ -340,6 +340,8 @@ protoc --proto_path=./proto \
 
 本次会多生成一个`gw.pb.go` 文件，用于启动 HTTP 服务。
 
+其中`--proto_path=./proto`用于指定 import 文件路径（默认为pwd），即前面引入的`google/api/annotations.proto`文件的位置。
+
 
 
 **3）调整 server.go**
@@ -549,6 +551,10 @@ func request_Greeter_SayHello_0(ctx context.Context, marshaler runtime.Marshaler
 
 
 到这里可以发现 gRPC-Gateway 的具体流程和之前的描述是一致的。
+
+
+
+本文所有代码都在[Github](https://github.com/lixd/i-go/tree/master/grpc/gateway)。
 
 
 
