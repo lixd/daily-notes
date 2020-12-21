@@ -21,6 +21,8 @@ rpc AllStream (stream StreamReqData) returns (stream StreamResData){}
 
 项目中使用go调用Python的图像处理服务，同步调用时一次需要300ms左右，换做流式调用后平均下来一次只需要260~270ms
 
+> 本文所有代码都在这个[Git仓库](https://github.com/lixd/i-go/tree/master/grpc)
+
 ## 2.服务端推送流
 
 ### 2.1 server_stream.proto
@@ -628,11 +630,11 @@ Recv Data:9
 
 ## 5. 总结
 
-每个函数 形参都有对应的 推送 或者 接收 对象，我们只要 不断循环 Recv(),或者 Send() 就能接收或者推送了！
+客户端或者服务端都有对应的 推送 或者 接收 对象，我们只要 不断循环 Recv(),或者 Send() 就能接收或者推送了！
 
 > grpc 的 stream 和 go的协程 配合 简直完美。通过流 我们 可以更加 灵活的 实现自己的业务。如 订阅，大数据传输等。
 
-**Client发送完成后需要手动调用Close()方法关闭stream，Server端则`return nil`就会自动Close()**
+**Client发送完成后需要手动调用Close()或者CloseSend()方法关闭stream，Server端则`return nil`就会自动 Close**
 
 
 
@@ -654,11 +656,11 @@ Recv Data:9
 
 
 
+本文所有代码都在这个[Git仓库](https://github.com/lixd/i-go/tree/master/grpc)
+
 
 
 ## 6. 参考
 
-`https://blog.csdn.net/weixin_34219944/article/details/87456847`
-
-`https://blog.csdn.net/m0_37595562/article/details/80784101`
+`https://grpc.io/docs/languages/go/basics/#server-side-streaming-rpc`
 

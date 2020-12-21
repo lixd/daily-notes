@@ -10,6 +10,8 @@ gRPC 默认使用 **protocol buffers**，这是 Google 开源的一套成熟的�
 
 
 
+> 本文所有代码都在这个[Git仓库](https://github.com/lixd/i-go/tree/master/grpc)
+
 ## 2. 环境准备
 
 **1）protoc**
