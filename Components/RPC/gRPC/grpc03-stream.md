@@ -25,8 +25,6 @@ rpc AllStream (stream StreamReqData) returns (stream StreamResData){}
 
 > gRPC 系列所有代码都在这个 [Git仓库](https://github.com/lixd/i-go/tree/master/grpc)
 
-> 本文所有代码都在这个[Git仓库](https://github.com/lixd/i-go/tree/master/grpc)
-
 ## 2.服务端推送流
 
 ### 2.1 server_stream.proto
@@ -657,10 +655,6 @@ Recv Data:9
 * 客户端服务端都通过stream向对方推送数据
 * 客户端推送完成后通过`CloseSend()`关闭流，通过`err == io.EOF`判断服务端是否响应完成
 * 服务端通过`err == io.EOF`判断客户端是否响应完成,通过`return nil`表示已经完成响应
-
-
-
-本文所有代码都在这个[Git仓库](https://github.com/lixd/i-go/tree/master/grpc)
 
 
 
