@@ -15,11 +15,15 @@ rpc PutStream (stream StreamReqData) returns (StreamResData){}
 rpc AllStream (stream StreamReqData) returns (stream StreamResData){}
 ```
 
-其实双向流 已经 基本退化成 tcp了，grpc 底层为我们 分包了，所以真的很方便。
+其实双向流 已经 基本退化成 TCP 了，gRPC底层为我们 分包了，所以真的很方便。
 
 经常测试流式调用比同步调用会有一定的效率提升。
 
-项目中使用go调用Python的图像处理服务，同步调用时一次需要300ms左右，换做流式调用后平均下来一次只需要260~270ms
+项目中使用 Go 调用 Python 的图像处理服务，同步调用时一次需要 300ms 左右，换做流式调用后平均下来一次只需要 260~270ms。
+
+> 省掉了中间每次建立连接的花费，所以效率上会提升一些。
+
+> gRPC 系列所有代码都在这个 [Git仓库](https://github.com/lixd/i-go/tree/master/grpc)
 
 > 本文所有代码都在这个[Git仓库](https://github.com/lixd/i-go/tree/master/grpc)
 
