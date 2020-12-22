@@ -6,7 +6,9 @@ gRPC-Gateway 是Google protocol buffers compiler(protoc)的一个**插件**。�
 
 > 换句话说就是将 gRPC 转为 RESTful HTTP API。
 
-希望用`RPC`作为内部`API`的通讯，同时也想对外提供`RESTful HTTP API`，写两套又太繁琐,使用 gRPC-Gateway 刚好就可以解决这个问题。
+源自 coreos 的一篇博客，转载到了 gRPC 官方博客 [gRPC with REST and Open APIs](http://www.grpc.io/blog/coreos)。
+
+etcd v3 改用 gRPC 后为了兼容原来的 API，同时要提供 HTTP/JSON 方式的API，为了满足这个需求，要么开发两套 API，要么实现一种转换机制，他们选择了后者，而我们选择跟随他们的脚步。
 
 架构如下
 
