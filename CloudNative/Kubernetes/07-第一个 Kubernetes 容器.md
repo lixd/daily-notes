@@ -82,7 +82,7 @@ kubernetes-node2    Ready    <none>   12m   v1.19.4
 
 `nginx-deployment.yaml`
 
-```shell
+```yaml
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -102,7 +102,7 @@ spec:
     spec:
       containers:
       - name: nginx
-        image: nginx:1.14.2
+        image: nginx:1.18.0
         ports:
         - containerPort: 80
 ```
@@ -151,7 +151,7 @@ nginx-deployment   2/2     2            2           27s
 
 ```shell
 $ kubectl expose deployment nginx-deployment --port=80 --type=LoadBalancer
-
+$ kubectl expose deployment hello-world --type=LoadBalancer --name=my-service
 # 输出如下
 root@docker:/usr/local/k8s/conf#  kubectl expose deployment nginx-deployment --port=80 --type=LoadBalancer
 service/nginx-deployment exposed
