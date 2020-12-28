@@ -157,6 +157,30 @@ root@docker:/usr/local/k8s/conf#  kubectl expose deployment nginx-deployment --p
 service/nginx-deployment exposed
 ```
 
+也可以通过 配置文件方式创建
+
+```yaml
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kube-node-service
+  labels:
+    name: kube-node-service
+spec:
+  type: LoadBalancer      
+  ports:
+  - port: 80         
+    targetPort: 80  
+    protocol: TCP
+  selector:
+    app: nginx         
+```
+
+
+
+
+
 ### 5. 查看已发布的服务
 
 ```shell
