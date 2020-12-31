@@ -1,18 +1,45 @@
-# ConfigMap、Secret
+# Projected Volume
 
 
 
 ## 1. 概述
 
+在 Kubernetes 中，有几种特殊的 Volume，它们存在的意义不是为了存放容器里的数据，也不是用来进行容器和宿主机之间的数据交换。这些特殊 Volume 的作用，是为容器提供预先定义好的数据。所以，从容器的角度来看，这些 Volume 里的信息就是仿佛是被 Kubernetes“投射”（Project）进入容器当中的。这正是 Projected Volume 的含义。
+
+到目前为止，Kubernetes 支持的 Projected Volume 一共有四种：
+
+1. ConfigMap；
+2. Secret；
+3. Downward API；
+4. ServiceAccountToken。
+
 ConfigMap顾名思义，是用于保存配置数据的键值对，可以用来保存单个属性，也可以保存配置文件。
 
 Secret可以为Pod提供密码、Token、私钥等敏感数据；对于一些非敏感数据，比如应用的配置信息，则可以使用ConfigMap。
+
+> 就是把数据存放到 Etcd 中。然后，你就可以通过在 Pod 的容器里挂载 Volume 的方式，访问到这些 Secret、ConfigMap 里保存的信息了。
+
+Downward API，它的作用是：让 Pod 里的容器能够直接获取到这个 Pod API 对象本身的信息。
+
+> 不过，需要注意的是，Downward API 能够获取到的信息，**一定是 Pod 里的容器进程启动之前就能够确定下来的信息**。
+
+其实，Secret、ConfigMap，以及 Downward API 这三种 Projected Volume 定义的信息，大多还可以通过环境变量的方式出现在容器里。但是，通过环境变量获取这些信息的方式，不具备自动更新的能力。**所以，一般情况下，都建议使用 Volume 文件的方式获取这些信息**，Volume 方式可以自动更新，不过可能会有一定延迟。
+
+ServiceAccountToken 一种特殊的 Secret，是 Kubernetes 系统内置的一种“服务账户”，它是 Kubernetes 进行权限分配的对象。
+
+> 另外，为了方便使用，Kubernetes 已经为你提供了一个默认“服务账户”（default Service Account）。并且，任何一个运行在 Kubernetes 里的 Pod，都可以直接使用这个默认的 Service Account，而无需显示地声明挂载它（k8s 默认会为每一个Pod 都挂载该Volume）。
+
+
+
+
 
 > 官方文档：[Secret](https://kubernetes.io/docs/concepts/configuration/secret/)，[ConfigMap](https://kubernetes.io/docs/concepts/configuration/configmap/)
 
 
 
 ## 2. ConfigMap
+
+
 
 ### 1. 创建
 
@@ -440,3 +467,50 @@ $ cat hello
 world
 ```
 
+
+
+## 4. Downward API
+
+它的作用是：让 Pod 里的容器能够直接获取到这个 Pod API 对象本身的信息。
+
+不过，需要注意的是，Downward API 能够获取到的信息，**一定是 Pod 里的容器进程启动之前就能够确定下来的信息**。
+
+举个例子
+
+```yaml
+
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test-downwardapi-volume
+  labels:
+    zone: us-est-coast
+    cluster: test-cluster1
+    rack: rack-22
+spec:
+  containers:
+    - name: client-container
+      image: k8s.gcr.io/busybox
+      command: ["sh", "-c"]
+      args:
+      - while true; do
+          if [[ -e /etc/podinfo/labels ]]; then
+            echo -en '\n\n'; cat /etc/podinfo/labels; fi;
+          sleep 5;
+        done;
+      volumeMounts:
+        - name: podinfo
+          mountPath: /etc/podinfo
+          readOnly: false
+  volumes:
+    - name: podinfo
+      projected:
+        sources:
+        - downwardAPI:
+            items:
+              - path: "labels"
+                fieldRef:
+                  fieldPath: metadata.labels
+```
+
+在这个 Pod 的 YAML 文件中，我定义了一个简单的容器，声明了一个 projected 类型的 Volume。只不过这次 Volume 的数据来源，变成了 Downward API。而这个 Downward API Volume，则声明了要暴露 Pod 的 **metadata.labels** 信息给容器。
