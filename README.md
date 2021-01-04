@@ -20,7 +20,7 @@ let's go :)
     * [笔记](https://github.com/lixd/daily-notes/tree/master/Storage/MongoDB)
     * [博客](https://www.lixueduan.com/categories/MongoDB/)
   * MySQL
-    * [笔记]()
+    * [笔记](https://github.com/lixd/daily-notes/tree/master/Storage/MySQL)
     * [博客](https://www.lixueduan.com/categories/MySQL/)
   * [Redis]
     * [笔记](https://github.com/lixd/daily-notes/tree/master/Storage/Redis)
@@ -37,7 +37,7 @@ let's go :)
     * [笔记](https://github.com/lixd/daily-notes/tree/master/Components/RabbitMQ)
   * gRPC
     * [笔记](https://github.com/lixd/daily-notes/tree/master/Components/RPC/gRPC)
-    * [博客]((https://www.lixueduan.com/categories/gRPC/))
+    * [博客](https://www.lixueduan.com/categories/gRPC/)
 * Git
   * [笔记](https://github.com/lixd/daily-notes/tree/master/Git)
   * [博客](https://www.lixueduan.com/categories/Git/)
