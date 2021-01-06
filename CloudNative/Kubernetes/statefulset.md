@@ -164,3 +164,97 @@ $ kubectl exec web-1 -- sh -c 'hostname'
 web-1
 ```
 
+
+
+接下来，我们再试着以 DNS 的方式，访问一下这个 Headless Service：
+
+```sh
+$ kubectl run -i --tty --image busybox:1.28.4 dns-test --restart=Never --rm /bin/sh 
+```
+
+通过这条命令，我们启动了一个一次性的 Pod，因为–rm 意味着 Pod 退出后就会被删除掉。然后，在这个 Pod 的容器里面，我们尝试用 nslookup 命令，解析一下 Pod 对应的 Headless Service：
+
+```sh
+$ kubectl run -i --tty --image busybox:1.28.4 dns-test --restart=Never --rm /bin/sh 
+/ # nslookup web-0.nginx
+Server:    172.21.0.10
+Address 1: 172.21.0.10 kube-dns.kube-system.svc.cluster.local
+
+Name:      web-0.nginx
+Address 1: 172.20.0.174 web-0.nginx.default.svc.cluster.local
+/ # nslookup web-1.nginx
+Server:    172.21.0.10
+Address 1: 172.21.0.10 kube-dns.kube-system.svc.cluster.local
+
+Name:      web-1.nginx
+Address 1: 172.20.0.15 web-1.nginx.default.svc.cluster.local
+```
+
+从 nslookup 命令的输出结果中，我们可以看到，在访问 web-0.nginx 的时候，最后解析到的，正是 web-0 这个 Pod 的 IP 地址；而当访问 web-1.nginx 的时候，解析到的则是 web-1 的 IP 地址。
+
+时候，如果你在另外一个 Terminal 里把这两个“有状态应用”的 Pod 删掉：
+
+```sh
+$ kubectl delete pod -l app=nginx
+pod "web-0" deleted
+pod "web-1" deleted
+
+```
+
+然后，再在当前 Terminal 里 Watch 一下这两个 Pod 的状态变化，就会发现一个有趣的现象：
+
+```sh
+$ kubectl get pod -w -l app=nginx
+NAME    READY   STATUS    RESTARTS   AGE
+web-0   0/1     Terminating   0          11s
+web-0   0/1     Terminating   0          11s
+web-0   0/1     Pending       0          0s
+web-0   0/1     Pending       0          0s
+web-0   0/1     ContainerCreating   0          1s
+web-0   1/1     Running             0          1s
+web-1   0/1     Terminating         0          17s
+web-1   0/1     Terminating         0          17s
+web-1   0/1     Pending             0          0s
+web-1   0/1     Pending             0          0s
+web-1   0/1     ContainerCreating   0          0s
+web-1   1/1     Running             0          1s
+```
+
+可以看到，当我们把这两个 Pod 删除之后，Kubernetes 会按照原先编号的顺序，创建出了两个新的 Pod。并且，Kubernetes 依然为它们分配了与原来相同的“网络身份”：web-0.nginx 和 web-1.nginx。**通过这种严格的对应规则，StatefulSet 就保证了 Pod 网络标识的稳定性**。
+
+> 比如，如果 web-0 是一个需要先启动的主节点，web-1 是一个后启动的从节点，那么只要这个 StatefulSet 不被删除，你访问 web-0.nginx 时始终都会落在主节点上，访问 web-1.nginx 时，则始终都会落在从节点上，这个关系绝对不会发生任何变化。
+
+所以，如果我们再用 nslookup 命令，查看一下这个新 Pod 对应的 Headless Service 的话：
+
+```sh
+$ kubectl run -i --tty --image busybox:1.28.4 dns-test --restart=Never --rm /bin/sh
+If you don't see a command prompt, try pressing enter.
+/ # nslookup web-0.nginx
+Server:    172.21.0.10
+Address 1: 172.21.0.10 kube-dns.kube-system.svc.cluster.local
+
+Name:      web-0.nginx
+Address 1: 172.20.0.18 web-0.nginx.default.svc.cluster.local
+/ # nslookup web-1.nginx
+Server:    172.21.0.10
+Address 1: 172.21.0.10 kube-dns.kube-system.svc.cluster.local
+
+Name:      web-1.nginx
+Address 1: 172.20.0.176 web-1.nginx.default.svc.cluster.local
+```
+
+我们可以看到，在这个 StatefulSet 中，这两个新 Pod 的“网络标识”（比如：web-0.nginx 和 web-1.nginx），再次解析到了正确的 IP 地址（比如：web-0 Pod 的 IP 地址 172.21.0.10）。
+
+通过这种方法，Kubernetes 就成功地将 Pod 的拓扑状态（比如：哪个节点先启动，哪个节点后启动），按照 Pod 的“名字 + 编号”的方式固定了下来。此外，Kubernetes 还为每一个 Pod 提供了一个固定并且唯一的访问入口，即：这个 Pod 对应的 DNS 记录。
+
+这些状态，在 StatefulSet 的整个生命周期里都会保持不变，绝不会因为对应 Pod 的删除或者重新创建而失效。
+
+不过，尽管 web-0.nginx 这条记录本身不会变，但它解析到的 Pod 的 IP 地址，并不是固定的。这就意味着，**对于“有状态应用”实例的访问，你必须使用 DNS 记录或者 hostname 的方式，而绝不应该直接访问这些 Pod 的 IP 地址**。
+
+
+
+## 4. 小结
+
+StatefulSet 这个控制器的主要作用之一，就是使用 Pod 模板创建 Pod 的时候，对它们进行编号，并且按照编号顺序逐一完成创建工作。而当 StatefulSet 的“控制循环”发现 Pod 的“实际状态”与“期望状态”不一致，需要新建或者删除 Pod 进行“调谐”的时候，它会严格按照这些 Pod 编号的顺序，逐一完成这些操作。
+
+所以，StatefulSet 其实可以认为是对 Deployment 的改良。与此同时，通过 Headless Service 的方式，StatefulSet 为每个 Pod 创建了一个固定并且稳定的 DNS 记录，来作为它的访问入口。
