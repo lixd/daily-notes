@@ -8,20 +8,16 @@ stream的种类:
 
 ```protobuf
 // 客户端推送 服务端 
-rpc GetStream (StreamReqData) returns (stream StreamResData){}
+rpc Sum (stream ClientStreamReq) returns (ClientStreamResp) {}
 // 服务端推送 客户端 
-rpc PutStream (stream StreamReqData) returns (StreamResData){}
+rpc Pow (ServerStreamReq) returns (stream ServerStreamResp) {}
 // 客户端与 服务端 互相 推送 
-rpc AllStream (stream StreamReqData) returns (stream StreamResData){}
+rpc Sqrt (stream AllStreamReq) returns (stream AllStreamResp) {}
 ```
 
 其实双向流 已经 基本退化成 TCP 了，gRPC底层为我们 分包了，所以真的很方便。
 
-经常测试流式调用比同步调用会有一定的效率提升。
-
-项目中使用 Go 调用 Python 的图像处理服务，同步调用时一次需要 300ms 左右，换做流式调用后平均下来一次只需要 260~270ms。
-
-> 省掉了中间每次建立连接的花费，所以效率上会提升一些。
+> 同时因为省掉了中间每次建立连接的花费，所以效率上会提升一些。
 
 > gRPC 系列所有代码都在这个 [Git仓库](https://github.com/lixd/i-go/tree/master/grpc)
 
@@ -634,7 +630,7 @@ Recv Data:9
 
 客户端或者服务端都有对应的 推送 或者 接收 对象，我们只要 不断循环 Recv(),或者 Send() 就能接收或者推送了！
 
-> grpc 的 stream 和 go的协程 配合 简直完美。通过流 我们 可以更加 灵活的 实现自己的业务。如 订阅，大数据传输等。
+> gRPC 的 Stream 和 go的协程 配合 简直完美。通过流我们可以更加灵活的 实现自己的业务。如 订阅，大数据传输等。
 
 **Client发送完成后需要手动调用Close()或者CloseSend()方法关闭stream，Server端则`return nil`就会自动 Close**
 

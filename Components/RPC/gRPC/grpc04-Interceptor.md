@@ -481,7 +481,7 @@ $ go run client_unary.go
 
 然后运行 stream 方法客户端
 
-```go
+```sh
 $ go run client_stream.go
 2020/12/21 14:33:51 stream filter,method :/interceptor.Interceptor/Sqrt
 2020/12/21 14:33:51 stream gRPC before method: /interceptor.Interceptor/Sqrt
@@ -525,7 +525,7 @@ $ go run client_stream.go
 
 手动触发 panic 后结果如下
 
-```go
+```sh
 $ go run client_unary.go
 2020/12/21 15:15:48 unary filter,method :/interceptor.Interceptor/SayHello
 2020/12/21 15:15:48 unary gRPC before method: /interceptor.Interceptor/SayHello req:name:"world"

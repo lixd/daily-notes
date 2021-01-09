@@ -1,5 +1,20 @@
 # elasticsearch 生产环境配置
 
+ES 启动时主要依据配置文件中的`http.host` 配置项来区分是开发模式还是生产模式。
+
+* Dev Cluster
+  * http.host: localhost
+* Production Cluster
+  * http.host: 192.168.x.x
+
+为 localhost 的时候为开发模式，修改后则为生产模式。
+
+> [官方文档](https://www.elastic.co/guide/en/elasticsearch/reference/current/bootstrap-checks.html)
+
+如果是生产模式运行则启动时必须通过所有 Bootstrap 检测，否则无法启动。
+
+Bootstrap Checks可以分为两类: JVM & Linux Checks。Linux Checks 只针对 Linux系统。
+
 ## 1. 概述
 
 虽然 elasticsearch 不怎么需要配置，使用默认配置就可以运行了，但是生产环境中，建议下面的都配置一下。

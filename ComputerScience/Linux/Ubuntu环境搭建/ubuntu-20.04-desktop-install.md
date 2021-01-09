@@ -487,7 +487,7 @@ dash to panel 能把顶栏和任务栏合并，减少竖向面积的占用，个
 
 **搜狗输入法暂不支持 20.04 感觉自带的中文输入法也不错。**
 
-一下是 20.04 版本安装谷歌输入法过程。
+以下是 20.04 版本安装谷歌输入法过程。
 
 1）安装 谷歌输入法
 
@@ -643,6 +643,24 @@ message()
 ```
 
 > 参考 https://blog.csdn.net/xianjs616/article/details/102178455
+
+上面的方法不行的话试一下下面这个
+
+在 ide 对应的 vmoptions 文件中增加
+
+```sh
+-Drecreate.x11.input.method=true
+```
+
+然后重启应该就可以了。
+
+> 除了输入法候选框不会跟随光标之外，基本能够勉强使用。
+>
+> https://github.com/libpinyin/ibus-libpinyin/issues/262
+>
+> https://youtrack.jetbrains.com/issue/IDEA-23472
+
+
 
 ### 3. protobuf
 
