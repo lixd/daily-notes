@@ -6,14 +6,12 @@
 
 ### 1. 安装包下载
 
-官网：`http://nginx.org/en/download.html` 这里下载的时`nginx-1.15.9.tar.gz`
+官网：`http://nginx.org/en/download.html` 这里下载的是`nginx-1.19.0.tar.gz`。
 
-上传到服务器上，这里放在了`usr/software`目录下
+直接右键复制下载链接 用`wget` 下载到服务器
 
-或者直接右键复制下载链接 用`wget`
-
-```shell
-wget http://nginx.org/download/nginx-1.19.0.tar.gz
+```sh
+$ wget http://nginx.org/download/nginx-1.19.0.tar.gz
 ```
 
 
@@ -22,26 +20,26 @@ wget http://nginx.org/download/nginx-1.19.0.tar.gz
 
 **安装编译源码所需要的工具和库**:
 
-```linux
-# yum install -y gcc gcc-c++
+```sh
+$ yum install -y gcc gcc-c++
 ```
 
 **安装pcre软件包（使nginx支持http rewrite模块）**
 
-```linux
-yum install -y pcre pcre-devel
+```sh
+$ yum install -y pcre pcre-devel
 ```
 
 **安装 openssl-devel（使 nginx 支持 ssl）**
 
-```linux
-# yum install -y openssl openssl-devel 
+```sh
+$ yum install -y openssl openssl-devel 
 ```
 
 **安装zlib**
 
-```shell
-# yum install -y zlib zlib-devel gd gd-devel
+```sh
+$ yum install -y zlib zlib-devel gd gd-devel
 ```
 
 
@@ -51,17 +49,18 @@ yum install -y pcre pcre-devel
 **解压**：
 
 ```shell
-[root@localhost software]# tar -zxvf nginx-1.15.9.tar.gz -C /usr/local
-//解压到/usr/local目录下
+$ tar -zxvf nginx-1.19.0.tar.gz
 ```
 
 **配置**:
 
 进行configure配置，检查是否报错。
 
-```linux
-[root@localhost nginx-1.15.9]# ./configure --prefix=/usr/local/nginx
+```sh
+$ ./configure --prefix=/usr/local/nginx
 
+# 增加 ssl 模块
+$ ./configure --prefix=/usr/local/nginx --with-http_stub_status_module --with-http_ssl_module
 //出现下面的配置摘要就算配置ok
 Configuration summary
   + using system PCRE library
@@ -77,12 +76,11 @@ Configuration summary
 
 **编译安装**:
 
-```linux
-[root@localhost nginx-1.15.9]# make&&make install
+```sh
+$ make && make install
 
 //出现下面的提示就算编译安装ok
-make[1]: Leaving directory `/usr/local/nginx-1.15.9'
-
+make[1]: Leaving directory `/usr/local/nginx-1.19.0'
 ```
 
 编译安装后多了一个`Nginx`文件夹,在`/usr/local/nginx` 内部又分为四个目录
@@ -97,22 +95,28 @@ make[1]: Leaving directory `/usr/local/nginx-1.15.9'
 
 **查看Nginx版本:**
 
-```linux
-[root@localhost nginx]# /usr/local/nginx/sbin/nginx -v
-nginx version: nginx/1.15.9
-//这里是Nginx 1.15.9
+```shell
+$ /usr/local/nginx/sbin/nginx -v
+nginx version: nginx/1.19.0
 ```
 
 到这里``Nginx`安装就结束了。
 
+
+
 ### 4. 常用命令
 
 ```sh
-/usr/local/nginx/sbin/nginx # 以默认配置文件启动
-/usr/local/nginx/sbin/nginx -c xxx.conf # 指定配置文件启动
-/usr/local/nginx/sbin/nginx -s reload   # 重新载入配置文件
-/usr/local/nginx/sbin/nginx -s reopen   # 重启 Nginx
-/usr/local/nginx/sbin/nginx -s stop     # 停止 Nginx
+ # 以默认配置文件启动
+/usr/local/nginx/sbin/nginx
+# 指定配置文件启动
+/usr/local/nginx/sbin/nginx -c /usr/local/nginx/conf/nginx.conf 
+ # 重新载入配置文件
+/usr/local/nginx/sbin/nginx -s reload  
+ # 重启 Nginx
+/usr/local/nginx/sbin/nginx -s reopen  
+ # 停止 Nginx
+/usr/local/nginx/sbin/nginx -s stop    
 ```
 
 
@@ -127,7 +131,7 @@ nginx version: nginx/1.15.9
 /usr/local/docker/nginx
 					--/conf/nginx.conf # 配置文件
 					--/html # 存静态文件的目录
-					--/ssl # 存放ssl证书
+					--/certs # 存放ssl证书
 					--/log # 日志
 					--docker-compose.yml # 启动文件
 ```
@@ -152,7 +156,7 @@ services:
       - ./conf/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./logs:/var/log/nginx
       - ./html:/var/html #把外部存静态文件的目录映射到容器内部 nginx.conf文件就指定加载这个目录下的静态文件
-      - ./ssl:/var/ssl 
+      - ./certs:/var/certs 
 ```
 
 ### 3. nginx.conf
@@ -199,6 +203,5 @@ services:
     #        index  index.html index.htm;
     #    }
     #}
-
 ```
 

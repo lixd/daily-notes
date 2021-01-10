@@ -253,6 +253,6 @@ BenchmarkStringAdd-6                4620            237020 ns/op         1496941
 
 `https://draveness.me/golang/docs/part2-foundation/ch03-datastructure/golang-string/`
 
-`https://www.bilibili.com/video/BV1hv411x7we`
+`https://www.bilibili.com/video/BV1hv411x7we?p=1`
 
 `https://www.mdeditor.tw/pl/pDSl`
