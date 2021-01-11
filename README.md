@@ -22,7 +22,7 @@ let's go :)
   * MySQL
     * [笔记](https://github.com/lixd/daily-notes/tree/master/Storage/MySQL)
     * [博客](https://www.lixueduan.com/categories/MySQL/)
-  * [Redis]
+  * Redis
     * [笔记](https://github.com/lixd/daily-notes/tree/master/Storage/Redis)
     * [博客](https://www.lixueduan.com/categories/Redis/)
 * 常用组件
@@ -51,3 +51,20 @@ let's go :)
 
   * [笔记](https://github.com/lixd/daily-notes/tree/master/CloudNative/Kubernetes)
 
+
+
+**gRPC**
+
+[gRPC 系列](https://www.lixueduan.com/categories/gRPC/)
+
+[gRPC系列(一)---Protobuf](https://www.lixueduan.com/post/grpc/01-protobuf/)
+
+[gRPC系列(二)---Hello gRPC](https://www.lixueduan.com/post/grpc/02-hello-world/)
+
+[gRPC系列(三)---Stream 推送流](https://www.lixueduan.com/post/grpc/03-stream/)
+
+[gRPC系列(四)---拦截器Interceptor](https://www.lixueduan.com/post/grpc/04-Interceptor/)
+
+[gRPC系列(五)---TLS--数据加密](https://www.lixueduan.com/post/grpc/05-auth-tls/)
+
+[gRPC系列(六)---自定义身份校验](https://www.lixueduan.com/post/grpc/06-auth-custom/)
