@@ -197,7 +197,37 @@ step2 中确定了所需内存大小，但是 Go 语言的`内存分配模块`�
 
 
 
-## 5 .参考
+## 5. 与 String 互转
+
+Slice 由 Data、Len、Cap 构成，String 由 Data、Len 构成，二者只相差了一个 Cap 属性。
+
+通过 unsafe 包可以快速进行二者的转换。
+
+```go
+func String2Bytes(str string) []byte {
+	sh := (*reflect.SliceHeader)(unsafe.Pointer(&str))
+	// slice 比 string 多一个 cap 属性 这里给 cap 单独赋值
+	sh.Cap = sh.Len
+	return *(*[]byte)(unsafe.Pointer(sh))
+}
+
+func Bytes2String(buf []byte) string {
+	return *(*string)(unsafe.Pointer(&buf))
+}
+```
+
+Go 语言标准库中 strings.Builder 就使用到了 unsafe.Pointer 来提升效率。
+
+```go
+// strings/builder.go 47 行
+func (b *Builder) String() string {
+	return *(*string)(unsafe.Pointer(&b.buf))
+}
+```
+
+
+
+## 6 .参考
 
 `https://draveness.me/golang/docs/part2-foundation/ch03-datastructure/golang-array-and-slice/`
 

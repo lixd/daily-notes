@@ -1,67 +1,28 @@
 # Docker 安装 MongoDB
 
-## 1. Docker安装
+文本主要记录了如何基于 DockerCompose 部署一个 MongoDB。
 
-### 拉取镜像
+> MongoDB Atlas（`www.mongodb.com/cloud/`）允许用户在上面创建一个免费集群作为学习使用。
+>
+> 学习基本是够用了，不过就是国内访问延迟有点高。
 
-```shell
-docker pull mongo
-```
 
-### 环境准备
 
-```shell
-/usr/local/docker/mongodb
-						├──data //数据
-						├──backup //备份
-						├──conf //配置文件
-```
+> 直接安装可以查看[官方安装文档](https://docs.mongodb.com/manual/installation/)和 [生产环境配置](https://docs.mongodb.com/manual/administration/production-notes/)
 
-### 配置文件
 
-```shell
-# mongodb.conf
-logappend=true
-# bind_ip=127.0.0.1
-port=27017 
-fork=false
-noprealloc=true
-# 是否开启身份认证
-auth=false
-```
 
-`fork=false`是否后台运行 必须为false 否则无法启动容器
-
-### 启动容器
-
-```shell
-docker run --name mongodb -v \
-/usr/local/docker/mongodb/data:/data/db -v \
-/usr/local/docker/mongodb/backup:/data/backup -v \
-/usr/local/docker/mongodb/conf:/data/configdb -p \27017:27017 -d mongo \
--f /data/configdb/mongodb.conf \
---auth
-# 命令说明
-容器命名mongodb，
-数据库数据文件挂载到/usr/local/docker/mongodb/data
-备份文件挂载到/usr/local/docker/mongodb/backup
-启动的配置文件目录挂载到容器的/usr/local/docker/mongodb/conf
---auth开启身份验证。
--f /data/configdb/mongodb.conf 以配置文件启动 
-# mongod启动命令是在容器内执行的，因此使用的配置文件路径是相对于容器的内部路径。
-```
-
-## 2. docker-compose安装
+## 1. Docker Compose
 
 ### 1.目录
 
 ```sh
-/usr/local/docker/mongo
-                      ├──docker-compose.yml
-                      ├──/data
-                      ├──/backup
-                      ├──/conf
-                      		├──mongod.conf
+/mongo
+     ├──docker-compose.yml
+     ├──/db
+     ├──/backup
+     ├──/configdb
+        ├──mongod.conf
 ```
 
 ### 2. docker-compose.yml
@@ -72,108 +33,33 @@ services:
   mongo-db:
     image: mongo:latest
     container_name: mongodb
-    #network_mode: "host"
     restart: always
     ports:
       - 27017:27017
     environment:
-      TZ: Asia/Shanghai
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: 123456
     volumes:
-      - /etc/localtime:/etc/localtime
-      - ./data/db:/data/db
+      - ./db:/data/db
       - ./backup:/data/backup
-      - ./conf:/data/configdb
-     #- ./entrypoint/:/docker-entrypoint-initdb.d/
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "200k"
-        max-file: "10"
+      #- ./configdb:/data/configdb
 ```
 
-### 3. 配置文件
-
-`mongod.conf`
-
-```conf
-systemLog:
-    quiet: false
-    path: /data/logs/mongod.log
-    logAppend: false
-    destination: file
-processManagement:
-    fork: true
-    pidFilePath: /data/mongodb/mongod.pid
-net:
-    bindIp: 0.0.0.0
-    port: 27017
-    maxIncomingConnections: 65536
-    wireObjectCheck: true
-    ipv6: false   
-storage:
-    dbPath: /data/db
-    indexBuildRetry: true
-    journal:
-        enabled: true
-    directoryPerDB: false
-    engine: mmapv1
-    syncPeriodSecs: 60
-    mmapv1:
-        quota:
-            enforced: false
-            maxFilesPerDB: 8
-        smallFiles: true   
-        journal:
-            commitIntervalMs: 100
-    wiredTiger:
-        engineConfig:
-            cacheSizeGB: 0.5 # 内存限制0.5GB
-            journalCompressor: snappy
-            directoryForIndexes: false   
-        collectionConfig:
-            blockCompressor: snappy
-        indexConfig:
-            prefixCompression: true
-operationProfiling:
-    slowOpThresholdMs: 100
-    mode: off
-```
-
-初始化脚本
-
-> 暂时用不上 可以手动创建用户
-
-```bash
-#!/usr/bin/env bash
-echo "Creating mongo users..."
-mongo admin --host localhost -u root -p 123456 --eval "db.createUser({user: 'admin', pwd: '123456', roles: [{role: 'userAdminAnyDatabase', db: 'admin'}]});"
-mongo admin -u root -p 123456 << EOF
-use hi
-db.createUser({user: 'test', pwd: '123456', roles:[{role:'readWrite',db:'test'}]})
-EOF
-echo "Mongo users created."
-```
-
-
-
-## 3. 添加用户
+## 2. 添加用户
 
 > 到这里已经可以通过可视化客户端直接连上了
-> 账号密码就是前面指定的root 123456
-> 然后在客户端创建数据库什么的会比较方便
+> 账号密码就是前面yaml文件中指定的root 123456
 
 **手动添加**
 
 进入容器
 
-```shell
-# docker exec -it container_name bash
-$ docker exec -it mongodb bash
+```sh
+# docker exec -it container_name /bin/bash
+$ docker exec -it mongodb /bin/bash
 ```
 
-进入 MongoDB
+进入 MongoDB Shell
 
 ```shell
 $ mongo
@@ -184,6 +70,8 @@ $ mongo
 ```shell
 # 进入 admin 的数据库
 use admin
+# 授权
+db.auth('root','123456')
 # 创建管理员用户
 db.createUser(
    {
@@ -198,22 +86,12 @@ db.createUser(
      pwd: '123456',
      roles: [{role: "readWrite", db: "demo"}]
  })
- 
-  db.createUser({
-     user: 'test',
-     pwd: '123456',
-     roles: [{role: "readWrite", db: "dbname"}]
- })
  # 退出mongo
  exit
 ```
 
+退出容器
 
-
-## 4. MongoDB 提供的免费版本
-
-官网`www.mongodb.com/cloud/`
-
-MongoDB Atlas是MongoDB的云服务，构建在亚马逊的AWS上，MongoDB允许用户在上面创建一个免费集群作为学习使用。
-
-学习基本是够用了，不过就是国内访问延迟有点高。
+```sh
+$ exit
+```
