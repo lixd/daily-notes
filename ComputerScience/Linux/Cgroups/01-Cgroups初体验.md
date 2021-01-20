@@ -158,3 +158,35 @@ Cgroups 对资源的限制能力也有很多不完善的地方，被提及最多
 使用 `lxcfs`
 
 top 是从 /prof/stats 目录下获取数据，所以道理上来讲，容器不挂载宿主机的该目录就可以了。lxcfs就是来实现这个功能的，做法是把宿主机的 /var/lib/lxcfs/proc/memoinfo 文件挂载到Docker容器的/proc/meminfo位置后。容器中进程读取相应文件内容时，LXCFS的FUSE实现会从容器对应的Cgroup中读取正确的内存限制。从而使得应用获得正确的资源约束设定。kubernetes环境下，也能用，以ds 方式运行 lxcfs ，自动给容器注入争取的 proc 信息。
+
+
+
+## 4. 参数
+
+### CPU
+
+cpu子系统限制对CPU的访问，每个参数独立存在于cgroups虚拟文件系统的伪文件中，参数解释如下：
+
+- **cpu.shares**: cgroup对时间的分配。比如cgroup A设置的是1，cgroup B设置的是2，那么B中的任务获取cpu的时间，是A中任务的2倍。
+
+- **cpu.cfs_period_us**: 完全公平调度器的调整时间配额的周期。
+
+- **cpu.cfs_quota_us**: 完全公平调度器的周期当中可以占用的时间。
+
+- **cpu.stat** 统计值
+
+- - nr_periods 进入周期的次数
+  - nr_throttled 运行时间被调整的次数
+  - throttled_time 用于调整的时间
+
+
+
+cpu.shares 主要是完全公平调度的情况下，对cpu时间进行分配，比如A、B、C按照 1:2:1 设置cpu.shares，那么在3个进程都跑满的情况下，CPU 占用就是1:2:1这个比例，但是如果只有A再跑，其他都闲着，那么A完全可以把所有CPU都占用了。
+
+cpu.cfs_quota_us 设置最大能占用的CPU数。
+
+cpu.shares 则设置大家都跑满的时候获取到的CPU比例。
+
+在之前例子中给每个进程设置最大CPU为0.5个，然后share是1:2:1，宿主机一个1个CPU。都跑满的情况下cpu占用情况就是0.25：0.5:0.25这样。
+
+即**CPU资源有限的情况下，具体CPU获取由cpu.shares限制，CPU充足时由cpu.cfs_quota_us限制。**
