@@ -1,4 +1,15 @@
-# gRPC 自定义身份验证
+---
+title: "gRPC系列(六)---自定义身份校验"
+description: "gRPC 自定义身份校验以提升安全性"
+date: 2021-01-08 22:00:00
+draft: false
+tags: ["gRPC"]
+categories: ["gRPC"]
+---
+
+本文主要记录了如何在 gRPC 中使用自定义身份校验以提升服务安全性。
+
+<!--more-->
 
 ## 1. 概述
 
@@ -95,7 +106,7 @@ func (a *Authentication) Auth(ctx context.Context) error {
 }
 ```
 
-除了自定义之外，gRPC 提供了一写内置的 Auth：
+除了自定义之外，gRPC 也提供了一些常用的的 Auth：
 
 ```go
 func NewJWTAccessFromFile(keyFile string) (credentials.PerRPCCredentials, error) {
@@ -110,8 +121,6 @@ func NewOauthAccess(token *oauth2.Token) credentials.PerRPCCredentials {
 	return oauthAccess{token: *token}
 }
 ```
-
-
 
 
 
@@ -236,7 +245,7 @@ exit status 1
 ## 3. 小结
 
 * 1）实现`credentials.PerRPCCredentials`接口就可以把数据当做 gRPC 中的 Credential 在各个请求中进行传递；
-* 2）客户端请求时带上 Credential，服务端通过`metadata.FromIncomingContext(ctx)`从 ctx 中解析出来并进行身份验证,认证失败建议返回`codes.Unauthenticated`状态码。
+* 2）客户端请求时带上 Credential，服务端从 ctx 中解析出来并进行身份验证；
 * 3）可以借助 Interceptor 实现全局身份验证。
 
 
