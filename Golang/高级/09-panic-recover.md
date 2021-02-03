@@ -129,9 +129,9 @@ recover 只做一件事，就是把当前执行的 panic 置为已恢复，即�
 
 * 1）触发 panic。
 * 2）panic 开始执行 defer 链表
-* 3）defer 中有 recover，把当前 panic 恢复了（将当前 panic 的 recovered 字段为true）。
-* 4）每个 defer 函数执行完成后，panic 处理流程都会检查当前 panic 是否被它(即defer函数)恢复了。
-* 5）panic 处理流程发送当前 panic 已经被恢复了，于是将其从 panic 链表移除，同时对应的也会把前面执行过的那个 defer 函数移除，不过移除前需要保存 _defer.pc 和 _defer.sp 这两个字段的值。
+* 3）defer 中有 recover，把当前 panic 恢复了（将当前 panic 的 recovered 字段置为 true）。
+* 4）每个 defer 函数执行完成后，panic 处理流程都会检查当前 panic 是否被它(即刚刚执行的defer函数)恢复了。
+* 5）panic 处理流程发现当前 panic 已经被恢复了，于是将其从 panic 链表移除，同时对应的也会把前面执行过的那个 defer 函数移除，不过移除前需要保存 _defer.pc 和 _defer.sp 这两个字段的值。
 * 6）根据前面保存的 _defer.pc 和 _defer.sp 跳出当前 panic 的处理流程。
 
 

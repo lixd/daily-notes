@@ -52,7 +52,7 @@ option go_package = "{out_path};out_go_package";
 package imp;
 ```
 
-表示当前 protbuf 文件输入 imp 包，这个package不是 Go 语言中的那个package
+表示当前 protbuf 文件属于 imp 包，这个package不是 Go 语言中的那个package
 
 
 
@@ -92,7 +92,7 @@ message MsgReq {
 
 
 
-protoc 编译的时候通过 `--proto_path` 指定在那个目录去寻找 import 指定的文件。
+protoc 编译的时候通过 `--proto_path` 指定在哪个目录去寻找 import 指定的文件。
 
 比如指定 `--proto_path=.`即表示在当前目录下去寻找`grpc/imp/user.proto`这个文件。
 
