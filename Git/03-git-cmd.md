@@ -164,7 +164,7 @@ git checkout --filename1 filename2
 git reset --hard commitId
 ```
 
-**如果你不知道在做什么的话 慎用**
+**如果你不知道这个命令是在做什么的话 请慎用**
 
 
 
