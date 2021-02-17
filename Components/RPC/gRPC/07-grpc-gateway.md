@@ -1,6 +1,19 @@
-# gRPC-Gateway 入门教程
+---
+title: "gRPC系列(七)---利用Gateway同时提供HTTP和RPC服务"
+description: "使用 gRPC-Gateway 同时对外提供  RESTful API 和 gRPC 接口"
+date: 2021-01-15 22:00:00
+draft: false
+tags: ["gRPC"]
+categories: ["gRPC"]
+---
+
+本文主要记录了如何使用 gRPC-Gateway 同时对外提供  RESTful API 和 gRPC 接口。
+
+<!--more-->
 
 ## 1. 概述
+
+> gRPC 系列相关代码见 [Github][Github]
 
 gRPC-Gateway 是Google protocol buffers compiler(protoc)的一个**插件**。读取 protobuf 定义然后生成反向代理服务器，将  RESTful HTTP API 转换为 gRPC。
 
@@ -12,7 +25,7 @@ etcd v3 改用 gRPC 后为了兼容原来的 API，同时要提供 HTTP/JSON 方
 
 架构如下
 
-<img src="assets/grpc-gateway.png" style="zoom:80%;" />
+![gRPC-Gateway][gRPC-Gateway]
 
 当 HTTP 请求到达 gRPC-Gateway 时，它将 JSON 数据解析为 Protobuf 消息。然后，它使用解析的 Protobuf 消息发出正常的 Go gRPC 客户端请求。Go gRPC 客户端将 Protobuf 结构编码为 Protobuf 二进制格式，然后将其发送到 gRPC 服务器。gRPC 服务器处理请求并以 Protobuf 二进制格式返回响应。Go gRPC 客户端将其解析为 Protobuf 消息，并将其返回到 gRPC-Gateway，后者将 Protobuf 消息编码为 JSON 并将其返回给原始客户端。
 
@@ -47,7 +60,7 @@ etcd v3 改用 gRPC 后为了兼容原来的 API，同时要提供 HTTP/JSON 方
 gRPC-Gateway 只是一个插件，只需要安装一下就可以了。
 
 ```sh
-go get github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gatewa
+go get github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway
 ```
 
 
@@ -59,8 +72,8 @@ go get github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gatewa
 * 1）首先定义 .proto 文件；
 * 2）然后由 protoc 将 .proto 文件编译成 protobuf 格式的数据；
 * 3）将 2 中编译后的数据传递到各个插件，生成对应语言、对应模块的源代码。
-  * Go Plugins 就用于生成 .pb.go 文件
-  * gRPC Plugins 就用于生成 _grpc.pb.go
+  * Go Plugins 用于生成 .pb.go 文件
+  * gRPC Plugins 用于生成 _grpc.pb.go
   * gRPC-Gateway 则是 pb.gw.go
 
 其中步骤2和3是一起的，只需要在 protoc 编译时传递不同参数即可。
@@ -73,9 +86,9 @@ protoc --go_out . --go-grpc_out . --grpc-gateway_out . hello_world.proto
 
 
 
-
-
 ## 3. 例子
+
+> 本文所有代码都在这里 [Github](https://github.com/lixd/i-go/tree/master/grpc/gateway)。
 
 首先确保自己的环境是ok的，具体如下：
 
@@ -119,70 +132,67 @@ message HelloReply {
 使用 protoc 编译生成不同模块的源文件，具体命令如下:
 
 ```sh
-protoc --protp_path=./proto \
-   --go_out=./proto --go_opt=paths=source_relative \
-   --go-grpc_out=./proto --go-grpc_opt=paths=source_relative \
+lixd@17x:~/17x/projects/grpc-go-example/features$ protoc --proto_path=./proto \
+    --go_out=./proto --go_opt=paths=source_relative \
+    --go-grpc_out=./proto --go-grpc_opt=paths=source_relative \
    ./proto/helloworld/hello_world.proto
 ```
 
-> windows 下不支持`\`换行，需要替换为`^`，或者手动合并成一行。
->
 > 具体 protoc 信息可查看 protobuf 章节。
 
 会生成 `*.pb.go` 和 `*_grpc.pb.go` 两个文件。
 
 
 
-**3） server.go**
+**3） Server**
 
-`server.go`内容如下：
+`main.go`内容如下：
 
 ```go
 package main
 
 import (
 	"context"
+	"flag"
+	"fmt"
 	"log"
 	"net"
 
+	pb "github.com/lixd/grpc-go-example/features/proto/helloworld"
 	"google.golang.org/grpc"
-	pb "i-go/grpc/gateway/proto/helloworld"
 )
+var port = flag.Int("port", 50051, "the port to serve on")
 
 type server struct {
 	pb.UnimplementedGreeterServer
 }
 
-func NewServer() *server {
-	return &server{}
-}
-
 func (s *server) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloReply, error) {
-	return &pb.HelloReply{Message: in.Name + " world"}, nil
+	return &pb.HelloReply{Message: "hello " + in.Name }, nil
 }
 
 func main() {
-	// Create a listener on TCP port
-	lis, err := net.Listen("tcp", ":8080")
-	if err != nil {
-		log.Fatalln("Failed to listen:", err)
-	}
-
 	// Create a gRPC server object
 	s := grpc.NewServer()
 	// Attach the Greeter service to the server
 	pb.RegisterGreeterServer(s, &server{})
 	// Serve gRPC Server
-	log.Println("Serving gRPC on 0.0.0.0:8080")
-	log.Fatal(s.Serve(lis))
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
+	log.Println("Serving gRPC on 0.0.0.0" + fmt.Sprintf(":%d", *port))
+	if err := s.Serve(lis); err != nil {
+		log.Fatalf("failed to serve: %v", err)
+	}
 }
 ```
 
 
 
-**4）client.go**
+**4）Client**
 
-`client.go`内容如下:
+`main.go`内容如下:
 
 ```go
 package main
@@ -222,13 +232,13 @@ func main() {
 到此分别运行 server.go、client.go ，一个简单的 gRPC demo 就跑起来了。
 
 ```sh
-$ go run server.go
-2020/12/17 16:56:41 Serving gRPC on 0.0.0.0:8080
+lixd@17x:~/17x/projects/grpc-go-example/features/gateway/server$ go run main.go 
+2021/01/30 10:15:53 Serving gRPC on 0.0.0.0:50051
 ```
 
 ```sh
-$ go run client.go
-2020/12/17 16:57:11 Greeting: world world
+lixd@17x:~/17x/projects/grpc-go-example/features/gateway/client$ go run main.go 
+2021/01/30 10:17:23 Greeting: hello world
 ```
 
 
@@ -245,33 +255,31 @@ $ go run client.go
 
 ```protobuf
 syntax = "proto3";
-option go_package = ".;proto";
+option go_package = "github.com/lixd/grpc-go-example/features/proto/echo";
 package helloworld;
-
 import "google/api/annotations.proto";
-// The greeting service definition
+
 service Greeter {
-  // Sends a greeting
   rpc SayHello (HelloRequest) returns (HelloReply) {
     option (google.api.http) = {
-      post: "/v1/example/echo"
+      get: "/v1/greeter/sayhello"
       body: "*"
     };
   }
 }
 
-// The request message containing the user's name
 message HelloRequest {
   string name = 1;
 }
 
-// The response message containing the greetings
 message HelloReply {
   string message = 1;
 }
 ```
 
 主要修改了两个地方
+
+**第一步引入`annotations.proto`**
 
 ```protobuf
 import "google/api/annotations.proto";
@@ -287,8 +295,8 @@ import "google/api/annotations.proto";
 
 下载链接如下:
 
-```json
-https://github.com/grpc-ecosystem/grpc-gateway/tree/master/third_party/googleapis
+```go
+https://github.com/grpc-ecosystem/grpc-gateway/tree/master/third_party/googleapis/google/api
 ```
 
 复制后的**目录结构**如下：
@@ -303,12 +311,12 @@ proto
     └── hello_world.proto
 ```
 
-
+**第二步增加 http 相关注解**
 
 ```protobuf
   rpc SayHello (HelloRequest) returns (HelloReply) {
     option (google.api.http) = {
-      post: "/v1/example/echo"
+      get: "/v1/greeter/sayhello"
       body: "*"
     };
   }
@@ -316,25 +324,23 @@ proto
 
 每个方法都必须添加 `google.api.http` 注解后 gRPC-Gateway 才能生成对应 http 方法。
 
-其中`post`为 HTTP 方法，即 POST 方法，`/v1/example/echo` 则是请求路径。
+其中`post`为 HTTP Method，即 POST 方法，`/v1/greeter/sayhello` 则是请求路径。
 
 更多语法看这里：
 
-```json
+```go
 https://github.com/googleapis/googleapis/blob/master/google/api/http.proto
 ```
 
 
 
-
-
-
-
 **2）再次编译**
 
+增加 `--grpc-gateway_out`
+
 ```sh
-protoc --proto_path=./proto \
-  --go_out=./proto --go_opt=paths=source_relative \
+lixd@17x:~/17x/projects/grpc-go-example/features$ protoc --proto_path=./proto \
+   --go_out=./proto --go_opt=paths=source_relative \
   --go-grpc_out=./proto --go-grpc_opt=paths=source_relative \
   --grpc-gateway_out=./proto --grpc-gateway_opt=paths=source_relative \
   ./proto/helloworld/hello_world.proto
@@ -342,67 +348,64 @@ protoc --proto_path=./proto \
 
 本次会多生成一个`gw.pb.go` 文件，用于启动 HTTP 服务。
 
-其中`--proto_path=./proto`用于指定 import 文件路径（默认为pwd），即前面引入的`google/api/annotations.proto`文件的位置。
+其中`--proto_path=./proto`用于指定 import 文件路径（默认为{$pwd}），即前面引入的`google/api/annotations.proto`文件的位置。
 
 
 
-**3）调整 server.go**
+**3）调整 Server**
 
 在原有 gRPC 基础上在启动一个 HTTP 服务。
-
-
 
 ```go
 package main
 
 import (
 	"context"
+	"flag"
+	"fmt"
 	"log"
 	"net"
 	"net/http"
 
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+
+	pb "github.com/lixd/grpc-go-example/features/proto/helloworld"
 	"google.golang.org/grpc"
-	pb "i-go/grpc/gateway/proto/helloworld"
 )
+
+var port = flag.Int("port", 50051, "the port to serve on")
+var restful = flag.Int("restful", 8080, "the port to restful serve on")
 
 type server struct {
 	pb.UnimplementedGreeterServer
 }
 
-func NewServer() *server {
-	return &server{}
-}
-
 func (s *server) SayHello(ctx context.Context, in *pb.HelloRequest) (*pb.HelloReply, error) {
-	return &pb.HelloReply{Message: in.Name + " world"}, nil
+	return &pb.HelloReply{Message: "hello " + in.Name}, nil
 }
 
 func main() {
-	// 1. 启动 gRPC 服务
-	// Create a listener on TCP port
-	lis, err := net.Listen("tcp", ":8080")
-	if err != nil {
-		log.Fatalln("Failed to listen:", err)
-	}
-
 	// Create a gRPC server object
 	s := grpc.NewServer()
 	// Attach the Greeter service to the server
 	pb.RegisterGreeterServer(s, &server{})
-	// Serve gRPC server
-	log.Println("Serving gRPC on 0.0.0.0:8080")
+	// Serve gRPC Server
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", *port))
+	if err != nil {
+		log.Fatalf("failed to listen: %v", err)
+	}
+	log.Println("Serving gRPC on 0.0.0.0" + fmt.Sprintf(":%d", *port))
 	go func() {
-		log.Fatalln(s.Serve(lis))
+		if err := s.Serve(lis); err != nil {
+			log.Fatalf("failed to serve: %v", err)
+		}
 	}()
-	
+
 	// 2. 启动 HTTP 服务
 	// Create a client connection to the gRPC server we just started
 	// This is where the gRPC-Gateway proxies the requests
-	conn, err := grpc.DialContext(
-		context.Background(),
-		"0.0.0.0:8080",
-		grpc.WithBlock(),
+	conn, err := grpc.Dial(
+		"localhost:50051",
 		grpc.WithInsecure(),
 	)
 	if err != nil {
@@ -417,11 +420,11 @@ func main() {
 	}
 
 	gwServer := &http.Server{
-		Addr:    ":8090",
+		Addr:    fmt.Sprintf(":%d", *restful),
 		Handler: gwmux,
 	}
 
-	log.Println("Serving gRPC-Gateway on http://0.0.0.0:8090")
+	log.Println("Serving gRPC-Gateway on http://0.0.0.0"+fmt.Sprintf(":%d", *restful))
 	log.Fatalln(gwServer.ListenAndServe())
 }
 ```
@@ -435,25 +438,43 @@ func main() {
 运行并测试效果。
 
 ```sh
-$ go run server.go
-2020/12/17 17:31:55 Serving gRPC on 0.0.0.0:8080
-2020/12/17 17:31:55 Serving gRPC-Gateway on http://0.0.0.0:8090
+lixd@17x:~/17x/projects/grpc-go-example/features/gateway/server$ go run main.go 
+2021/01/30 10:32:15 Serving gRPC on 0.0.0.0:50051
+2021/01/30 10:32:15 Serving gRPC-Gateway on http://0.0.0.0:8080
 ```
 
 gRPC 请求
 
 ```sh
-$ go run client.go
-2020/12/17 17:32:34 Greeting: world world
+lixd@17x:~/17x/projects/grpc-go-example/features/gateway/client$ go run main.go 
+2021/01/30 10:32:18 Greeting: hello world
 ```
 
 HTTP 请求
 
 ```sh
-$ curl -X POST -k http://localhost:8090/v1/example/echo -d '{"name": " hello"}'
-  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
-                                 Dload  Upload   Total   Spent    Left  Speed
-100    44  100    26  100    18   4333   3000 --:--:-- --:--:-- --:--:--  7333{"message":" hello world"}
+$ curl -k http://localhost:8080/v1/greeter/sayhello?name=world
+{"message":"hello world"}
+```
+
+
+
+将 GET 请求修改为 **POST**,只需要修改 proto 文件中的注释并重新编译即可
+
+```go
+    option (google.api.http) = {
+      post: "/v1/greeter/sayhello",
+      body: "*"
+    };
+```
+
+同时还增加了 body 字段用于接收http request body 中的参数，不指定则无法接收。
+
+编译后重启服务端，测试如下：
+
+```sh
+$ curl -X POST -k http://localhost:8080/v1/greeter/sayhello -d '{"name": "world"}'
+{"message":"hello world"}
 ```
 
 
@@ -462,7 +483,7 @@ $ curl -X POST -k http://localhost:8090/v1/example/echo -d '{"name": " hello"}'
 
 
 
-### 3. 简单分析
+### 3. 源码分析
 
 首先建立 gRPC 连接，然后New 一个 ServeMux 接着调用了pb.RegisterGreeterHandler() 方法，最后就启动了一个 HTTP 服务。
 
@@ -554,14 +575,16 @@ func request_Greeter_SayHello_0(ctx context.Context, marshaler runtime.Marshaler
 
 到这里可以发现 gRPC-Gateway 的具体流程和之前的描述是一致的。
 
-
-
-本文所有代码都在[Github](https://github.com/lixd/i-go/tree/master/grpc/gateway)。
-
-
+> gRPC 系列相关代码见 [Github][Github]
 
 ## 4. 参考
 
 `https://grpc-ecosystem.github.io/grpc-gateway/`
 
 `https://developers.google.com/protocol-buffers`
+
+
+
+[Github]: https://github.com/lixd/grpc-go-example
+[gRPC-Gateway]: https://github.com/lixd/blog/raw/master/images/grpc/grpc-gateway.png
+
