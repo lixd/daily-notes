@@ -61,16 +61,16 @@ cgroup.clone_children  cgroup.event_control  cgroup.procs  cpuacct.stat  cpuacct
 现在，我们在后台执行这样一条脚本:
 
 ```shell
-while : ; do : ; done &
+$ while : ; do : ; done &
 [1] 27218
 ```
 
-显然，它执行了一个死循环，可以把计算机的 CPU 吃到 100%，根据它的输出，我们可以看到这个脚本在后台运行的进程号（PID）是 226。
+显然，它执行了一个死循环，可以把计算机的 CPU 吃到 100%，根据它的输出，我们可以看到这个脚本在后台运行的进程号（PID）是 27218。
 
 查看一下CPU占用
 
 ```shell
-top
+$ top
 
 PID USER      PR  NI    VIRT    RES    SHR S %CPU %MEM     TIME+ COMMAND    
 27218 root      20   0  115680    672    152 R 99.9  0.0   2:07.07 bash                                                  
@@ -106,7 +106,7 @@ $ echo 27218 > /sys/fs/cgroup/cpu/container/tasks
 使用 top 指令查看一下
 
 ```shell
-top
+$ top
 
 PID USER      PR  NI    VIRT    RES    SHR S %CPU %MEM     TIME+ COMMAND    
 27218 root      20   0  115680    672    152 R 20 0.0   2:07.07 bash                                                  
@@ -143,7 +143,7 @@ $ cat /sys/fs/cgroup/cpu/docker/5d5c9f67d/cpu.cfs_quota_us
 
 
 
-## 3. Cgroups存在的问题
+## 3. 存在的问题
 
 Cgroups 对资源的限制能力也有很多不完善的地方，被提及最多的自然是 /proc 文件系统的问题。
 
