@@ -1,5 +1,29 @@
 # CMD 和 ENTRYPOINT的区别
 
+## 1. 概述
+
+**完整命令格式为：[ ENTRYPOINT CMD ]**，CMD 为ENTRYPOINT 的参数。 
+
+> Docker为我们提供了默认的 ENTRYPOINT ，即 `/bin/sh -c`。
+
+所以如果Dockerfile中指定的是
+
+```dockerfile
+CMD ["python", "app.py"]
+```
+
+那么实际运行命令为 `/bin/sh -c python app.py`
+
+如果是
+
+```dockerfile
+ENTRYPOINT  ["./app"]
+```
+
+那么会替换掉默认的ENTRYPOINT `/bin/sh -c`，因此实际运行命令就是 `./app`
+
+
+
 **推荐使用方式：**
 
 - 使用 exec 格式的 ENTRYPOINT 指令 设置固定的默认命令和参数
@@ -7,9 +31,13 @@
 
 
 
+
+
+## 2. 资料
+
 当 `CMD` 和 `ENTRYPOINT` 的使用总结如下：
 
-- 在 Dockerfile 中， 应该至少指定一个 `CMD` 和 `ENTRYPOINT`；
+- 在 Dockerfile 中， 应该至少指定一个 `CMD` 或者 `ENTRYPOINT`；
 - 将 Docker 当作可执行程序时， 应该使用 `ENTRYPOINT` 进行配置；
 - `CMD` 可以用作 `ENTRYPOINT` 默认参数， 或者用作 Docker 的默认命令；
 - `CMD` 可以被 docker run 传入的参数覆盖；
