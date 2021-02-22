@@ -17,14 +17,14 @@ cd certbot
 ```sh
 # 语法如下 ./certbot-auto certonly --webroot --agree-tos -v -t --email 邮箱地址 -w 网站根目录 -d 网站域名
 # 具体如下
-./certbot-auto certonly --webroot --agree-tos -v -t --email xueduan.li@gmail.com -w /usr/local/docker/nginx/heml -d refersmoon.com
+./certbot-auto certonly --webroot --agree-tos -v -t --email xueduan.li@gmail.com -w /usr/local/projects/blog/html -d refersmoon.com
 ```
 
-**注意** 这里 默认会自动生成到 `/**网站根目录**/.well-known/acme-challenge` 文件夹，然后 shell 脚本会对应的访问 `**网站域名**/.well-known/acme-challenge `是否存在来确定你对网站的所属权。
+**注意** 这里 默认会自动生成验证文件到 `/**网站根目录**/.well-known/acme-challenge` 文件夹，然后 shell 脚本会对应的访问 `**网站域名**/.well-known/acme-challenge `是否存在来确定你对网站的所属权。
 
 比如：我的域名是 **refersmoon.com** 那我就得保证域名下面的 **.well-known/acme-challenge/** 目录是可访问的
 
-如果返回正常就确认了你对这个网站的所有权，就能顺利生成，完成后这个目录会被清空
+如果返回正常就确认了你对这个网站的所有权，就能顺利生成，完成后这个目录会被清空。
 
 ## 3. 测试
 
