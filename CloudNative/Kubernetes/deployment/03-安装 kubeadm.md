@@ -12,6 +12,13 @@
 
 kubeadm 是 kubernetes 的集群安装工具，能够快速安装 kubernetes 集群。
 
+步骤如下：
+
+* 1）安装 kubeadm，kubelet，kubectl
+* 2）拉取 kubernetes 相关镜像
+
+由于国内特殊网络环境，每一步都需要额外的配置。
+
 
 
 ## 配置软件源

@@ -41,7 +41,7 @@
 
 
 
-### 3. k8s对虚拟机系统的配置
+## 2. k8s对虚拟机系统的配置
 
 > 几台机器都需要做的操作统一在这里处理了
 
@@ -75,11 +75,52 @@ vi /etc/cloud/cloud.cfg
 preserve_hostname: true
 ```
 
+修改DNS
 
+方法一
+
+- 停止 `systemd-resolved` 服务：`systemctl stop systemd-resolved`
+- 修改 DNS：`vi /etc/resolv.conf`，将 `nameserver` 修改为如 `114.114.114.114` 可以正常使用的 DNS 地址
+
+方法二
+
+```bash
+vi /etc/systemd/resolved.conf
+```
+
+添加 DNS
+
+```shell
+#  This file is part of systemd.
+# 
+#  systemd is free software; you can redistribute it and/or modify it
+#  under the terms of the GNU Lesser General Public License as published by
+#  the Free Software Foundation; either version 2.1 of the License, or
+#  (at your option) any later version.
+#
+# Entries in this file show the compile time defaults.
+# You can change settings by editing this file.
+# Defaults can be restored by simply deleting this file.
+#
+# See resolved.conf(5) for details
+
+[Resolve]
+DNS=114.114.114.114
+#FallbackDNS=
+#Domains=
+#LLMNR=no
+#MulticastDNS=no
+#DNSSEC=no
+#DNSOverTLS=no
+#Cache=yes
+#DNSStubListener=yes
+#ReadEtcHosts=yes
+~                   
+```
 
    
 
-## 3. 克隆
+## 3. 创建链接克隆
 
 在前面安装好的机器上创建 3 个`链接克隆`，用于安装 kubernetes 。
 
@@ -152,45 +193,3 @@ root@docker:~# hostnamectl
 root@docker:~# hostnamectl set-hostname kubernetes-master
 ```
 
-### 4. 修改DNS
-
-#### 方法一
-
-- 停止 `systemd-resolved` 服务：`systemctl stop systemd-resolved`
-- 修改 DNS：`vi /etc/resolv.conf`，将 `nameserver` 修改为如 `114.114.114.114` 可以正常使用的 DNS 地址
-
-#### 方法二
-
-```bash
-vi /etc/systemd/resolved.conf
-```
-
-添加 DNS
-
-```shell
-#  This file is part of systemd.
-# 
-#  systemd is free software; you can redistribute it and/or modify it
-#  under the terms of the GNU Lesser General Public License as published by
-#  the Free Software Foundation; either version 2.1 of the License, or
-#  (at your option) any later version.
-#
-# Entries in this file show the compile time defaults.
-# You can change settings by editing this file.
-# Defaults can be restored by simply deleting this file.
-#
-# See resolved.conf(5) for details
-
-[Resolve]
-DNS=114.114.114.114
-#FallbackDNS=
-#Domains=
-#LLMNR=no
-#MulticastDNS=no
-#DNSSEC=no
-#DNSOverTLS=no
-#Cache=yes
-#DNSStubListener=yes
-#ReadEtcHosts=yes
-~                   
-```

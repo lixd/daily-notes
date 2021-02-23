@@ -276,6 +276,13 @@ gRPC 中内置了 retry 功能，使用比较简单。
 
 
 
+相关文档
+
+```http
+https://github.com/grpc/proposal/blob/master/A6-client-retries.md
+
+```
+
 
 
 [Github]: https://github.com/lixd/grpc-go-example
