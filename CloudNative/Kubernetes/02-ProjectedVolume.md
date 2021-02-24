@@ -1,10 +1,12 @@
 # Projected Volume
 
-
-
 ## 1. 概述
 
-在 Kubernetes 中，有几种特殊的 Volume，它们存在的意义不是为了存放容器里的数据，也不是用来进行容器和宿主机之间的数据交换。这些特殊 Volume 的作用，是为容器提供预先定义好的数据。所以，从容器的角度来看，这些 Volume 里的信息就是仿佛是被 Kubernetes“投射”（Project）进入容器当中的。这正是 Projected Volume 的含义。
+在 Kubernetes 中，有几种特殊的 Volume，它们存在的意义不是为了存放容器里的数据，也不是用来进行容器和宿主机之间的数据交换。
+
+**这些特殊 Volume 的作用，是为容器提供预先定义好的数据**。
+
+所以，从容器的角度来看，这些 Volume 里的信息就是仿佛是被 Kubernetes“投射”（Project）进入容器当中的。这正是 Projected Volume 的含义。
 
 到目前为止，Kubernetes 支持的 Projected Volume 一共有四种：
 
@@ -31,15 +33,11 @@ ServiceAccountToken 一种特殊的 Secret，是 Kubernetes 系统内置的一�
 
 
 
-
-
 > 官方文档：[Secret](https://kubernetes.io/docs/concepts/configuration/secret/)，[ConfigMap](https://kubernetes.io/docs/concepts/configuration/configmap/)
 
 
 
 ## 2. ConfigMap
-
-
 
 ### 1. 创建
 
@@ -132,8 +130,6 @@ Blog: "https://www.lixueduan.com"
 Github: "https://github.com/lixd"
 Blog: "https://www.refersmoon.com"
 ```
-
-
 
 
 
@@ -291,8 +287,6 @@ Secret有三种类型：
 
 
 
-
-
 ### 1. 创建
 
 Secret 同样有多种创建方式
@@ -381,8 +375,6 @@ map[hello:d29ybGQ=]
 
 
 
-
-
 **用作环境变量**
 
 > 和 configmap 类似，把 configMapKeyRef 替换成 secretKeyRef 即可,同时 secret 是单个的，所以也去掉了批量获取的 envFrom 字段。
@@ -419,8 +411,6 @@ pod/test-secret-env-pod created
 $ kubectl logs test-secret-env-pod
 CUSTOM_HELLO=world
 ```
-
-
 
 
 

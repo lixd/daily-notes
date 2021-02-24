@@ -2,13 +2,13 @@
 
 ## 1. 概述
 
+Deployment 实际上是一个**两层控制器**。
 
+首先，它通过 **ReplicaSet 的个数**来描述应用的版本；
 
-Deployment 实际上是一个**两层控制器**。首先，它通过 **ReplicaSet 的个数**来描述应用的版本；然后，它再通过 **ReplicaSet 的属性**（比如 replicas 的值），来保证 Pod 的副本数量。
+然后，它再通过 **ReplicaSet 的属性**（比如 replicas 的值），来保证 Pod 的副本数量。
 
 > 备注：Deployment 控制 ReplicaSet（版本），ReplicaSet 控制 Pod（副本数）。这个两层控制关系一定要牢记。
-
-
 
 
 
@@ -49,11 +49,40 @@ for {
 
 ## 3. Deployment
 
+回顾一下nginx的例子
+
+```yaml
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+spec:
+  selector:
+    matchLabels:
+      app: nginx
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.7.9
+        ports:
+        - containerPort: 80
+```
+
+这个 Deployment 定义的编排动作非常简单，即：确保携带了 app=nginx 标签的 Pod 的个数，永远等于 spec.replicas 指定的个数，即 2 个。
+
+> 这就意味着，如果在这个集群中，携带 app=nginx 标签的 Pod 的个数大于 2 的时候，就会有旧的 Pod 被删除；反之，就会有新的 Pod 被创建。
+
 接下来，以 Deployment 为例，我和你简单描述一下它对控制器模型的实现：
 
 * 1）Deployment 控制器从 Etcd 中获取到所有携带了“app: nginx”标签的 Pod，然后统计它们的数量，这就是实际状态；
 * 2）Deployment 对象的 Replicas 字段的值就是期望状态；
-* 3）Deployment 控制器将两个状态做比较，然后根据比较结果，确定是创建 Pod，还是删除已有的 Pod（具体如何操作 Pod 对象，我会在下一篇文章详细介绍）。
+* 3）Deployment 控制器将两个状态做比较，然后根据比较结果，确定是创建 Pod，还是删除已有的 Pod。
 
 可以看到，一个 Kubernetes 对象的主要编排逻辑，实际上是在第三步的“对比”阶段完成的。这个操作，通常被叫作**调谐（Reconcile）**。这个调谐的过程，则被称作**“Reconcile Loop”（调谐循环）**或者**“Sync Loop”（同步循环）**。
 
@@ -68,7 +97,7 @@ for {
 而被控制对象的定义，则来自于一个“模板”。比如，Deployment 里的 template 字段。
 
 ```yaml
-
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -104,7 +133,7 @@ spec:
 
 
 
-## 4. RS
+## 4. ReplicaSet
 
 Deployment 看似简单，但实际上，它实现了 Kubernetes 项目中一个非常重要的功能：Pod 的“水平扩展 / 收缩”（horizontal scaling out/in）。
 
@@ -113,7 +142,7 @@ Deployment 看似简单，但实际上，它实现了 Kubernetes 项目中一个
 而这个能力的实现，依赖的是 Kubernetes 项目中的一个非常重要的概念（API 对象）：ReplicaSet。
 
 ```yaml
-
+---
 apiVersion: apps/v1
 kind: ReplicaSet
 metadata:
