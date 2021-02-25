@@ -2,6 +2,8 @@
 
 ## 1. 概述
 
+> StatefulSet 保持Pod的存储状态主要靠PV/PVC来完成。
+
 要在一个 Pod 里声明 Volume，只要在 Pod 里加上 spec.volumes 字段即可，**如果你并不知道有哪些 Volume 类型可以用，要怎么办呢？**
 
 > 作为一个应用开发者，我可能对持久化存储项目（比如 Ceph、GlusterFS 等）一窍不通,自然不会编写它们对应的 Volume 定义文件。
@@ -13,6 +15,8 @@
 * 3）PV 对象则描述了真正的 Volume，一般是由运维人员维护。
 
 **PVC 与 PV 类似 接口与实现的思想**。开发者使用时只需要关心接口 即PVC ，具体实现 PV 则由运维人员维护。
+
+
 
 ## 2. 例子
 
@@ -108,10 +112,8 @@ PVC、PV 的设计，也使得 StatefulSet 对存储状态的管理成为了可�
 
 Pod 创建后 k8s 会给每个 Pod 编号， PVC 也是一样的，会有自己的编号。
 
-
-
 ```yaml
-
+---
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -192,3 +194,8 @@ StatefulSet 里的不同 Pod 实例，不再像 ReplicaSet 中那样都是完全
 **StatefulSet 其实就是一种特殊的 Deployment，而其独特之处在于，它的每个 Pod 都被编号了**。而且，这个编号会体现在 Pod 的名字和 hostname 等标识信息上，这不仅代表了 Pod 的创建顺序，也是 Pod 的重要网络标识（即：在整个集群里唯一的、可被访问的身份）。
 
 有了这个编号后，StatefulSet 就使用 Kubernetes 里的两个标准功能：**Headless Service **和 **PV/PVC**，实现了对 Pod 的**拓扑状态**和**存储状态**的维护。
+
+* 1）StatefulSet 为Pod编号
+* 2）Headless Service 根据编号为Pod创建DNS记录，作为固定的访问入口
+* 3）PV/PVC 根据编号将Pod和对应Volume绑定，由于是远程Volume所以Pod重启也不会让Volume丢失。
+

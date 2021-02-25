@@ -1,5 +1,7 @@
 # Deployment
 
+> [Deployment 官方文档](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/)
+
 ## 1. 概述
 
 Deployment 实际上是一个**两层控制器**。

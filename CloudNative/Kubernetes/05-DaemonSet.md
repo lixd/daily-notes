@@ -1,10 +1,10 @@
 # DaemonSet
 
-
+> [DaemonSet 官方文档](https://kubernetes.io/docs/concepts/workloads/controllers/daemonset/)
 
 ## 1. 概述
 
-DaemonSet 的主要作用，是让你在 Kubernetes 集群里，运行一个 Daemon Pod。
+**DaemonSet 的主要作用，是让你在 Kubernetes 集群里，运行一个 Daemon Pod**。
 
 这个 Pod 有如下三个特征：
 
@@ -23,8 +23,6 @@ DaemonSet 的主要作用，是让你在 Kubernetes 集群里，运行一个 Dae
 > k8s 日志收集中就以一种通过 DaemonSet 方式进行日志收集的。
 
 更重要的是，跟其他编排对象不一样，**DaemonSet 开始运行的时机，很多时候比整个 Kubernetes 集群出现的时机都要早**。
-
-
 
 
 
