@@ -1,5 +1,7 @@
 # Job CronJob
 
+> [Job 官方文档](https://kubernetes.io/docs/concepts/workloads/controllers/job/)
+
 ## 1. 概述
 
 根据作业的不同，可以将其分为 LRS（Long Running Service）和 Batch Jobs 两种作业形态。
@@ -40,7 +42,7 @@ spec:
  **restartPolicy**：重启策略。
 
 * 如果 restartPolicy=Never，那么离线作业失败后 Job Controller 就会不断地尝试创建一个新 Pod
-* r如果 restartPolicy=OnFailure，那么离线作业失败后，Job Controller 就不会去尝试创建新的 Pod。而是不断地尝试重启 Pod 里的容器。
+* 如果 restartPolicy=OnFailure，那么离线作业失败后，Job Controller 就不会去尝试创建新的 Pod。而是不断地尝试重启 Pod 里的容器。
 
 > 事实上，restartPolicy 在 Job 对象里只允许被设置为 Never 和 OnFailure；而在 Deployment 对象里，restartPolicy 则只允许被设置为 Always。
 

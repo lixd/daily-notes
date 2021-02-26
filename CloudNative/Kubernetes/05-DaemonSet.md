@@ -12,7 +12,7 @@
 * 2）每个节点上只有一个这样的 Pod 实例；
 * 3）当有新的节点加入 Kubernetes 集群后，该 Pod 会自动地在新节点上被创建出来；而当旧节点被删除后，它上面的 Pod 也相应地会被回收掉。
 
-常用场景：
+**常用场景**：
 
 * 1）各种网络插件的 Agent 组件，都必须运行在每一个节点上，用来处理这个节点上的容器网络；
 * 2）各种存储插件的 Agent 组件，也必须运行在每一个节点上，用来在这个节点上挂载远程存储目录，操作容器的 Volume 目录；
@@ -31,7 +31,7 @@
 DaemonSet YAML 文件如下：
 
 ```yaml
-
+---
 apiVersion: apps/v1
 kind: DaemonSet
 metadata:
@@ -114,7 +114,7 @@ k8s 会对不可用的 Node 进行污点标记，比如节点不可调度就标�
 
 在正常情况下，被标记了 unschedulable “污点”的 Node，是不会有任何 Pod 被调度上去的（effect: NoSchedule）。
 
-于是，DaemonSet 为了保证每个节点上都会被调度一个 Pod，需要突破这个限制。
+因此，DaemonSet 为了保证每个节点上都会被调度一个 Pod，需要突破这个限制。
 
 所以，DaemonSet 还会给这个 Pod 自动加上另外一个与调度相关的字段，叫作 tolerations。这个字段意味着这个 Pod，会“容忍”（Toleration）某些 Node 的“污点”（Taint）。
 
@@ -139,7 +139,9 @@ spec:
 
 ## 3. ControllerRevision
 
-Deployment 管理版本，靠的是“一个版本对应一个 ReplicaSet 对象”。可是，DaemonSet 控制器操作的直接就是 Pod，不可能有 ReplicaSet 这样的对象参与其中。
+Deployment 管理版本，靠的是“一个版本对应一个 ReplicaSet 对象”。
+
+可是，DaemonSet 控制器操作的直接就是 Pod，不可能有 ReplicaSet 这样的对象参与其中。
 
 那么，它的这些版本又是如何维护的呢？
 

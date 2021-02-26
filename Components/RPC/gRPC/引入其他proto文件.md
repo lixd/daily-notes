@@ -40,7 +40,7 @@ option go_package = "{out_path};out_go_package";
 
 前一个参数用于指定生成文件的位置，后一个参数指定生成的 .go 文件的 package 。
 
-这里指定的 out_path 并不是绝对路径，只是相对路径或者说只是路径的一部分。
+**这里指定的 out_path 并不是绝对路径，只是相对路径或者说只是路径的一部分**。
 
 和 protoc 的 `--go_out` 拼接后才是完整的路径。
 
