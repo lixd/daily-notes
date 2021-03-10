@@ -1,5 +1,7 @@
 # K8s 权限控制 RBAC
 
+> [Kubernetes RBAC官方文档](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)
+
 ## 1. 概述
 
  **Kubernetes 项目中，负责完成授权（Authorization）工作的机制，就是 RBAC：基于角色的访问控制（Role-Based Access Control）。**
@@ -14,8 +16,6 @@ RBAC API 声明了四种 Kubernetes 对象：Role、ClusterRole、RoleBinding �
 > 其中 Role 和 RoleBinding 作用在某个 namespace，ClusterRole和ClusterRoleBinding 则作用在整个集群。
 
 
-
-> [Kubernetes官方文档](https://kubernetes.io/docs/reference/access-authn-authz/rbac/)
 
 ## 2. 基本概念
 
@@ -141,8 +141,6 @@ metadata:
 一个最简单的 ServiceAccount 对象只需要 Name 和 Namespace 这两个最基本的字段。
 
 ServiceAccount 也是 subject 中的一种。
-
-
 
 
 
@@ -354,7 +352,7 @@ ca.crt	namespace  token
 
 1）使用 通过 role-binding 将 role 和 subject 进行关联。
 
-2）Pod 中通过设置 spec.serviceAccountName 来指定对应的 subject，以现在 Pod 中容器的权限。
+2）Pod 中通过设置 spec.serviceAccountName 来指定对应的 subject，以限制 Pod 中容器的权限。
 
 3）subject 除`用户`外还有 `用户组`的概念，通过用户组可以直接给某个 namespace下或者整个集群中的 ServiceAccount 绑定权限。
 

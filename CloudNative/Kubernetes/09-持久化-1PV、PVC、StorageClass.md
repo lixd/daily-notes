@@ -2,6 +2,14 @@
 
 ## 1. 概述
 
+简单理解：
+
+* PV是具体实现
+* PVC是接口
+* StorageClass 则是根据接口自动创建具体实现的插件
+
+
+
 **PV 描述的，是持久化存储数据卷**。这个 API 对象主要定义的是一个持久化存储在宿主机上的目录，比如一个 NFS 的挂载目录。
 
 > 通常情况下，PV 对象是由运维人员事先创建在 Kubernetes 集群里待用的
@@ -293,3 +301,9 @@ No events.
 * 1）运维人员创建 StorageClass ；
 * 2）开发人员在 PVC 中指定要使用的 StorageClass 名字；
 * 3）创建 PVC 时 Kubernetes 就会自动创建出对应的 PV。
+
+简单理解：
+
+* PV是具体实现
+* PVC是接口
+* StorageClass 则是根据接口自动创建具体实现的插件
