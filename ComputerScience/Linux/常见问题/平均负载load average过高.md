@@ -131,7 +131,7 @@ Load Average 过高一般可以通过以下几个方面进行排查：
   4.wa io等待时间长
      iowait% <20%       良好
      iowait% <35%       一般
-     iowait% >50%
+     iowait% >50%	
   5.进一步使用iostat观察
 **CPU瓶颈：load,vmstat中r列**
   1.反应为CPU队列长度
