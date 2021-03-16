@@ -8,7 +8,9 @@
 
 在 Kubernetes 里，网络隔离能力的定义，是依靠一种专门的 API 对象来描述的，即：**NetworkPolicy**。
 
-**Kubernetes 里的 Pod 默认都是“允许所有”（Accept All）的**。即：Pod 可以接收来自任何发送方的请求；或者，向任何接收方发送请求。而如果你要对这个情况作出限制，就必须通过 NetworkPolicy 对象来指定。
+**Kubernetes 里的 Pod 默认都是“允许所有”（Accept All）的**。即：Pod 可以接收来自任何发送方的请求；或者，向任何接收方发送请求。
+
+而如果你要对这个情况作出限制，就必须通过 NetworkPolicy 对象来指定。
 
 
 
@@ -55,14 +57,14 @@ spec:
 
 具体参数如下：
 
-* metadata.namespace 指定要限制 default namespace 下的Pod
-* spec.podSelector.matchLabels 用于匹配要限制的 Pod，这里就是限制有 role: db 这个标签的 Pod
-* policyTypes 指定要限制的类型，Ingress 为入流量，Egress为出流量。
-* from、to 则是白名单，有 ipBlock、namespaceSelector 和 podSelector 这三种指定方式。
+* **metadata.namespace** 指定要限制 default namespace 下的Pod
+* **spec.podSelector.matchLabels** 用于匹配要限制的 Pod，这里就是限制有 role: db 这个标签的 Pod
+* **policyTypes **指定要限制的类型，Ingress 为入流量，Egress为出流量。
+* **ingress.from、egress.to** 则是白名单，匹配具体的IP或者Pod，有 ipBlock、namespaceSelector 和 podSelector 这三种指定方式。
   * ipBlock：特定的 IP CIDR 范围。
   * podSelector ：在 NetworkPolicy 指定的名字空间中选择特定的 Pod
   * namespaceSelector ：特定 namespace 里的所有 Pod
-* ports 则是白名单对应的端口号，from 则是允许访问的端口，to 则是允许访问的目标端口。
+* **ports** 同样是白名单，用于匹配具体的端口号
 
 
 
