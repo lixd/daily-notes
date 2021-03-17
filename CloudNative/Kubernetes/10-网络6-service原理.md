@@ -52,7 +52,7 @@ spec:
 
 这个应用的作用，就是每次访问 9376 端口时，返回它自己的 hostname。
 
-而被 selector 选中的 Pod，就称为 Service 的 Endpoints，你可以使用 kubectl get ep 命令看到它们，如下所示：
+而被 selector 选中的 Pod，就称为 Service 的 Endpoints，你可以使用 `kubectl get endpoints` 命令看到它们，如下所示：
 
 ```sh
 $ kubectl get endpoints hostnames
@@ -105,6 +105,8 @@ hostnames-bvc05
 
 并且，由于 10.0.1.175 只是一条 iptables 规则上的配置，并没有真正的网络设备，所以你 ping 这个地址，是不会有任何响应的。
 
+> 因为需要指定具体端口时才会匹配上
+
 ### iptables 链
 
 我们即将跳转到的 KUBE-SVC-NWV5X2332I4OT4T3 规则实际上是一组规则的集合，如下所示：
@@ -141,6 +143,8 @@ hostnames-bvc05
 可以看到，这三条链，其实是三条 DNAT 规则。而且在 DNAT 规则之前，iptables 对流入的 IP 包还设置了一个“标志”（–set-xmark）。
 
 **DNAT 规则的作用，就是在 PREROUTING 检查点之前，也就是在路由之前，将流入 IP 包的目的地址和端口，改成–to-destination 所指定的新的目的地址和端口**。可以看到，这个目的地址和端口，正是被代理 Pod 的 IP 地址和端口。
+
+> DNAT规则的作用，就是将流入的IP包的目的地址和端口，改成被代理Pod的IP地址和端口。
 
 这样，访问 Service VIP 的 IP 包经过上述 iptables 处理之后，就已经变成了访问具体某一个后端 Pod 的 IP 包了。
 
@@ -210,7 +214,7 @@ IPVS 模式的工作原理，其实跟 iptables 模式类似。当我们创建�
 
 ## 5. 小结
 
-所谓 Service，其实就是 Kubernetes 为 Pod 分配的、固定的、基于 iptables（或者 IPVS）的访问入口。而这些访问入口代理的 Pod 信息，则来自于 Etcd，由 kube-proxy 通过控制循环来维护。
+**所谓 Service，其实就是 Kubernetes 为 Pod 分配的、固定的、基于 iptables（或者 IPVS）的访问入口**。而这些访问入口代理的 Pod 信息，则来自于 Etcd，由 kube-proxy 通过控制循环来维护。
 
 
 
@@ -223,7 +227,7 @@ Service 原理：
   * KUBE-SVC-(hash) 规则对应的负载均衡链，这些规则的数目应该与 Endpoints 数目一致；
 * 3）然后，这些 Endpoints 对应的 iptables 规则，正是 kube-proxy 通过监听 Pod 的变化事件，在宿主机上生成并维护的。
 
-上述模式需要维护大量 iptables，在大量Pod的情况下，性能不佳，于是出现了 IPVS 模式。创建虚拟网卡，并分配虚拟IP的形式，直接使用Linux 的 IPVS 模块，由于将转发逻辑放到了 Linux 内核中执行，性能上有所提升。
+上述模式需要维护大量 iptables，在大量Pod的情况下，性能不佳，于是出现了 **IPVS 模式**。以创建虚拟网卡，并分配虚拟IP的形式，直接使用Linux 的 IPVS 模块，由于将转发逻辑放到了 Linux 内核中执行，性能上有所提升。
 
 
 

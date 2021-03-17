@@ -45,7 +45,7 @@ spec:
 
 > 如果你不显式地声明 nodePort 字段，Kubernetes 就会为你分配随机的可用端口来设置代理。这个端口的范围默认是 30000-32767，你可以通过 kube-apiserver 的–service-node-port-range 参数来修改它。
 
-么这时候，要访问这个 Service，你只需要访问：
+那么这时候，要访问这个 Service，你只需要访问：
 
 ```sh
 <任何一台宿主机的IP地址>:8080
@@ -53,7 +53,7 @@ spec:
 
 就可以访问到某一个被代理的 Pod 的 80 端口了。
 
-odePort 模式也就非常容易理解,kube-proxy 要做的，就是在每台宿主机上生成这样一条 iptables 规则：
+**NodePort 模式也就非常容易理解,kube-proxy 要做的，就是在每台宿主机上生成这样一条 iptables 规则**：
 
 ```sh
 -A KUBE-NODEPORTS -p tcp -m comment --comment "default/my-nginx: nodePort" -m tcp --dport 8080 -j KUBE-SVC-67RL4FN6JRUPOJYM
@@ -130,7 +130,9 @@ spec:
   type: LoadBalancer
 ```
 
-在公有云提供的 Kubernetes 服务里，都使用了一个叫作 CloudProvider 的转接层，来跟公有云本身的 API 进行对接。所以，**在上述 LoadBalancer 类型的 Service 被提交后，Kubernetes 就会调用 CloudProvider 在公有云上为你创建一个负载均衡服务，并且把被代理的 Pod 的 IP 地址配置给负载均衡服务做后端**。
+在公有云提供的 Kubernetes 服务里，都使用了一个叫作 CloudProvider 的转接层，来跟公有云本身的 API 进行对接。
+
+所以，**在上述 LoadBalancer 类型的 Service 被提交后，Kubernetes 就会调用 CloudProvider 在公有云上为你创建一个负载均衡服务，并且把被代理的 Pod 的 IP 地址配置给负载均衡服务做后端**。
 
 
 
@@ -152,7 +154,9 @@ spec:
 
 这时候，当你通过 Service 的 DNS 名字访问它的时候，比如访问：my-service.default.svc.cluster.local。那么，Kubernetes 为你返回的就是my.database.example.com。
 
-所以说，**ExternalName 类型的 Service，其实是在 kube-dns 里为你添加了一条 CNAME 记录**。这时，访问 my-service.default.svc.cluster.local 就和访问 my.database.example.com 这个域名是一个效果了。
+所以说，**ExternalName 类型的 Service，其实是在 kube-dns 里为你添加了一条 CNAME 记录**。
+
+这时，访问 my-service.default.svc.cluster.local 就和访问 my.database.example.com 这个域名是一个效果了。
 
 此外，Kubernetes 的 Service 还允许你为 Service 分配公有 IP 地址，比如下面这个例子：
 
@@ -234,3 +238,9 @@ I1027 22:14:54.040223    5063 proxier.go:294] Adding new service "kube-system/ku
 * 2）KUBE-SEP-(hash) 规则对应的 DNAT 链，这些规则应该与 Endpoints 一一对应；
 * 3）KUBE-SVC-(hash) 规则对应的负载均衡链，这些规则的数目应该与 Endpoints 数目一致；
 * 4）如果是 NodePort 模式的话，还有 POSTROUTING 处的 SNAT 链。
+
+
+
+## 6. 小结 
+
+**所谓 Service，其实就是 Kubernetes 为 Pod 分配的、固定的、基于 iptables（或者 IPVS）的访问入口**。而这些访问入口代理的 Pod 信息，则来自于 Etcd，由 kube-proxy 通过控制循环来维护。
