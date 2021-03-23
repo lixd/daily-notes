@@ -27,8 +27,6 @@ SIG-Node 以及 kubelet，其实是 Kubernetes 整套体系里非常核心的一
 
 所以，跟其他控制器类似，kubelet 启动的时候，要做的第一件事情，就是设置 Listers，也就是注册它所关心的各种事件的 Informer。这些 Informer，就是 SyncLoop 需要处理的数据的来源。
 
-
-
 此外，kubelet 还负责维护着很多很多其他的子控制循环（也就是图中的小圆圈）。这些控制循环的名字，一般被称作某某 Manager，比如 Volume Manager、Image Manager、Node Status Manager 等等。这些控制循环的责任，就是通过控制器模式，完成 kubelet 的某项具体职责。
 
 
@@ -37,21 +35,13 @@ SIG-Node 以及 kubelet，其实是 Kubernetes 整套体系里非常核心的一
 
 实际上，kubelet 也是通过**Watch**机制，监听了与自己相关的 Pod 对象的变化。
 
-
-
 而当一个 Pod 完成调度、与一个 Node 绑定起来之后， 这个 Pod 的变化就会触发 kubelet 在控制循环里注册的 Handler，也就是上图中的 HandlePods 部分。此时，通过检查该 Pod 在 kubelet 内存里的状态，kubelet 就能够判断出这是一个新调度过来的 Pod，从而触发 Handler 里 ADD 事件对应的处理逻辑。
-
-
 
 在具体的处理过程当中，kubelet 会启动一个名叫 Pod Update Worker 的、单独的 Goroutine 来完成对 Pod 的处理工作。
 
 比如，如果是 ADD 事件的话，kubelet 就会为这个新的 Pod 生成对应的 Pod Status，检查 Pod 所声明使用的 Volume 是不是已经准备好。然后，调用下层的容器运行时（比如 Docker），开始创建这个 Pod 所定义的容器。
 
 而如果是 UPDATE 事件的话，kubelet 就会根据 Pod 对象具体的变更情况，调用下层容器运行时进行容器的重建工作。
-
-
-
-
 
 
 
@@ -81,7 +71,7 @@ Kubernetes 项目之所以要在 kubelet 中引入 CRI 这样一层单独的抽�
 
 ## 4. 小结
 
-scheduler 将Pod调度到具体某一个Node之后，后续就由kubelet接手。
+scheduler 将 Pod 调度到具体某一个 Node 之后，后续就由 kubelet 接手。
 
 通过抽象 CRI 将 kubelet 和具体 ContainerRuntime 解耦。
 
