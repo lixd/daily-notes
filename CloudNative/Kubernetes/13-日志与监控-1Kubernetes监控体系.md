@@ -51,3 +51,38 @@ http://127.0.0.1:8001/apis/metrics.k8s.io/v1beta1/namespaces/<namespace-name>/po
 
 
 **kube-aggregator 其实就是一个根据 URL 选择具体的 API 后端的代理服务器**。
+
+
+
+## 4. 指标监控
+
+在具体的监控指标规划上，建议你**遵循业界通用的 USE 原则和 RED 原则**。
+
+其中，USE 原则指的是，按照如下三个维度来规划资源监控指标：
+
+* 1）利用率（Utilization），资源被有效利用起来提供服务的平均时间占比；
+* 2）饱和度（Saturation），资源拥挤的程度，比如工作队列的长度；
+* 3）错误率（Errors），错误的数量。
+
+而 RED 原则指的是，按照如下三个维度来规划服务监控指标：
+
+* 1）每秒请求数量（Rate）；
+* 2）每秒错误数量（Errors）；
+* 3）服务响应时间（Duration）。
+
+不难发现， USE 原则主要关注的是“资源”，比如节点和容器的资源使用情况，而 RED 原则主要关注的是“服务”，比如 kube-apiserver 或者某个应用的工作情况。
+
+这两种指标，在 Kubernetes + Prometheus 组成的监控体系中，都是可以完全覆盖到的。
+
+
+
+## 5. 自定义 Metrics
+
+自定义metrics主要依赖于kube-aggregator，访问custom.metrics.k8s.io时kube-aggregator会转发给 Custom Metrics APIServer。
+
+
+
+使用自定义 Metrics 可以让Auto Scaling等功能不再“食之无味”。
+
+Kubernetes 社区已经为你提供了一套叫作 [ KubeBuilder](https://github.com/kubernetes-sigs/kubebuilder) 的工具库，帮助你生成一个 API Server 的完整代码框架，你只需要在里面添加自定义 API，以及对应的业务逻辑即可。
+

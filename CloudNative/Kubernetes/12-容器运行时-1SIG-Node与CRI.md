@@ -1,5 +1,7 @@
 # SIG-Node与CRI
 
+> [CRI官方文档](https://kubernetes.io/blog/2016/12/container-runtime-interface-cri-in-kubernetes/)
+
 ## 1. 概述
 
 SIG-Node 以及 kubelet，其实是 Kubernetes 整套体系里非常核心的一个部分。 毕竟，它们才是 Kubernetes 这样一个容器编排与管理系统，跟容器打交道的主要“场所”。
