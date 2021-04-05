@@ -1,10 +1,19 @@
-# Service、DNS与服务发现
+---
+title: "Kubernetes系列(四)---Service核心原理"
+description: "Kubernetes Service实现原理"
+date: 2021-04-02
+draft: false
+categories: ["Kubernetes"]
+tags: ["Kubernetes"]
+---
+
+本文主要讲述了 Kubernetes 中的 Service 的具体实现原理。所谓 Service，其实就是 Kubernetes 为 Pod 分配的、固定的、基于 iptables（或者 IPVS）的访问入口。而这些访问入口代理的 Pod 信息，则来自于 Etcd，由 kube-proxy 通过控制循环来维护。
+
+<!--more-->
 
 ## 1. 概述
 
  Kubernetes 之所以需要 Service，一方面是因为 Pod 的 IP 不是固定的，另一方面则是因为一组 Pod 实例之间总会有负载均衡的需求。
-
-
 
 一个最典型的 Service 定义，如下所示：
 
@@ -237,3 +246,15 @@ DNS：
 
 * ClusterIP：`<serviceName>.<namespace>.svc.cluster.local`
 * Headless Service：`<podName>.<serviceName>.<namesapce>.svc.cluster.local`
+
+
+
+
+
+## 6. 参考
+
+`https://kubernetes.io/docs/concepts/services-networking/service/`
+
+`https://draveness.me/kubernetes-service/`
+
+`深入剖析Kubernetes`
