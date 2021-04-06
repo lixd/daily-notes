@@ -3,9 +3,11 @@
 ## 1. 流程
 
 * 1）创建 Index（Settings & Mappings）
-
 * 2）导入数据
 * 3）CRUD
+* 4）索引别名
+
+> 本教程基于Elasticsearch7.x版本
 
 
 
@@ -27,13 +29,12 @@
 直接写入测试数据
 
 ```shell
-POST /open_cate/_doc
+POST sites_v1/_doc
 {
-  "name":"Golang",
-  "date":"2020-07-09"
-  "is_vip":false
+  "id":"mock id",
+  "keywords":["search"],
+  "host":"baidu.com"
 }
-
 ```
 
 未指定 Mapping 写入数据的时候，Elasticsearch 会根据写入的文档来自动生成 Mapping。
@@ -42,19 +43,31 @@ POST /open_cate/_doc
 
 ```shell
 # 查看自动生成的 Mapping
-GET /open_cate/_mapping
+GET sites_v1/_mapping
 # 结果如下
 {
-  "open_cate_v1" : {
+  "sites" : {
     "mappings" : {
       "properties" : {
-        "date" : {
-          "type" : "date"
+        "host" : {
+          "type" : "text",
+          "fields" : {
+            "keyword" : {
+              "type" : "keyword",
+              "ignore_above" : 256
+            }
+          }
         },
-        "is_vip" : {
-          "type" : "boolean"
+        "id" : {
+          "type" : "text",
+          "fields" : {
+            "keyword" : {
+              "type" : "keyword",
+              "ignore_above" : 256
+            }
+          }
         },
-        "name" : {
+        "keywords" : {
           "type" : "text",
           "fields" : {
             "keyword" : {
@@ -67,6 +80,7 @@ GET /open_cate/_mapping
     }
   }
 }
+
 ```
 
 假设自动生成的 Mapping 有的字段类型识别错了，那就在这个基础上手动修改，不用每个字段都去写了。
@@ -75,48 +89,65 @@ GET /open_cate/_mapping
 
 ```shell
 # 删除 Index
-DELETE /open_cate
+DELETE sites_v1
 
 # 修改后指定 Mapping
-PUT /open_cate_v1
+PUT sites_v1
 {
-    "settings": {
-       "number_of_shards": 3,
-       "number_of_replicas": 1
-    },
-    "mappings" : {
-      "properties" : {
-        "date" : {
-          "type" : "date"
-        },
-        "is_vip" : {
-          "type" : "boolean"
-        },
-        "name" : {
-          "type" : "text",
-          "fields" : {
-            "keyword" : {
-              "type" : "keyword",
-              "ignore_above" : 256
-            }
-          }
-        }
+  "mappings": {
+    "properties": {
+      "host": {
+        "type": "keyword"
+      },
+      "id": {
+        "type": "keyword"
+      },
+      "keywords": {
+        "type": "text"
       }
     }
+  }
 }
 ```
 
-#### 
+
 
 ### 2. Settings
 
-一般`Settings`中需要手动指定主分片与副本分片数。
+一般创建索引时需要在`Settings`中手动指定主分片与副本分片数。
 
-```shell
+```sh
  "settings": {
-        "number_of_shards": 3,
+        "number_of_shards": 1,
         "number_of_replicas": 1
     }
+```
+
+删除索引后重新创建，可以和Mapping一起设置。
+
+```shell
+# 删除索引后重新创建
+DELETE sites_v1
+PUT sites_v1
+{
+  "settings": {
+    "number_of_shards": 1,
+    "number_of_replicas": 1
+  },
+  "mappings": {
+    "properties": {
+      "host": {
+        "type": "keyword"
+      },
+      "id": {
+        "type": "keyword"
+      },
+      "keywords": {
+        "type": "text"
+      }
+    }
+  }
+}
 ```
 
 对于生产环境中分片的设定，需要提前做好容量规划
@@ -136,9 +167,9 @@ PUT /open_cate_v1
 
 ```shell
 # 需要先 close Index
-POST /open_cate_v1/_close
+POST sites_v1/_close
 # 为 Index 单独指定分词器
-PUT open_cate_v1/_settings
+PUT sites_v1/_settings
 {
   "index":{
     "analysis.analyzer.default.type":"ik_max_word",
@@ -146,7 +177,7 @@ PUT open_cate_v1/_settings
   }
 }
 # 然后继续开启
-POST open_cate_v1/_open
+POST sites_v1/_open
 ```
 
 
@@ -156,16 +187,14 @@ POST open_cate_v1/_open
 使用批量操作`_bulk`写入部分数据
 
 ```shell
-# 写入数据
- POST open_cate/_bulk
- { "index" : { "_id" : "1" } }
- { "name":"Golang","date":"2020-07-09","is_vip":true }
- { "index" : { "_id" : "2" } }
- { "name":"Java","date":"2020-07-08","is_vip":false }
- { "index" : { "_id" : "3" } }
- { "name":"Python","date":"2020-07-07","is_vip":false }
- { "index" : { "_id" : "4" } }
- { "name":"Php","date":"2020-07-06","is_vip":false }
+#写入部分数据
+ POST sites_v1/_bulk
+{"index":{"_id":"1"}}
+{"id":"1","keywords":["golang"],"host":"golang.org"}
+{"index":{"_id":"2"}}
+{"id":"2","keywords":["java"],"host":"java.com"}
+{"index":{"_id":"3"}}
+{"id":"3","keywords":["cpp"],"host":"cplusplus.com"}
 ```
 
 
@@ -178,7 +207,7 @@ POST open_cate_v1/_open
 
 建议为所有的 Index 都指定一个别名，后续可以进行索引的平滑切换。
 
-比如创建的 Index 名为`open_cate_v1`，通过如下请求添加了一个别名`open_cate`。
+比如创建的 Index 名为`sites_v1`，通过如下请求添加了一个别名`sites`。
 
 ```shell
 # alias 指定别名 
@@ -186,18 +215,18 @@ POST _aliases
 {
     "actions": [
         { "add": {
-            "alias": "open_cate",
-            "index": "open_cate_v1"
+            "alias": "sites",
+            "index": "sites_v1"
         }}
     ]
 }
 ```
 
-后续就能通过`open_cate`来访问索引`open_cate_v1`了。
+后续就能通过`sites`来访问索引`sites_v1`了。
 
 由于 Mapping 设置之后就不能改了，所以假如某天需要调整 Mapping 就只能创建一个新的 Index。
 
-比如叫做`open_cate_v2`，然后只需要把`open_cate_v2`别名设置为`open_cate`就能直接不做任何改动的情况下平滑过渡到新 Index。
+比如叫做`sites_v2`，然后只需要把`sites_v2`别名设置为`sites`就能直接不做任何改动的情况下平滑过渡到新 Index。
 
 ```shell
 # alias 指定别名到新 Index 同时移除旧的 
@@ -205,12 +234,12 @@ POST _aliases
 {
     "actions": [
         { "add": {
-            "alias": "open_cate",
-            "index": "open_cate_v2"
+            "alias": "sites",
+            "index": "sites_v2"
         },
         "remove": {
-            "alias": "open_cate",
-            "index": "open_cate_v1"
+            "alias": "sites",
+            "index": "sites_v1"
         }}
     ]
 }

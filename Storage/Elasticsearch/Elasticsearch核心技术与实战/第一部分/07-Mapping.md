@@ -88,26 +88,26 @@ GET mapping_test/_mapping
 
 ### 2. 能否更改 Mapping 的字段类型
 
-<<<<<<< HEAD
 * 两种情况
   * 新增加字段
     * Dynamic 设置为 true 时，一旦有新增字段的文档写入，Mapping 也同时被更新
     * Dynamic 设置为 false 时，Mapping 不会被更新，新增字段的数据无法被索引，但是信息会出现在`_source`字段中
     * Dynamic 设置为 Strict 时，文档写入会失败
   * 修改已有字段，一旦已经有数据写入，就不再支持修改字段定义
+    
     * 因为 Lucene 实现的倒排索引，一旦生成后，就不允许修改
-  * 如果希望改变字段类型，必须调用 Reindex API，重建索引
+* 如果希望改变字段类型，必须调用 Reindex API，重建索引
 =======
-
+  
 * 新增加字段
   * Dynamic 设置为 true 时，一旦有新增字段的文档写入，Mapping 也同时被更新
   * Dynamic 设置为 false 时，Mapping 不会被更新，新增字段的数据无法被索引，但是信息会出现在`_sourcez`中
   * Dynamic 设置为 Strict 时，文档写入会失败
 * 对已有字段，一旦已经有数据写入，就不再支持修改字段定义
+  
   * **因为 Lucene 实现的倒排索引，一旦生成后，就不允许修改**
 * 如果希望改变字段类型，必须调用 **Reindex API，重建索引**
 
->>>>>>> 17e4fda6f68f52015eae9244a46239680c6ea95c
 * 原因
   * 如果修改了字段的数据类型，会导致已经被索引的数据无法被搜索
   * 但是如果是增加新的字段，就不会有这样的影响
@@ -123,14 +123,10 @@ PUT movies/_mapping
 
 ```
 
-<<<<<<< HEAD
+
 Dynamic Mapping 值不同的情况下，写入**新增字段**文档的情况变化
 
 | DynamicMapping | true | false | scrict |
-=======
-| dynamic        | true | false | scrict |
->>>>>>> 17e4fda6f68f52015eae9244a46239680c6ea95c
-| -------------- | ---- | ----- | ------ |
 | 文档可索引     | YES  | YES   | NO     |
 | 字段可索引     | YES  | NO    | NO     |
 | Mapping 被更新 | YES  | NO    | NO     |
