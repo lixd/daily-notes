@@ -4,15 +4,18 @@
 
 所谓 Service，其实就是 Kubernetes 为 Pod 分配的、固定的、基于 iptables（或者 IPVS）的**访问入口**。而这些访问入口代理的 Pod 信息，则来自于 Etcd，由 kube-proxy 通过控制循环来维护。
 
+四种访问方式如下：
 
+* 1）ClusterIP
 
-三种访问方式如下：
+* 2）NodePort
+* 3）LoadBalancer
+* 4）ExternalName
 
-* 1）NodePort
-* 2）LoadBalancer
-* 3）ExternalName
+`ClusterIP`： 默认方式。根据是否生成ClusterIP又可分为普通Service和Headless Service两类：
 
-
+- 普通Service：通过为Kubernetes的Service分配一个集群内部可访问的`固定虚拟IP`（Cluster IP），实现集群内的访问。为最常见的方式。
+- Headless Service：该服务不会分配Cluster IP，也不通过kube-proxy做反向代理和负载均衡。而是通过DNS提供稳定的络ID来访问，DNS会将headless service的后端直接解析为podIP列表。主要供StatefulSet使用。
 
 ## 2. NodePort
 
