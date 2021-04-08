@@ -141,18 +141,7 @@ linux 下，可以通过设置 socket 使其变为 non-blocking。当对一个 n
 
 使用 sock_nonblock 使得该过程非阻塞
 
-```shell
-# 获取socket fd 文件描述符 假设是 fd5
-socket = fd5
-# 绑定端口
-bind 9800
-# 监听 这个 文件描述符
-listen fd5
-# 然后 accept 等待连接过来 比如这里 fd6 就是进来的连接
-accept fd5 = fd6
-# 然后从 fd6 读取数据
-recvfrom fd6       
-```
+
 
 ### 问题
 
