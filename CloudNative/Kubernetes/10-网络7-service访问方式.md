@@ -1,25 +1,47 @@
-# Kubernetes 之 Service
+---
+title: "Kubernetes系列教程(五)---Service 的几种访问方式"
+description: "Kubernetes Service 的几种访问方式"
+date: 2021-04-09
+draft: false
+categories: ["Kubernetes"]
+tags: ["Kubernetes"]
+---
+
+本文主要介绍了 Service 的几种访问方式，包括ClusterIP、NodePort、LoadBalancer、ExternalName等。
+
+<!--more-->
+
+
 
 ## 1. 概述
 
 所谓 Service，其实就是 Kubernetes 为 Pod 分配的、固定的、基于 iptables（或者 IPVS）的**访问入口**。而这些访问入口代理的 Pod 信息，则来自于 Etcd，由 kube-proxy 通过控制循环来维护。
 
-四种访问方式如下：
+Service 的四种访问方式如下：
 
-* 1）ClusterIP
+* 1）ClusterIP：通过集群的内部 IP 暴露服务，选择该值时服务只能够在集群内部访问。
+* 2）NodePort：通过每个节点上的 IP 和静态端口（`NodePort`）暴露服务。 `NodePort` 服务会路由到自动创建的 `ClusterIP` 服务。 通过请求 `<节点 IP>:<节点端口>`，你可以从集群的外部访问一个 `NodePort` 服务。
+* 3）LoadBalancer：使用云提供商的负载均衡器向外部暴露服务。 外部负载均衡器可以将流量路由到自动创建的 `NodePort` 服务和 `ClusterIP` 服务上。
+* 4）ExternalName：通过返回 `CNAME` 和对应值，可以将服务映射到 `externalName` 字段的内容（例如，`foo.bar.example.com`）。 无需创建任何类型代理。
 
-* 2）NodePort
-* 3）LoadBalancer
-* 4）ExternalName
+其中 ClusterIP 为默认方式，只能集群内部访问。NodePort、LoadBalancer 则是向外暴露服务的同时将流量路由到 ClusterIP服务。ExternalName 则是CNAME方式进行服务映射。
 
-`ClusterIP`： 默认方式。根据是否生成ClusterIP又可分为普通Service和Headless Service两类：
+## 2. 详解
 
-- 普通Service：通过为Kubernetes的Service分配一个集群内部可访问的`固定虚拟IP`（Cluster IP），实现集群内的访问。为最常见的方式。
-- Headless Service：该服务不会分配Cluster IP，也不通过kube-proxy做反向代理和负载均衡。而是通过DNS提供稳定的络ID来访问，DNS会将headless service的后端直接解析为podIP列表。主要供StatefulSet使用。
+### 2.1 ClusterIP
 
-## 2. NodePort
+`ClusterIP`也是 Service 的默认访问方式。
 
-NodePort 是最常用的一种方式。
+根据是否生成 ClusterIP 又可分为普通 Service 和 Headless Service 两类：
+
+- 普通 Service：通过为 Kubernetes 的 Service 分配一个集群内部可访问的`固定虚拟IP`（Cluster IP），实现集群内的访问，为最常见的方式。
+- Headless Service：该服务不会分配 Cluster IP，也不通过 kube-proxy 做反向代理和负载均衡。而是通过 DNS 提供稳定的网络络 ID 来访问，DNS 会将Headless Service 的后端（endpoints）直接解析为 PodIP 列表，主要供 StatefulSet 使用。
+
+
+
+### 2.2 NodePort
+
+NodePort 也是比较常见的一种访问方式。
 
 YAML 定义如下：
 
@@ -32,6 +54,8 @@ metadata:
     run: my-nginx
 spec:
   type: NodePort
+  selector:
+    app: my-nginx
   ports:
   - nodePort: 8080
     targetPort: 80
@@ -40,8 +64,7 @@ spec:
   - nodePort: 443
     protocol: TCP
     name: https
-  selector:
-    run: my-nginx
+
 ```
 
 在这个 Service 的定义里，我们声明它的类型是，type=NodePort。然后，我在 ports 字段里声明了 Service 的 8080 端口代理 Pod 的 80 端口，Service 的 443 端口代理 Pod 的 443 端口。
@@ -114,7 +137,7 @@ KUBE-SVC-67RL4FN6JRUPOJYM其实就是一组随机模式的 iptables 规则。所
 
 
 
-## 3. LoadBalancer
+### 2.3 LoadBalancer
 
 从外部访问 Service 的第二种方式，适用于公有云上的 Kubernetes 服务。这时候，你可以指定一个 LoadBalancer 类型的 Service。
 
@@ -139,7 +162,7 @@ spec:
 
 
 
-## 4. ExternalName
+### 2.4 ExternalName
 
 而第三种方式，是 Kubernetes 在 1.7 之后支持的一个新特性，叫作 ExternalName。举个例子：
 
@@ -184,7 +207,7 @@ spec:
 
 
 
-## 5. 故障诊断
+## 3. 故障诊断
 
 在理解了 Kubernetes Service 机制的工作原理之后，很多与 Service 相关的问题，其实都可以通过分析 Service 在宿主机上对应的 iptables 规则（或者 IPVS 配置）得到解决。
 
@@ -244,6 +267,23 @@ I1027 22:14:54.040223    5063 proxier.go:294] Adding new service "kube-system/ku
 
 
 
-## 6. 小结 
+## 4. 小结 
 
 **所谓 Service，其实就是 Kubernetes 为 Pod 分配的、固定的、基于 iptables（或者 IPVS）的访问入口**。而这些访问入口代理的 Pod 信息，则来自于 Etcd，由 kube-proxy 通过控制循环来维护。
+
+* ClusterIP：集群内部IP，也是默认方法方式。
+* NodePort：通过节点IP+静态端口访问，NodePort 服务会将流量路由到 ClusterIP 服务。
+* LoadBalancer：使用云厂商提供的负载均衡向外暴露服务，可以将流量路由到 NodePort 服务或者ClusterIP 服务。
+* ExternalName：通过返回 CNAME 值的方式将服务映射到指定的域名。
+
+
+
+
+
+## 5. 参考
+
+`https://kubernetes.io/docs/concepts/services-networking/service/`
+
+`https://draveness.me/kubernetes-service/`
+
+`深入剖析Kubernetes`
