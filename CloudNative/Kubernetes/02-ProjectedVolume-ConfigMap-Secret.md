@@ -39,6 +39,21 @@ ServiceAccountToken 一种特殊的 Secret，是 Kubernetes 系统内置的一�
 
 ## 2. ConfigMap
 
+```sh
+# 创建
+$ kubectl create configmap 
+# 删除
+$ kubectl delete configmap ConfigMap名称
+# 编辑
+$ kubectl edit configmap ConfigMap名称
+# 查看-列表
+$ kubectl get configmap
+# 查看-详情
+$ kubectl describe configmap ConfigMap名称
+```
+
+
+
 ### 1. 创建
 
 可以使用 `kubectl create configmap` 从以下多种方式创建 ConfigMap。
@@ -173,12 +188,13 @@ Pod 可以通过三种方式来使用 ConfigMap，分别为：
 
 - 将 ConfigMap 中的数据设置为环境变量
 - 使用 Volume 将 ConfigMap 作为文件或目录挂载
+  - **注意：ConfigMap 中的每一个Key都会单独挂载为一个文件**
 
 **注意！！**
 
 - ConfigMap 必须在 Pod 使用它之前创建
 - 使用 envFrom 时，将会自动忽略无效的键
-- Pod 只能使用同一个命名空间的 ConfigMap
+- 一个Pod 只能使用同一个命名空间的 ConfigMap
 
 
 
