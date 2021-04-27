@@ -33,10 +33,6 @@ ServiceAccountToken 一种特殊的 Secret，是 Kubernetes 系统内置的一�
 
 
 
-> 官方文档：[Secret](https://kubernetes.io/docs/concepts/configuration/secret/)，[ConfigMap](https://kubernetes.io/docs/concepts/configuration/configmap/)
-
-
-
 ## 2. ConfigMap
 
 ```sh
@@ -520,3 +516,20 @@ spec:
 ```
 
 在这个 Pod 的 YAML 文件中，我定义了一个简单的容器，声明了一个 projected 类型的 Volume。只不过这次 Volume 的数据来源，变成了 Downward API。而这个 Downward API Volume，则声明了要暴露 Pod 的 **metadata.labels** 信息给容器。
+
+
+
+## 5. 小结
+
+建议使用 ConfigMap 管理配置信息，Secret 则可以用于管理敏感信息。
+
+
+
+## 6. 参考
+
+`https://kubernetes.io/docs/concepts/configuration/configmap/`
+
+`https://kubernetes.io/docs/concepts/configuration/secret/`
+
+`深入剖析Kubernetes`
+
