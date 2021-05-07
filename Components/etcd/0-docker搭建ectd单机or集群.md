@@ -36,8 +36,7 @@ services:
     ports:
       - 8088:8080
     networks:
-      - myetcd_single
-      
+      - myetcd_single  
 ```
 
 ### 3. 相关参数
@@ -167,12 +166,6 @@ docker-compose up -d
 ```sh
 localhost:8088
 ```
-
-
-
-> etcdKeeper访问etcd好像是通过外网访问的(也可能是我配置问题)
->
-> 如果是线上服务器的话需要配置一下安全组才能访问
 
 
 
