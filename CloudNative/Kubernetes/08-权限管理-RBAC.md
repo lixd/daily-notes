@@ -233,6 +233,8 @@ metadata:
   name: example-sa
 ```
 
+
+
 然后定义一个 role
 
 ```yaml
@@ -317,6 +319,34 @@ spec:
     image: nginx:1.7.9
   serviceAccountName: example-sa
 ```
+
+或者在 Deployment 中定义
+
+```yaml
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+spec:
+  selector:
+    matchLabels:
+      app: nginx
+  replicas: 2
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.7.9
+        ports:
+        - containerPort: 80
+      serviceAccountName: example-sa
+```
+
+
 
 等这个 Pod 运行起来之后，我们就可以看到，该 ServiceAccount 的 token，也就是一个 Secret 对象，被 Kubernetes 自动挂载到了容器的 /var/run/secrets/kubernetes.io/serviceaccount 目录下，如下所示：
 
