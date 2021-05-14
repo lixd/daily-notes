@@ -148,7 +148,7 @@ metadata:
 rules:
 - apiGroups: [""]
   resources: ["endpoints"]
-  verbs: ["get", "watch", "list"]
+  verbs: ["get", "watch"]
 ```
 
 
