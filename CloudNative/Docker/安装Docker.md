@@ -50,8 +50,10 @@ Docker 要求 CentOS 系统的内核版本高于 `3.10`。
 7、安装docker
 
 ```shell
-[root@localhost ~]#  yum install docker-ce (这样写默认安装最新版本)
-[root@localhost ~]#  yum install  docker-ce-<VERSION_STRING> (指定安装版本) 
+# (这样写默认安装最新版本)
+[root@localhost ~]#  yum install docker-ce 
+# (指定安装版本) 
+[root@localhost ~]#  yum install  docker-ce-<VERSION_STRING> 
 ```
 
 8、启动并加入开机启动
