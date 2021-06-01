@@ -1,5 +1,5 @@
 ---
-title: "gRPC系列教程(十二)---内置负载均衡"
+title: "gRPC系列教程(十二)---客户端负载均衡"
 description: "gRPC LoadBalance"
 date: 2021-05-08 22:00:00
 draft: false
@@ -7,7 +7,7 @@ tags: ["gRPC"]
 categories: ["gRPC"]
 ---
 
-本文主要介绍了 gRPC 内置的负载均衡策略及其配置与使用，包括 Name Resolver、ServiceConfig 等。
+本文主要介绍了 gRPC 客户端负载均衡策略及其配置与使用，包括 Name Resolver、ServiceConfig 等。
 
 <!--more-->
 
