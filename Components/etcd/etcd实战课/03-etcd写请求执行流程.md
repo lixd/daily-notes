@@ -5,8 +5,10 @@
 以一个简单的写请求为例，
 
 ```sh
+# 设置环境变量 指定使用 v3 版本API 否则可能会出现找不到 put 命令的情况
+$ export ETCDCTL_API=3
 $ etcdctl put hello world
-world
+ok
 ```
 
 具体流程如下图所示：

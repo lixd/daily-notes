@@ -1,5 +1,5 @@
 ---
-title: "gRPC系列教程(十一)---负载均衡"
+title: "gRPC系列教程(十二)---客户端负载均衡"
 description: "gRPC LoadBalance"
 date: 2021-05-08 22:00:00
 draft: false
@@ -7,7 +7,7 @@ tags: ["gRPC"]
 categories: ["gRPC"]
 ---
 
-本文主要介绍了 gRPC 内置的负载均衡策略及其配置与使用，包括 Name Resolver、ServiceConfig 等。
+本文主要介绍了 gRPC 客户端负载均衡策略及其配置与使用，包括 Name Resolver、ServiceConfig 等。
 
 <!--more-->
 
@@ -26,7 +26,7 @@ gRPC 的客户端负载均衡主要分为两个部分：
 
 ### 1. NameResolver
 
-具体可以参考[官方文档-Name Resolver](https://github.com/grpc/grpc/blob/master/doc/naming.md)
+具体可以参考[官方文档-Name Resolver](https://github.com/grpc/grpc/blob/master/doc/naming.md)或者[gRPC系列教程(十一)---NameResolver 实战及原理分析](https://www.lixueduan.com/post/grpc/11-name-resolver/)
 
 gRPC 中的默认 name-system 是DNS，同时在客户端以插件形式提供了自定义 name-system 的机制。
 
@@ -53,13 +53,11 @@ gRPC NameResolver 会根据 name-system 选择对应的解析器，用以解析�
 
 
 
-## 2. NameResolver
+## 2. Demo
 
-首先用一个Demo来介绍一个 gRPC 的NameResolver如何使用。
+
 
 ### 2.1 Server
-
-服务端代码比较简单，没有什么需要注意的点。
 
 ```go
 package main
@@ -69,12 +67,16 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"sync"
+
+	"google.golang.org/grpc"
 
 	pb "github.com/lixd/grpc-go-example/features/proto/echo"
-	"google.golang.org/grpc"
 )
 
-const addr = "localhost:50051"
+var (
+	addrs = []string{":50051", ":50052"}
+)
 
 type ecServer struct {
 	pb.UnimplementedEchoServer
@@ -85,26 +87,37 @@ func (s *ecServer) UnaryEcho(ctx context.Context, req *pb.EchoRequest) (*pb.Echo
 	return &pb.EchoResponse{Message: fmt.Sprintf("%s (from %s)", req.Message, s.addr)}, nil
 }
 
-func main() {
+func startServer(addr string) {
 	lis, err := net.Listen("tcp", addr)
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
 	s := grpc.NewServer()
 	pb.RegisterEchoServer(s, &ecServer{addr: addr})
-	log.Printf("serving on %s\n", addr)
+	log.Printf("serving on 0.0.0.0%s\n", addr)
 	if err := s.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %v", err)
 	}
 }
 
+func main() {
+	var wg sync.WaitGroup
+	for _, addr := range addrs {
+		wg.Add(1)
+		go func(addr string) {
+			defer wg.Done()
+			startServer(addr)
+		}(addr)
+	}
+	wg.Wait()
+}
 ```
+
+主要通过一个 for 循环，在 50051 和 50052 这两个端口上启动了服务。
 
 
 
 ### 2.2 Client
-
-客户端需要注意的是，这里建立连接时用到了自定义的Scheme，而不是默认的 DNS。所以需要有和这个自定义的Scheme对应的 Resolver 来解析才行。
 
 ```go
 package main
@@ -117,16 +130,15 @@ import (
 
 	pb "github.com/lixd/grpc-go-example/features/proto/echo"
 	"google.golang.org/grpc"
-
 	"google.golang.org/grpc/resolver"
 )
 
 const (
 	exampleScheme      = "example"
-	exampleServiceName = "resolver.example.grpc.io"
-
-	backendAddr = "localhost:50051"
+	exampleServiceName = "lb.example.grpc.lixueduan.com"
 )
+
+var addrs = []string{"localhost:50051", "localhost:50052"}
 
 func callUnaryEcho(c pb.EchoClient, message string) {
 	ctx, cancel := context.WithTimeout(context.Background(), time.Second)
@@ -141,58 +153,58 @@ func callUnaryEcho(c pb.EchoClient, message string) {
 func makeRPCs(cc *grpc.ClientConn, n int) {
 	hwc := pb.NewEchoClient(cc)
 	for i := 0; i < n; i++ {
-		callUnaryEcho(hwc, "this is examples/name_resolving")
+		callUnaryEcho(hwc, "this is examples/load_balancing")
 	}
 }
 
 func main() {
-	passthroughConn, err := grpc.Dial(
-		fmt.Sprintf("passthrough:///%s", backendAddr), // Dial to "passthrough:///localhost:50051"
+	// "pick_first" is the default, so there's no need to set the load balancer.
+	pickfirstConn, err := grpc.Dial(
+		fmt.Sprintf("%s:///%s", exampleScheme, exampleServiceName),
 		grpc.WithInsecure(),
 		grpc.WithBlock(),
 	)
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}
-	defer passthroughConn.Close()
+	defer pickfirstConn.Close()
 
-	fmt.Printf("--- calling helloworld.Greeter/SayHello to \"passthrough:///%s\"\n", backendAddr)
-	makeRPCs(passthroughConn, 10)
+	fmt.Println("--- calling helloworld.Greeter/SayHello with pick_first ---")
+	makeRPCs(pickfirstConn, 10)
 
 	fmt.Println()
 
-	exampleConn, err := grpc.Dial(
-		fmt.Sprintf("%s:///%s", exampleScheme, exampleServiceName), // Dial to "example:///resolver.example.grpc.io"
+	// Make another ClientConn with round_robin policy.
+	roundrobinConn, err := grpc.Dial(
+		fmt.Sprintf("%s:///%s", exampleScheme, exampleServiceName),
+		grpc.WithDefaultServiceConfig(`{"loadBalancingPolicy":"round_robin"}`), // This sets the initial balancing policy.
 		grpc.WithInsecure(),
 		grpc.WithBlock(),
 	)
 	if err != nil {
 		log.Fatalf("did not connect: %v", err)
 	}
-	defer exampleConn.Close()
+	defer roundrobinConn.Close()
 
-	fmt.Printf("--- calling helloworld.Greeter/SayHello to \"%s:///%s\"\n", exampleScheme, exampleServiceName)
-	makeRPCs(exampleConn, 10)
+	fmt.Println("--- calling helloworld.Greeter/SayHello with round_robin ---")
+	makeRPCs(roundrobinConn, 10)
 }
+```
+
+可以看到，在客户端是分别使用不同的负载均衡策略建立了两个连接，首先是默认的策略 pick_first，然后则是 round_robin，核心代码为：
+
+```go
+grpc.WithDefaultServiceConfig(`{"loadBalancingPolicy":"round_robin"}`)
 ```
 
 
 
-具体 Resolver 相关代码如下：
+同时由于是本地测试，不方便使用内置的 dns Resolver 所以自定义了一个 Name Resolver，相关代码如下：
 
 ```go
-// Following is an example name resolver. It includes a
-// ResolverBuilder(https://godoc.org/google.golang.org/grpc/resolver#Builder)
-// and a Resolver(https://godoc.org/google.golang.org/grpc/resolver#Resolver).
-//
-// A ResolverBuilder is registered for a scheme (in this example, "example" is
-// the scheme). When a ClientConn is created for this scheme, the
-// ResolverBuilder will be picked to build a Resolver. Note that a new Resolver
-// is built for each ClientConn. The Resolver will watch the updates for the
-// target, and send updates to the ClientConn.
+// Following is an example name resolver implementation. Read the name
+// resolution example to learn more about it.
 
-// exampleResolverBuilder is a
-// ResolverBuilder(https://godoc.org/google.golang.org/grpc/resolver#Builder).
 type exampleResolverBuilder struct{}
 
 func (*exampleResolverBuilder) Build(target resolver.Target, cc resolver.ClientConn, opts resolver.BuildOptions) (resolver.Resolver, error) {
@@ -200,7 +212,7 @@ func (*exampleResolverBuilder) Build(target resolver.Target, cc resolver.ClientC
 		target: target,
 		cc:     cc,
 		addrsStore: map[string][]string{
-			exampleServiceName: {backendAddr},
+			exampleServiceName: addrs,
 		},
 	}
 	r.start()
@@ -208,8 +220,6 @@ func (*exampleResolverBuilder) Build(target resolver.Target, cc resolver.ClientC
 }
 func (*exampleResolverBuilder) Scheme() string { return exampleScheme }
 
-// exampleResolver is a
-// Resolver(https://godoc.org/google.golang.org/grpc/resolver#Resolver).
 type exampleResolver struct {
 	target     resolver.Target
 	cc         resolver.ClientConn
@@ -227,34 +237,77 @@ func (r *exampleResolver) start() {
 func (*exampleResolver) ResolveNow(o resolver.ResolveNowOptions) {}
 func (*exampleResolver) Close()                                  {}
 
-func init() {
-	// Register the example ResolverBuilder. This is usually done in a package's
-	// init() function.
-	resolver.Register(&exampleResolverBuilder{})
-}
-```
-
-resolver 包括 ResolverBuilder 和 Resolver两个部分。
-
-分别需要实现`Builder`和`Resolver`接口
-
-```go
-type Builder interface {
-	Build(target Target, cc ClientConn, opts BuildOptions) (Resolver, error)
-	Scheme() string
-}
-
-
-type Resolver interface {
-	ResolveNow(ResolveNowOptions)
-	Close()
-}
 ```
 
 
 
+### 3. Test
 
+分别运行服务端和客户端查看结果
+
+```sh
+lixd@17x:~/17x/projects/grpc-go-example/features/load_balancing/server$ go run main.go 
+2021/05/23 09:47:59 serving on 0.0.0.0:50052
+2021/05/23 09:47:59 serving on 0.0.0.0:50051
+```
+
+```sh
+lixd@17x:~/17x/projects/grpc-go-example/features/load_balancing/client$ go run main.go 
+--- calling helloworld.Greeter/SayHello with pick_first ---
+this is examples/load_balancing (from :50051)
+this is examples/load_balancing (from :50051)
+this is examples/load_balancing (from :50051)
+this is examples/load_balancing (from :50051)
+this is examples/load_balancing (from :50051)
+this is examples/load_balancing (from :50051)
+this is examples/load_balancing (from :50051)
+this is examples/load_balancing (from :50051)
+this is examples/load_balancing (from :50051)
+this is examples/load_balancing (from :50051)
+
+--- calling helloworld.Greeter/SayHello with round_robin ---
+this is examples/load_balancing (from :50052)
+this is examples/load_balancing (from :50051)
+this is examples/load_balancing (from :50052)
+this is examples/load_balancing (from :50051)
+this is examples/load_balancing (from :50052)
+this is examples/load_balancing (from :50051)
+this is examples/load_balancing (from :50052)
+this is examples/load_balancing (from :50051)
+this is examples/load_balancing (from :50052)
+this is examples/load_balancing (from :50051)
+```
+
+可以看到 pick_first 负载均衡策略时一直请求第一个服务 50051，round_robin 时则会交替请求，这也和负载均衡策略相符合。
+
+
+
+## 3. 小结
+
+本文介绍的 负载均衡属于 **客户端负载均衡**，需要在客户端做较大改动，因为 gRPC-go 中已经实现了对应的代码，所以使用起来还是很简单的。
+
+gRPC 内置负载均衡实现：
+
+* 1）根据提供了服务名，使用对应 name resolver 解析获取到具体的 ip+端口号 列表
+* 2）根据具体服务列表，分别建立连接
+  * gRPC 内部也维护了一个连接池
+* 3）根据负载均衡策略选取一个连接进行 rpc 请求
+
+
+
+比如之前的例子，服务名为`example:///lb.example.grpc.lixueduan.com`，使用自定义的 name resolver 解析出来具体的服务列表为`localhost:50051,localhost:50052`.
+
+然后调用 dial 建立连接时会分别与这两个服务建立连接。最后根据负载均衡策略选择一个连接来发起 rpc 请求。所以 pick_first会一直请求50051服务，而 round_robin 会交替请求 50051和50052。
+
+
+
+## 4. 参考
+
+`https://github.com/grpc/grpc/blob/master/doc/naming.md`
+
+`https://github.com/grpc/grpc/blob/master/doc/load-balancing.md`
 
 
 
 [Github]:https://github.com/lixd/grpc-go-example
+
