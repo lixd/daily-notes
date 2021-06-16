@@ -1,5 +1,5 @@
 ---
-title: "gRPC系列教程(十三)--- Kubernetes 中的 gRPC 负载均衡"
+title: "gRPC系列教程(十三)--- Kubernetes 环境下的 gRPC 负载均衡"
 description: "gRPC LoadBalance on Kubernetes "
 date: 2021-05-28 22:00:00
 draft: false
@@ -21,9 +21,11 @@ categories: ["gRPC"]
 
 但是真正测试的时候才发现，所有流量都进入到了某一个 Pod，这时才意识到负载均衡可能出现了问题。
 
-因为 gRPC 是基于 HTTP/2 之上的，而 HTTP/2 被设计为一个长期存在的 TCP 连接，所有都通过该连接进行多路复用。这样虽然减少了管理连接的开销，但是在负载均衡上又引出了新的问题。
+因为 gRPC 是基于 HTTP/2 之上的，而 HTTP/2 被设计为一个长期存在的 TCP 连接，所有都通过该连接进行多路复用。
 
-由于我们无法在连接层面进行均衡，为了做 gRP C负载均衡，我们需要从连接级均衡转向请求级均衡。
+> 这样虽然减少了管理连接的开销，但是在负载均衡上又引出了新的问题。
+
+由于我们无法在连接层面进行均衡，为了做 gRPC 负载均衡，我们需要从**连接级均衡**转向**请求级均衡**。
 
 > 换句话说，我们需要打开一个到每个目的地的 HTTP/2 连接，并平衡这些连接之间的请求。
 
@@ -38,13 +40,11 @@ categories: ["gRPC"]
 
 
 
-
-
 ## 2. 客户端负载均衡
 
 这也是比较容易实现的方案，具体为：[NameResolver](https://github.com/grpc/grpc/blob/master/doc/naming.md) + [load balancing policy](https://github.com/grpc/grpc/blob/master/doc/load-balancing.md)+[Headless-Service](https://kubernetes.io/docs/concepts/services-networking/service/#headless-services)。
 
-相关教程可以看上一篇文章[gRPC系列教程(十二)---客户端负载均衡](https://www.lixueduan.com/post/grpc/12-buildin-loadbalance/)
+相关教程可以看上一篇文章[gRPC系列教程(十二)---客户端负载均衡](https://www.lixueduan.com/post/grpc/12-client-side-loadbalance/)
 
 1）当 gRPC 客户端想要与 gRPC 服务器进行交互时，它首先尝试通过向 resolver 发出名称解析请求来解析服务器名称，解析程序返回已解析IP地址的列表。
 
@@ -117,7 +117,9 @@ gRPC 连接默认能永久存活，如果将该值降低能改善这个问题。
 
 这样每个连接只会使用一分钟，到期后会重新建立连接，相当于对扩容的感知只会延迟 1 分钟。
 
-> 虽然能用，但是并比是那么完美，强迫症表示完成无法接收这个方案。
+> 虽然能用，但是并比是那么完美，强迫症表示完成无法接受这个方案。
+
+
 
 ### kuberesolver
 
@@ -246,3 +248,9 @@ client 请求中间组件，由中间组件再去请求后端的 Pod。
 `https://en.wikipedia.org/wiki/Round-robin_DNS`
 
 `https://kubernetes.io/blog/2018/11/07/grpc-load-balancing-on-kubernetes-without-tears/`
+
+
+
+
+
+[Github]: https://github.com/lixd/grpc-go-example
