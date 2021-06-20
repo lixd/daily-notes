@@ -1,16 +1,27 @@
-## 1. 为什么需要Pod
+---
+title: "Kubernetes系列教程(七)---Pod 之(1) 为什么需要 Pod"
+description: "Kubernetes 项目为什么要搞出一个 Pod 的概念来"
+date: 2021-06-11
+draft: false
+categories: ["Kubernetes"]
+tags: ["Kubernetes"]
+---
 
-为什么 Kubernetes 项目又突然搞出一个 Pod 来呢？
+本文主要解释了 Kubernetes 中为什么需要新增 Pod 的概念及 Kubernetes 中的 容器设计模式。
 
-**为了更好的管理。**
+<!--more-->
+
+## 1. Why
+
+回答开篇的问题：为什么 Kubernetes 项目又突然搞出一个 Pod 来呢？
+
+答：**为了更好的管理。**
 
 
 
-首先，关于 Pod 最重要的一个事实是：它只是一个逻辑概念。
+首先，关于 Pod 最重要的一个事实是：**它只是一个逻辑概念**。
 
 Kubernetes 真正处理的，还是宿主机操作系统上 Linux 容器的 Namespace 和 Cgroups，而并不存在一个所谓的 Pod 的边界或者隔离环境。
-
-
 
 **Pod 这个看似复杂的 API 对象，实际上就是对容器的进一步抽象和封装而已，其实是一组共享了某些资源的容器。**
 
@@ -18,17 +29,23 @@ Kubernetes 真正处理的，还是宿主机操作系统上 Linux 容器的 Name
 
 
 
-### Network Namespace
+## 2. 环境共享
 
-这好像通过 docker run --net --volumes-from 这样的命令就能实现嘛，比如：
+### 2.1 Network Namespace
+
+共享 Network Namespace 在 Docker 里也可以实现，通过 `docker run --net --volumes-from`这样的命令就能实现嘛，比如：
 
 ```sh
 $ docker run --net=B --volumes-from=B --name=A image-A
 ```
 
-这样的前提条件是：容器 B 就必须比容器 A 先启动。这会导致一个 Pod 里的多个容器就不是对等关系，而是拓扑关系了。
+不过这样的**前提条件**是：**容器 B 就必须比容器 A 先启动**。
 
-所以，在 Kubernetes 项目里，Pod 的实现需要使用一个**中间容器**，这个容器叫作 Infra 容器。在这个 Pod 中，Infra 容器永远都是第一个被创建的容器，而其他用户定义的容器，则通过 Join Network Namespace 的方式，与 Infra 容器关联在一起。
+**这会导致一个 Pod 里的多个容器就不是对等关系，而是拓扑关系了**。
+
+所以，在 Kubernetes 项目里，Pod 的实现需要使用一个**中间容器**，这个容器叫作 `Infra 容器`。
+
+在 Pod 中，Infra 容器永远都是第一个被创建的容器，而其他用户定义的容器，则通过 Join Network Namespace 的方式，与 Infra 容器关联在一起。
 
 > 在 Kubernetes 项目里，Infra 容器一定要占用极少的资源，所以它使用的是一个非常特殊的镜像，叫作：k8s.gcr.io/pause。
 >
@@ -38,13 +55,13 @@ $ docker run --net=B --volumes-from=B --name=A image-A
 
 具体如下图所示：
 
-![](D:/lillusory/projects/daily-notes/CloudNative/Kubernetes/assets/pod/pod-infra.png)
+![pod-infra][pod-infra]
 
-图源：深入剖析Kubernetes
+> 图源：深入剖析Kubernetes
 
 
 
-### Volume 
+### 2.2 Volume
 
 有了 Infra 这个设计之后，共享 Volume 就简单多了：Kubernetes 项目只要把所有 Volume 的定义都设计在 Pod 层级即可。
 
@@ -81,9 +98,13 @@ spec:
 
 
 
-### 容器设计模式
+## 3. 容器设计模式
 
-Pod 这种“超亲密关系”容器的设计思想，实际上就是希望，当用户想在一个容器里跑多个功能并不相关的应用时，应该优先考虑它们是不是更应该被描述成一个 Pod 里的多个容器。
+Pod 这种`超亲密关系`容器的设计思想，实际上就是希望，当用户想在一个容器里跑多个功能并不相关的应用时，应该优先考虑它们是不是更应该被描述成一个 Pod 里的多个容器。
+
+即：**优先将关联密切的容器运行在一个 Pod 中**。
+
+### 例一：Java Web 应用
 
 **第一个最典型的例子是：WAR 包与 Web 服务器。**
 
@@ -137,6 +158,8 @@ WAR 包容器的类型不再是一个普通容器，而是一个 Init Container 
 
 
 
+### 例二：日志收集
+
 **第二个例子，则是容器的日志收集。**
 
 比如，我现在有一个应用，需要不断地把日志文件输出到容器的 /var/log 目录中。
@@ -151,18 +174,37 @@ WAR 包容器的类型不再是一个普通容器，而是一个 Init Container 
 
 
 
-**Pod 的另一个重要特性是，它的所有容器都共享同一个 Network Namespace**。这就使得很多与 Pod 网络相关的配置和管理，也都可以交给 sidecar 完成，而完全无须干涉用户容器。这里最典型的例子莫过于 Istio 这个微服务治理项目了。
+**Pod 的另一个重要特性是，它的所有容器都共享同一个 Network Namespace**。这就使得很多与 Pod 网络相关的配置和管理，也都可以交给 sidecar 完成，而完全无须干涉用户容器。
 
-### 小结
+> 这里最典型的例子莫过于 Istio 这个微服务治理项目了。
 
-> Docker 容器核心实现原理：Namespace 做隔离，Cgroups 做限制，rootfs 做文件系统。
 
-* **容器**的本质是**进程**。
 
-* **容器镜像**就是这个系统里的“.exe”**安装包**。
+## 4. 小结
 
-* **Pod**就是**进程组**。
+Docker 容器核心实现原理：Namespace 做隔离，Cgroups 做限制，rootfs 做文件系统。
 
-* **Kubernetes **就是**操作系统**！
+容器设计模式：优先考虑将关联密切的容器运行在一个 Pod 中。
+
+* **容器**的本质是**进程**；
+* **容器镜像**就是这个系统里的“.exe”**安装包**；
+* **Pod** 就是**进程组**；
+* **Kubernetes **就是**操作系统**。
 
 Pod 扮演的是传统部署环境里“虚拟机”的角色。这样的设计，是为了使用户从传统环境（虚拟机环境）向 Kubernetes（容器环境）的迁移，更加平滑。
+
+
+
+## 5. 参考
+
+`https://kubernetes.io/docs/concepts/workloads/pods/`
+
+`https://kubernetes.io/zh/docs/tasks/configure-pod-container/configure-pod-initialization/`
+
+`深入剖析Kubernetes`
+
+
+
+
+
+[pod-infra]:https://github.com/lixd/blog/raw/master/images/kubernetes/pod/pod-infra.png
