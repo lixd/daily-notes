@@ -45,6 +45,66 @@ services:
       #- ./configdb:/data/configdb
 ```
 
+
+
+### 3. 配置文件
+
+```conf
+systemLog:
+    quiet: false
+    path: /data/logs/mongod.log
+    logAppend: false
+    destination: file
+processManagement:
+    fork: true
+    pidFilePath: /data/mongodb/mongod.pid
+net:
+    bindIp: 0.0.0.0
+    port: 27017
+    maxIncomingConnections: 65536
+    wireObjectCheck: true
+    ipv6: false   
+storage:
+    dbPath: /data/db
+    indexBuildRetry: true
+    journal:
+        enabled: true
+    directoryPerDB: false
+    engine: mmapv1
+    syncPeriodSecs: 60
+    mmapv1:
+        quota:
+            enforced: false
+            maxFilesPerDB: 8
+        smallFiles: true   
+        journal:
+            commitIntervalMs: 100
+    wiredTiger:
+        engineConfig:
+            cacheSizeGB: 1 # 内存限制1GB
+            journalCompressor: snappy
+            directoryForIndexes: false   
+        collectionConfig:
+            blockCompressor: snappy
+        indexConfig:
+            prefixCompression: true
+operationProfiling:
+    slowOpThresholdMs: 100
+    mode: off
+```
+
+
+
+### 4. 启动
+
+```sh
+docker-compose up
+```
+
+
+
+
+
 ## 2. 添加用户
 
 > 到这里已经可以通过可视化客户端直接连上了
