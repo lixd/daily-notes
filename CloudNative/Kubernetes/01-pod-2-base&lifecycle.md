@@ -174,11 +174,46 @@ Pod 生命周期的变化，主要体现在 Pod API 对象的 Status 部分，�
 
 ## 3. 容器探针
 
-### 1. 健康检查
+### 0. 就绪检测
+
+当一个pod中的容器被创建后，正常工作情况下状态会转变至`Running`，在`kubectl get pods`的`READY`列的`左侧`数字会加1，代表该容器已然就绪，然实际上并不一定就绪。
+
+比如程序启动后需要进行一些初始化工作，此时转发到该 Pod 的流量就会因为程序为准备好而请求失败。
+
+就绪检测（readiness）则是用于解决该问题，**只有就绪检测成功后 k8s 才会将流量转发到该 Pod**。
+
+```yaml
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  labels:
+    test: liveness
+  name: test-liveness-exec
+spec:
+  containers:
+  - name: liveness
+    image: busybox
+    args:
+    - /bin/sh
+    - -c
+    - touch /tmp/healthy; sleep 30; rm -rf /tmp/healthy; sleep 600
+    readinessProbe:
+      exec:
+        command:
+        - cat
+        - /tmp/healthy
+      initialDelaySeconds: 5
+      periodSeconds: 5
+```
+
+
+
+### 1. 存活检查
 
 在 Kubernetes 中，你可以为 Pod 里的容器定义一个健康检查“探针”（Probe）。这样，kubelet 就会根据这个 Probe 的返回值决定这个容器的状态，而不是直接以容器镜像是否运行（来自 Docker 返回的信息）作为依据。
 
-**这种机制，是生产环境中保证应用健康存活的重要手段**。
+**存活检测（liveness）机制，是生产环境中保证应用健康存活的重要手段**。
 
 
 
