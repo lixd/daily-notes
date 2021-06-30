@@ -57,10 +57,19 @@ $ tar -zxvf nginx-1.19.0.tar.gz
 进行configure配置，检查是否报错。
 
 ```sh
+$ cd nginx-1.19.0/
 $ ./configure --prefix=/usr/local/nginx
+```
 
-# 增加 ssl 模块
+如果需要使用 HTTPS 则必须在编译时增加 SSL 模块，对应命令如下：
+
+```sh
 $ ./configure --prefix=/usr/local/nginx --with-http_stub_status_module --with-http_ssl_module
+```
+
+
+
+```sh
 //出现下面的配置摘要就算配置ok
 Configuration summary
   + using system PCRE library
@@ -86,11 +95,19 @@ make[1]: Leaving directory `/usr/local/nginx-1.19.0'
 编译安装后多了一个`Nginx`文件夹,在`/usr/local/nginx` 内部又分为四个目录
 
 ```nginx
-/usr/local/nginx
-			--conf	配置文件
-			--html  网页文件
-			--logs  日志文件
-			--sbin  主要二进制文件
+/nginx
+    ├── conf 配置文件
+    │   ├── .....
+    │   ├── mime.types
+    │   ├── mime.types.default
+    │   ├── nginx.conf
+    │   ├── nginx.conf.default
+        ├── .....
+    ├── html 网页文件
+    │   ├── 50x.html
+    │   └── index.html
+    ├── logs 日志文件
+    └── sbin 主要二进制文件
 ```
 
 **查看Nginx版本:**

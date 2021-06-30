@@ -108,10 +108,11 @@ systemctl stop redisd.service
 ### 1. 目录结构
 
 ```sh
-/usr/local/docker/redis 
-                      /data
-                      /conf/redis.conf
-                      --docker-compose.yml
+/redis
+├── conf
+│   └── redis.conf
+├── data
+└── docker-compose.yaml
 ```
 
 ### 2. docker-compose.yml

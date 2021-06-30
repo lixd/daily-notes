@@ -11,7 +11,7 @@ Docker 要求 CentOS 系统的内核版本高于 `3.10`。
 通过 **uname -r** 命令查看你当前的内核版本
 
 ```bash
-[root@localhost ~]#  uname -r
+[root@localhost ~]# uname -r
 ```
 
 2、使用 `root` 权限登录 Centos。确保 yum 包更新到最新。
@@ -44,7 +44,7 @@ Docker 要求 CentOS 系统的内核版本高于 `3.10`。
 6、可以查看所有仓库中所有docker版本，并选择特定版本安装
 
 ```shell
-[root@localhost ~]#  yum list docker-ce --showduplicates | sort -r
+[root@localhost ~]# yum list docker-ce --showduplicates | sort -r
 ```
 
 7、安装docker

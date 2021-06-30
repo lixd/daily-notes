@@ -42,7 +42,7 @@ services:
     volumes:
       - ./db:/data/db
       - ./backup:/data/backup
-      #- ./configdb:/data/configdb
+      - ./configdb:/data/configdb
 ```
 
 
@@ -81,7 +81,7 @@ storage:
             commitIntervalMs: 100
     wiredTiger:
         engineConfig:
-            cacheSizeGB: 1 # 内存限制1GB
+            cacheSizeGB: 2 # 内存限制2GB
             journalCompressor: snappy
             directoryForIndexes: false   
         collectionConfig:
@@ -163,7 +163,7 @@ db.createUser(
  )
  # 创建有可读写权限的用户. 对于一个特定的数据库, 比如'demo'
  db.createUser({
-     user: 'test',
+     user: 'zzra',
      pwd: '123456',
      roles: [{role: "readWrite", db: "demo"}]
  })
