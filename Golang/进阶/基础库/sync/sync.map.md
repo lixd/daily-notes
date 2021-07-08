@@ -85,7 +85,7 @@ sync.Map 的原理很简单，使用了`空间换时间策略`，通过冗余的
 
 ## 2. 原理解析
 
-![](../img/syncmap.jpg)
+![](assets/syncmap.jpg)
 
 
 

@@ -185,3 +185,63 @@ func (cs *clientStream) SendMsg(m interface{}) (err error) {
 		return status.Errorf(codes.ResourceExhausted, "trying to send message larger than max (%d vs. %d)", len(payload), *cs.callInfo.maxSendMessageSize)
 	}
 ```
+
+
+
+## 3. 请求超时
+
+查看日志发现总是会出现一些请求超时，而且是一阵一阵的，对比了请求量，发现超时的都是在并发较高的时间段。
+
+查看了 Pod 的 CPU、网络、内存都很正常，没有一点压力。
+
+再次查看连接数限制也远远没有达到上限
+
+```sh
+$ ulimit -Sn
+1048576
+$ ulimit -Hn
+1048576
+```
+
+而且 gRPC 是基于 HTTP/2 的，连接可以复用，也不会创建太多的连接。
+
+最后发现是 HTTP/2 有并发流限制，具体见该[文档](https://docs.microsoft.com/zh-cn/aspnet/core/grpc/performance?view=aspnetcore-5.0)
+
+HTTP/2 连接通常会限制一个连接上同时存在的[最大并发流（活动 HTTP 请求）数](https://httpwg.github.io/specs/rfc7540.html#rfc.section.5.1.2)。 默认情况下，大多数服务器将此限制设置为 100 个并发流。
+
+go中的http2默认并发流是设置的 250 个
+
+```go
+const (
+	defaultMaxStreams      = 250 // TODO: make this 100 as the GFE seems to?
+)
+```
+
+gRPC-go 中也提供了对应的设置项：
+
+```go
+grpc.MaxConcurrentStreams(10000)
+```
+
+如果没有设置则会使用 [HTTP2 包](https://github.com/golang/net/blob/master/http2/server.go#L56)中的 250 的上限。
+
+不过gRPC-go [在某次更新后](https://github.com/grpc/grpc-go/issues/1986)已经取消了该限制，默认时设置的 math.MaxUint32 数，源码如下：
+
+```go
+	maxStreams := config.MaxStreams
+	if maxStreams == 0 {
+		maxStreams = math.MaxUint32
+	} else {
+		isettings = append(isettings, http2.Setting{
+			ID:  http2.SettingMaxConcurrentStreams,
+			Val: maxStreams,
+		})
+	}
+```
+
+
+
+* 1）客户端同时启动了过多 Goroutine，并发请求，导致请求在客户端就被阻塞了
+  * todo
+* 2）服务端同时接受太多请求，无法处理
+  * 设置最大连接数`grpc.MaxConcurrentStreams(10000)`可以解决该问题，达到最大并发数后续的请求会在客户端排队
