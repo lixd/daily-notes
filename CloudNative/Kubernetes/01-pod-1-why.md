@@ -129,7 +129,7 @@ spec:
     name: war
     command: ["cp", "/sample.war", "/app"]
     volumeMounts:
-    - mountPath: /app
+    - mountPath: /app   
       name: app-volume
   containers:
   - image: geektime/tomcat:7.0
