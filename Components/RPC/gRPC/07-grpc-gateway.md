@@ -88,7 +88,7 @@ protoc --go_out . --go-grpc_out . --grpc-gateway_out . hello_world.proto
 
 ## 3. 例子
 
-> 本文所有代码都在这里 [Github](https://github.com/lixd/i-go/tree/master/grpc/gateway)。
+> 本文所有代码都在这里 [Github][Github]。
 
 首先确保自己的环境是ok的，具体如下：
 
@@ -287,19 +287,19 @@ import "google/api/annotations.proto";
 
 引入`annotations.proto`文件，因为添加的注解依赖该文件。
 
-**该文件需要手动从 `grpc-gateway/third_party/googleapis` 目录复制到自己的项目中。**
+**该文件需要手动从 `https://github.com/googleapis/googleapis` 仓库下载到自己的项目中。**
 
-**该文件需要手动从 `grpc-gateway/third_party/googleapis` 目录复制到自己的项目中。**
+**该文件需要手动从 `https://github.com/googleapis/googleapis` 仓库下载到自己的项目中。**
 
-**该文件需要手动从 `grpc-gateway/third_party/googleapis` 目录复制到自己的项目中。**
+**该文件需要手动从 `https://github.com/googleapis/googleapis` 仓库下载到自己的项目中。**
 
 下载链接如下:
 
 ```go
-https://github.com/grpc-ecosystem/grpc-gateway/tree/master/third_party/googleapis/google/api
+https://github.com/googleapis/googleapis/tree/master/google/api
 ```
 
-复制后的**目录结构**如下：
+下载后的**目录结构**如下：
 
 ```sh
 proto
