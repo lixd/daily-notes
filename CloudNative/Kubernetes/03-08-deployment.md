@@ -1,22 +1,41 @@
-# Deployment
+---
+title: "Kubernetes系列教程(八)---Deployment"
+description: "Kubernetes Deployment 详解"
+date: 2021-06-22
+draft: false
+categories: ["Kubernetes"]
+tags: ["Kubernetes"]
+---
 
-> [Deployment 官方文档](https://kubernetes.io/docs/concepts/workloads/controllers/deployment/)
+本文主要讲解了 Kubernetes 中最常见的控制器 Deployment。
+
+<!--more-->
 
 ## 1. 概述
 
-Deployment 实际上是一个**两层控制器**。
+看完之前对 Pod 相关文章后，你应该知道了**Pod 这个看似复杂的 API 对象，实际上就是对容器的进一步抽象和封装而已**
 
-首先，它通过 **ReplicaSet 的个数**来描述应用的版本；
-
-然后，它再通过 **ReplicaSet 的属性**（比如 replicas 的值），来保证 Pod 的副本数量。
-
-> 备注：Deployment 控制 ReplicaSet（版本），ReplicaSet 控制 Pod（副本数）。这个两层控制关系一定要牢记。
+> [Kubernetes系列教程(七)---Pod 之(1) 为什么需要 Pod](https://www.lixueduan.com/post/kubernetes/07-pod-1-why/)
+>
+> [Kubernetes系列教程(七)---Pod 之(2) Pod 基本概念与生命周期](https://www.lixueduan.com/post/kubernetes/07-pod-2-baselifecycle/)
 
 
 
-## 2. controller
+Deployment 是 Kubernetes 中最常见的控制器，实际上它是一个**两层控制器**。
 
-我在前面介绍 Kubernetes 架构的时候，曾经提到过一个叫作 kube-controller-manager 的组件。实际上，这个组件，就是一系列控制器的集合。我们可以查看一下 Kubernetes 项目的 pkg/controller 目录：
+* 首先，它通过 **ReplicaSet 的个数**来描述应用的版本；
+
+* 然后，它再通过 **ReplicaSet 的属性**（比如 replicas 的值），来保证 Pod 的副本数量。
+
+> 注：Deployment 控制 ReplicaSet（版本），ReplicaSet 控制 Pod（副本数）。这个两层控制关系一定要牢记。
+
+Deployment 是 Kubernetes 编排能力的一种提现，通过 Deployment 我们可以让 Pod 稳定的维持在指定的数量，除此之外还有滚动更新、版本回滚等功能。
+
+
+
+## 2. Controller
+
+前面介绍 Kubernetes 架构的时候，曾经提到过一个叫作 kube-controller-manager 的组件。实际上，这个组件，就是一系列控制器的集合。我们可以查看一下 Kubernetes 项目的 pkg/controller 目录：
 
 ```sh
 $ cd kubernetes/pkg/controller/
@@ -32,7 +51,7 @@ cronjob/                garbagecollector/       nodelifecycle/          replicat
 
 实际上，这些控制器之所以被统一放在 pkg/controller 目录下，就是因为它们都遵循 Kubernetes 项目中的一个通用编排模式，即：**控制循环（control loop）**。
 
-```go
+```sh
 // 伪代码如下
 for {
   实际状态 := 获取集群中对象X的实际状态（Actual State）
@@ -127,9 +146,7 @@ spec:
 
 **类似 Deployment 这样的一个控制器，实际上都是由上半部分的控制器定义（包括期望状态），加上下半部分的被控制对象的模板组成的。**
 
-
-
-你能否说出，Kubernetes 使用的这个“控制器模式”，跟我们平常所说的“事件驱动”，有什么区别和联系吗？
+*Kubernetes 使用的这个“控制器模式”，跟我们平常所说的“事件驱动”，有什么区别和联系呢？*
 
 > 事件往往是一次性的，如果操作失败比较难处理，但是控制器是循环一直在尝试的，最终达到一致，更符合kubernetes 声明式API。
 
@@ -172,7 +189,7 @@ spec:
 
 具体如图所示:
 
-<img src="assets/deployment-rs.jpg" style="zoom: 25%;" />
+![replicaset][replicaset]
 
 
 
@@ -197,7 +214,7 @@ deployment.apps/nginx-deployment scaled
 
 
 
-<img src="assets/deployment-rs-roll.jpg" style="zoom:25%;" />
+![replicaset-roll-update][replicaset-roll-update]
 
 如上所示，Deployment 的控制器，实际上控制的是 ReplicaSet 的数目，以及每个 ReplicaSet 的属性。而一个应用的版本，对应的正是一个 ReplicaSet；
 
@@ -224,4 +241,21 @@ REVISION    CHANGE-CAUSE
 $ kubectl rollout undo deployment/nginx-deployment --to-revision=2
 deployment.extensions/nginx-deployment
 ```
+
+
+
+
+
+## 5. 参考
+
+`深入剖析Kubernetes`
+
+`https://kubernetes.io/docs/concepts/workloads/controllers/deployment/`
+
+
+
+
+
+[replicaset]:https://github.com/lixd/blog/raw/master/images/kubernetes/deployment/replicaset.jpg
+[replicaset-roll-update]:https://github.com/lixd/blog/raw/master/images/kubernetes/deployment/replicaset-roll-update.jpg
 
