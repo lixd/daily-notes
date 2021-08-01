@@ -277,7 +277,13 @@ apoll_ctl(fd8,fd6)
 
 就是靠的**事件驱动**，收到消息后，网卡向 CPU 发送一个 中断事件,CPU 根据这个中断号就能判断出具体是什么事件了，然后通过回调方法就去拿到数据。
 
-epoll 因为采用 mmap的机制, 使得 内核 socket buffer 和用户空间的 buffer 共享, 从而省去了 socket data copy, 这也意味着, 当 epoll 回调上层的 callback 函数来处理 socket 数据时, 数据已经从内核层 "自动" 到了用户空间。
+epoll 因为采用 **mmap 机制**, 使得 内核 socket buffer 和用户空间的 buffer 共享, 从而省去了 socket data copy, 这也意味着, 当 epoll 回调上层的 callback 函数来处理 socket 数据时, 数据已经从内核层 "自动" 到了用户空间。
+
+epoll在实现上采用**红黑树**去存储所有套接字，当添加或者删除一个套接字时（epoll_ctl），都在红黑树上去处理，红黑树本身插入和删除性能比较好，时间复杂度O(logN)。
+
+最后 epoll 触发回调之后会将该事件添加到**双向链表**中。那么当我们调用epoll_wait时，epoll_wait只需要检查rdlist双向链表中是否有存在注册的事件，效率非常可观。这里也需要将发生了的事件复制到用户态内存中即可。
+
+
 
 #### epoll和select区别
 
