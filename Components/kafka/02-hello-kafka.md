@@ -1,5 +1,5 @@
 ---
-title: "Kafka(Go)系列教程(二)---hello Kafka"
+title: "Kafka(Go)教程(二)---hello Kafka"
 description: "Kafka 的 Golang 客户端 sarama 基本使用"
 date: 2021-07-30 22:00:00
 draft: false
@@ -13,11 +13,13 @@ tags: ["Kafka"]
 
 ## 1. 概述
 
+> Kafka 系列相关代码见 [Github][Github]
+
 Kafka 的 Golang 客户端比较少，不像 Java 由官方维护，Golang 的都是社区在维护。
 
 这里选取的是 [sarama](https://github.com/Shopify/sarama),社区活跃度还行，不过封装度比较低，比较接近原生，不过有好处也有坏处吧，如果对 Kafka 比较熟悉使用起来还是不错的。
 
-> kafka 系列相关代码见 [Github][Github]
+
 
 ## 2. Demo
 
@@ -145,8 +147,8 @@ ok，一切正常。
 
 
 
-> kafka 系列相关代码见 [Github][Github]
+> kKfka 系列相关代码见 [Github][Github]
 
 
 
-[github]:https://github.com/lixd/kafka-go-example
+[Github]:https://github.com/lixd/kafka-go-example

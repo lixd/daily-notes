@@ -1,5 +1,5 @@
 ---
-title: "Kafka(Go)系列教程(一)---通过docker-compose 安装 Kafka"
+title: "Kafka(Go)教程(一)---通过docker-compose 安装 Kafka"
 description: "通过docker-compose 快速安装 Kafka"
 date: 2021-07-30 21:00:00
 draft: false
@@ -17,7 +17,7 @@ Kafka 是由 Apache 软件基金会旗下的一个开源 `消息引擎系统`。
 
 使用 docker-compose 来部署开发环境也比较方便，只需要提准备一个 yaml 文件即可。
 
-> kafka 系列相关代码见 [Github][Github]
+> Kafka 系列相关代码见 [Github][Github]
 
 
 
@@ -128,7 +128,7 @@ docker-compose up
 
 
 
-> kafka 系列相关代码见 [Github][Github]
+> Kafka 系列相关代码见 [Github][Github]
 
 
 
