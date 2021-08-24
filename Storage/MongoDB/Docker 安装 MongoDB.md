@@ -131,27 +131,12 @@ $ docker exec -it mongodb /bin/bash
 $ mongo
 ```
 
- 创建用户
-
-```sh
-# 进入 admin 的数据库
-use admin
-# 创建超级管理员用户
-db.createUser(
-   {
-     user: "superuser",
-     pwd: "123456",
-     roles: [ { role: "root", db: "admin" } ]
-   }
- )
-```
-
-
+ 
 
 ```shell
 # 进入 admin 的数据库
 use admin
-# 授权
+# 授权 yaml 文件里指定的user和pwd
 db.auth('root','123456')
 # 创建管理员用户
 db.createUser(
@@ -165,7 +150,7 @@ db.createUser(
  db.createUser({
      user: 'zzra',
      pwd: '123456',
-     roles: [{role: "readWrite", db: "demo"}]
+     roles: [{role: "readWrite", db: "spider"}]
  })
  # 退出mongo
  exit
