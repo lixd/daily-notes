@@ -41,6 +41,7 @@ This  file defines a system-wide limit on the number of open files for all proce
 
 # cat /proc/sys/fs/file-nr
 1984    0       1584856
+#正在使用1984个，已分配未使用0个 最大 1584856 个
 ```
 
 
@@ -183,7 +184,7 @@ root hard nofile 2000000
 # echo  6553560 > /proc/sys/fs/file-max
 ```
 
-- 永久生效方法： 修改/etc/sysctl.conf文件，加入
+- 永久生效方法： 修改`/etc/sysctl.conf`文件，加入
 
 ```sh
 fs.file-max = 6553560 
@@ -215,13 +216,31 @@ fs.nr_open = 2000000
 
 ## 4. 小结 
 
-进程的最大FD数会受到`ile_max`、`nr_open`、`ulimit -n`这三个值限制。
+进程的最大FD数会受到`file_max`、`nr_open`、`ulimit -n`这三个值限制。
+
+* file_max 操作系统级别 `/proc/sys/fs/file-max`
+* nr_open 进程级别 `/etc/sysctl.conf`
+* ulimit -n shell 级别 `/etc/security/limits.conf`
+
+
+
+> 除此之外进程如果是 systemd 启动的进程还会受到 systemd 配置的限制。
+
+另外如果在 Centos 系统下 ulimit -n 设置得比 nr_open 还大会导致无法登陆系统 (Centos8 下遇到出现过这个问题)，详情见：
+
+```sh
+https://blog.csdn.net/liyu1059915776/article/details/108817180
+```
+
+
 
 查看FD占用数top10：
 
 ```sh
-# 进程打开的FD
+# 进程打开的FD 模糊值
 lsof -n| awk '{print $3}'|sort|uniq -c|sort -nr|head -10
+# 进程打开的FD 精确值
+ls /proc/$pid/fd/ |wc -l
 # 用户打开的FD
 lsof -n| awk '{print $2}'|sort|uniq -c|sort -nr|head -10
 # 命令打开的FD
