@@ -1,8 +1,10 @@
 # Let's 免费 HTTPS 证书
 
+## 旧版 certbot-auto
+
 主要使用 certbot 工具生成。
 
-## 1. 下载 certbot
+### 1. 下载 certbot
 
 ```sh
 git clone https://github.com/certbot/certbot
@@ -10,7 +12,9 @@ cd certbot
 ./certbot-auto --help
 ```
 
-## 2. 生成免费证书
+
+
+### 2. 生成免费证书
 
 执行以下命令即可生成证书：
 
@@ -29,7 +33,7 @@ cd certbot
 
 如果返回正常就确认了你对这个网站的所有权，就能顺利生成，完成后这个目录会被清空。
 
-## 3. 测试
+### 3. 测试
 
 如果上面的步骤正常 shell 脚本会展示如下信息：
 
@@ -39,7 +43,9 @@ cd certbot
 ...
 ```
 
-## 4. 生成 dhparams
+
+
+### 4. 生成 dhparams
 
 使用 openssl 工具生成 dhparams
 
@@ -47,7 +53,7 @@ cd certbot
 openssl dhparam -out /etc/ssl/certs/dhparams.pem 2048
 ```
 
-## 5. 配置 Nginx
+### 5. 配置 Nginx
 
 打开 nginx server 配置文件加入如下设置：
 
@@ -64,7 +70,7 @@ ssl_ciphers HIGH:!aNULL:!MD5;
 
 然后重启 nginx 服务就可以了
 
-## 6. 强制跳转 https
+### 6. 强制跳转 https
 
 https 默认是监听 443 端口的，没开启 https 访问的话一般默认是 80 端口。如果你确定网站 80 端口上的站点都支持 https 的话加入下面的配件可以自动重定向到 https
 
@@ -76,7 +82,7 @@ server {
 }
 ```
 
-## 7. 证书更新
+### 7. 证书更新
 
 免费证书只有 90 天的有效期，到时需要手动更新 renew。刚好 Let’s encrypt 旗下还有一个 [Let’s monitor](https://letsmonitor.org/) 免费服务，注册账号添加需要监控的域名，系统会在证书马上到期时发出提醒邮件，非常方便。收到邮件后去后台执行 renew 即可，如果提示成功就表示 renew 成功
 
@@ -88,9 +94,9 @@ server {
 
 
 
+## 新版 certbot
 
-
-## 新版
+### 旧版废弃
 
 certbot-auto申请证书时发现如下提示;certbot-auto被弃用了
 
@@ -113,6 +119,8 @@ https://github.com/certbot/certbot/issues/8535
 
 详细信息见[官方文档](https://certbot.eff.org/docs/using.html)
 
+### 手动流程
+
 新版手动生成流程如下：
 
 ```sh
@@ -123,7 +131,7 @@ space separated) (Enter 'c' to cancel): example.com # 1.这里输入域名
 Requesting a certificate for example.com
 
 - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-# 2. 这里在服务器根目录对应位置加上对应文件 用于校验域名所属
+# 2. 这里在服务器根目录对应位置加上对应文件 用于校验域名所属 也有可能是通过增加DNS解析方式验证
 Create a file containing just this data:
 
 ISGb__SljshkeZwofJEAGdp7fhJuedWNhWf0wvOXslc.VgoFElVNd4xMqN9HaHffeTp4xRept_XUAcM8j2gllX0
@@ -151,20 +159,43 @@ If you like Certbot, please consider supporting our work by:
 
 
 
+上面是手动模式，也可以通过命令模式直接指定参数
+
 ```sh
-certbot certonly -d *.zzra.com --manual --preferred-challenges dns
+certbot certonly --manual \
+-d *.zzra.com \
+--preferred-challenges dns \
+--email 1033256636@qq.com
 ```
 
 
 
-* -d 指定域名
 * --manual 手动模式
-*  --preferred-challenges 指定校验类型 dns、http
+* -d 指定域名
+* --preferred-challenges 指定校验类型 dns、http
+  *  默认应该是 dns 比较方便
 * dns 则是添加dns记录
   * http为在站点根目录防止文件
   * 其中泛域名必须使用 dns 方式校验
-
 * email 证书到期时的提醒邮箱
+
+
+
+### 证书更新
+
+更新证书则执行同样的命令即可：
+
+检测到证书已存在的时候会有以下提示：
+
+```sh
+What would you like to do?
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+1: Keep the existing certificate for now
+2: Renew & replace the certificate (may be subject to CA rate limits)
+- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+Select the appropriate number [1-2] then [enter] (press 'c' to cancel): 
+
+```
 
 
 

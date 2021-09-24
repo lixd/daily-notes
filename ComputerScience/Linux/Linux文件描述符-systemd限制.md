@@ -27,6 +27,8 @@ ls /proc/$pid/fd/ |wc -l
 `/etc/systemd/system.conf` 找到对应的配置项目，进行修改
 
 ```sh
+vim /etc/systemd/system.conf
+
 DefaultLimitNOFILE=10240000 # 修改文件句柄的限制
 DefaultLimitNPROC=10240000 # 修改进程树的限制
 ```
