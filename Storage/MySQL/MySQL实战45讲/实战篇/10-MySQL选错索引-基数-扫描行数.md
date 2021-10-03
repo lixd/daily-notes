@@ -90,8 +90,9 @@ mysql> show variables like 'slow%';
 3 rows in set (0.00 sec)
 
 # 开启慢日志并将时间阈值设置为0，表示该线程接下来的语句都会被记录入慢查询日志中；
-set global slow_launch_time=0;
 set global slow_query_log=true;
+set global slow_launch_time=0;
+
 
 # Q1 是 session B 原来的查询；
 select * from t where a between 10000 and 20000; /*Q1*/
