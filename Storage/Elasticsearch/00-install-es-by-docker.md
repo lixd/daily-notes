@@ -159,7 +159,34 @@ networks:
 
 **分词器版本需要和elasticsearch版本对应，并且安装完插件后需重启Es，才能生效**
 
-插件安装其实就是下载 zip 包然后解压到 plugins 目录下。
+插件安装其实就是下载 zip 包然后解压到 plugins 目录下。大概是这样的：
+
+```sh
+plugins/
+└── elasticsearch-analysis-ik-7.8.0
+    ├── commons-codec-1.9.jar
+    ├── commons-logging-1.2.jar
+    ├── config
+    │   ├── extra_main.dic
+    │   ├── extra_single_word.dic
+    │   ├── extra_single_word_full.dic
+    │   ├── extra_single_word_low_freq.dic
+    │   ├── extra_stopword.dic
+    │   ├── IKAnalyzer.cfg.xml
+    │   ├── main.dic
+    │   ├── preposition.dic
+    │   ├── quantifier.dic
+    │   ├── stopword.dic
+    │   ├── suffix.dic
+    │   └── surname.dic
+    ├── elasticsearch-analysis-ik-7.8.0.jar
+    ├── httpclient-4.5.2.jar
+    ├── httpcore-4.4.4.jar
+    ├── plugin-descriptor.properties
+    └── plugin-security.policy
+```
+
+
 
 **Docker 安装的话可以通过 Volume 的方式放在宿主机，或者进入容器用命令行安装也是一样的。**
 

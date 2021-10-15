@@ -119,6 +119,49 @@ https://github.com/certbot/certbot/issues/8535
 
 详细信息见[官方文档](https://certbot.eff.org/docs/using.html)
 
+
+
+### 下载 certbot
+
+[详细下载教程](https://certbot.eff.org/lets-encrypt/centosrhel8-nginx)
+
+完整流程：
+
+首先[安装 snap](https://snapcraft.io/docs/installing-snap-on-centos)
+
+```sh
+sudo yum install snapd
+sudo systemctl enable --now snapd.socket
+sudo ln -s /var/lib/snapd/snap /snap
+```
+
+然后借助 snap 安装 core
+
+```sh
+sudo snap install core
+sudo snap refresh core
+```
+
+然后把旧的 certbot 卸载
+
+```sh
+sudo yum remove certbot
+```
+
+接着安装新的
+
+```sh
+sudo snap install --classic certbot
+```
+
+创建一个软链接，便于使用
+
+```sh
+sudo ln -s /snap/bin/certbot /usr/bin/certbot
+```
+
+
+
 ### 手动流程
 
 新版手动生成流程如下：
@@ -163,7 +206,7 @@ If you like Certbot, please consider supporting our work by:
 
 ```sh
 certbot certonly --manual \
--d *.zzra.com \
+-d *.lixueduan.com,lixueduan.com \
 --preferred-challenges dns \
 --email 1033256636@qq.com
 ```
@@ -172,6 +215,8 @@ certbot certonly --manual \
 
 * --manual 手动模式
 * -d 指定域名
+  * 建议同时生成主域名和二级域名泛解析的证书
+  * 即`-d *.domain.com,domain.com`
 * --preferred-challenges 指定校验类型 dns、http
   *  默认应该是 dns 比较方便
 * dns 则是添加dns记录

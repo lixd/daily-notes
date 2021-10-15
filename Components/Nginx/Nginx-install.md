@@ -6,7 +6,13 @@
 
 ### 1. 安装包下载
 
-官网：`http://nginx.org/en/download.html` 这里下载的是`nginx-1.19.0.tar.gz`。
+官网：
+
+```sh
+http://nginx.org/en/download.html
+```
+
+这里下载的是`nginx-1.19.0.tar.gz`。
 
 直接右键复制下载链接 用`wget` 下载到服务器
 
