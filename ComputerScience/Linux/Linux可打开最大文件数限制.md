@@ -200,7 +200,7 @@ fs.file-max = 6553560
 # echo 2000000 > /proc/sys/fs/nr_open
 ```
 
-- 永久生效方法: 修改/etc/sysctl.conf文件，加入
+- 永久生效方法: 修改`/etc/sysctl.conf`文件，加入
 
 ```sh
 fs.nr_open = 2000000

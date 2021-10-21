@@ -74,13 +74,31 @@ SYSCALL_DEFINE2(listen, int, fd, int, backlog)
 
 ## 4. 查看程序打开的文件描述符
 
-`ps -aux|grep {programName}` 查询PID
+根据程序名查询PID
 
-` lsof -p {PID}| wc -l `查询文件描述符个数
+```sh
+ps -aux|grep $programName
+```
 
-` lsof -p {PID} `查询打开的文件描述符信息
+根据 PID 查询文件描述符个数
 
- 也可以使用 `ll proc/{PID}/fd`查看打开的文件描述符 
+```sh
+lsof -p {PID}| wc -l
+```
+
+查询打开的文件描述符信息
+
+```sh
+lsof -p {PID}
+```
+
+查看打开的文件描述符 
+
+```sh
+ll proc/{PID}/fd
+```
+
+
 
 
 
