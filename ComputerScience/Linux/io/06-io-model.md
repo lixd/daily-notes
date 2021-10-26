@@ -66,7 +66,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	// defer 关闭资源，以免引起内存泄漏
+
 	defer netListen.Close()
 	Log("Waiting for clients")
 	for {
@@ -88,24 +88,28 @@ func main() {
 
 **具体的调用**
 
+> 可以通过 strace 命令来追踪 系统调用。
+
 ```shell
 # 获取socket fd 文件描述符 假设是 fd5
-socket = fd5
+fd5= socket()
 # 绑定端口
-bind 9800
+bind(9800)
 # 监听 这个 文件描述符
-listen fd5
+listen(fd5)
 # 然后 accept 等待连接过来 比如这里 fd6 就是进来的连接
-accept fd5 = fd6
+fd6 = accept(fd5 )
 # 然后从 fd6 读取数据
-recvfrom fd6       
+recvfrom(fd6)       
 ```
 
 可以看到过程中会发生很多 syscall 系统调用。
 
+
+
 ### 问题
 
-这样做存在很多问题，需要为每个连接开一个 goroutine ，如果有 1W 链接那就要开 1W goroutine 。
+这样做存在很多问题，需要为每个连接开一个 goroutine ，如果有 1W 连接那就要开 1W goroutine 。
 
 * 1）消耗资源，每个 goroutine  是需要一定内存的。
 * 2）cpu 对这么多 goroutine 调度也会浪费资源
@@ -175,6 +179,8 @@ IO 复用同非阻塞 IO 本质一样，不过利用了新的 select 系统调�
 
 它的基本原理就是 select 这个 function 会不断的轮询所负责的所有 socket，当某个 socket 有数据到达了，就通知用户进程。它的流程如图：
 
+> 正如 select 这个名字这样，会选择其中有消息的 fd 并通知用户进程。
+
 ![select](https://github.com/lixd/blog/raw/master/images/linux/io/select.png)
 
 **select 方法接收多个 文件描述符，最后会返回需要处理的那几个文件描述符**。
@@ -187,7 +193,7 @@ IO 复用同非阻塞 IO 本质一样，不过利用了新的 select 系统调�
 
 现在：就先调用 `select(fds)` ,把 1W 个 文件描述符发给 kernel，内核处理后，假设只有 2个 连接是有消息的，需要处理，就只会返回对应的 fd,比如这里是 fd6、fd7。然后程序拿到需要处理的 fd 列表后再挨个处理，这样就减少了 9998 次 syscall。
 
-> **注意** 多路复用返回的是状态，具体读写操作还是由程序来控制。
+> **注意** 多路复用返回的是状态，具体读写操作还是由程序来控制，即还是同步模型。
 
 #### 问题
 
@@ -233,7 +239,7 @@ epoll_create()
 epoll_create() returns a file descriptor referring to the new epoll in‐
        stance. 
 # 返回一个文件描述符。
-# 这个就是前面说的，开内核中开辟一块空间来存放 fds 返回的文件描述符就是描述这块空间的
+# 这个就是前面说的，开内核中开辟一块空间来存放 fds 返回的文件描述符就是指向这块空间的
 ```
 
 ```shell
@@ -253,27 +259,29 @@ epoll_wait()
 
 ```shell
 # 获取socket fd 文件描述符 假设是 fd5
-socket = fd5
+fd5 = socket()
 # 绑定端口
-bind 9800
+bind(9800)
 # 监听 这个 文件描述符
-listen fd5
+listen(fd5)
 # 开辟一块用于存储 fds 的空间，假设为 fd8
-epoll_create fd8
-# 然后第一件事就是把 前面的 server 端 socket fd5 存进去
+fd8 = epoll_create()
+# 然后第一件事就是把 前面的 server 端 socket fd5 存进去,对应的事件为 accept
 apoll_ctl(fd8,add,fd5,accept)
 # 然后就开始等待了
 epoll_wait(fd8)
 
 # 假设此时有连接进来了 假设为 fd6
 accept fd5---> fd6
-# 也是 第一件事就存进去
-apoll_ctl(fd8,fd6)
+# 同样的 第一件事就先存进去,客户端连接对应的事件就是读/写
+apoll_ctl(fd8,add,fd6,w/r)
 ...
 # 最后 epoll 空间里肯定就存了很多 fd
 ```
 
-那么问题来了，他是如何指定那个 fd 需要处理的?
+
+
+*那么问题来了，内核如何知道那个 fd 需要处理的?*
 
 就是靠的**事件驱动**，收到消息后，网卡向 CPU 发送一个 中断事件,CPU 根据这个中断号就能判断出具体是什么事件了，然后通过回调方法就去拿到数据。
 
@@ -285,10 +293,16 @@ epoll在实现上采用**红黑树**去存储所有套接字，当添加或者�
 
 
 
+> epoll 核心为 事件驱动，相关优化为 mmap、红黑树、双向链表。
+
+
+
 #### epoll和select区别
 
 select 需要遍历所有注册的I/O事件，找出准备好的的I/O事件。
 而 epoll 则是由内核主动通知哪些I/O事件需要处理，不需要用户线程主动去反复查询，因此大大提高了事件处理的效率。
+
+epoll 充分发挥硬件能力，避免了 CPU 的浪费。
 
 
 
