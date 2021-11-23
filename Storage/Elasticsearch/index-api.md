@@ -36,7 +36,7 @@ DELETE /twitter/_alias/alias1
 
 ### 2. 方式二
 
-另一种方式,在 request body 指定要执行的操作，可以一直执行多个操作。
+另一种方式,在 request body 指定要执行的操作，可以一次执行多个操作。
 
 ```shell
 POST /_aliases
@@ -96,7 +96,7 @@ HEAD /_alias/alias1
 PUT /<index>
 ```
 
-同时可以指定以下参数：
+可以同时指定以下参数，也可以只指定部分：
 
 * Settings for the index
 * Mappings for fields in the index
@@ -150,7 +150,7 @@ PUT /test
 
 ### 2. Delete index
 
-删除索引，注意：这里不能通过 别名alias 来删除索引。
+删除索引，注意：这里不能通过 alias 来删除索引。
 
 ```shell
 DELETE /<index>
@@ -695,26 +695,9 @@ example:
 DELETE /_template/template_1
 ```
 
-### 3. Update index settings
 
-实时更新索引的 settings
 
-```shell
-PUT /<index>/_settings
-```
-
-example
-
-```shell
-PUT /twitter/_settings
-{
-    "index" : {
-        "number_of_replicas" : 2
-    }
-}
-```
-
-### 4. 查询
+### 3. 查询
 
 查看模板信息
 
@@ -744,7 +727,7 @@ example:
 HEAD /_template/template_1
 ```
 
-### 5. 组合模板
+### 4. 组合模板
 
 组合模板可以定义 settings、mappings、aliases，创建索引的时候可以自动应用。
 

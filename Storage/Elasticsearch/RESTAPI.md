@@ -429,9 +429,11 @@ DELETE _cluster/voting_config_exclusions
 
 ## 5. Document APIs
 
-
+文档相关的API 
 
 ### 1. Index
+
+**这里的 Index 是动词**，将文档索引到 Elasticsearch，可以理解为 insert。
 
 ```shell
 PUT /<index>/_doc/<_id>
@@ -454,10 +456,12 @@ POST /<index>/_create/<_id>
 * POST
   * 1）可以省略 id，elasticsearch 会自动生成
 
-两个 endpoint 的区别：
+**两个 endpoint 的区别**：
 
 * _doc : 可以创建或替换文档
 * _create：只能创建，文档已存在则会报错
+
+> 只需要创建的话，建议用 _create 避免把文档给替换了。
 
 
 
