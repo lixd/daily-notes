@@ -1,5 +1,9 @@
 # Dockerfile
 
+> 参考博客 https://dockertips.readthedocs.io/
+>
+> 官方文档 https://docs.docker.com/develop/develop-images/dockerfile_best-practices/
+
 ## 1. 概述
 
 通过`Dockerfile`可能快速构建自定义镜像。
@@ -187,7 +191,7 @@ COPY hom?.txt /mydir/
 
 `<目标路径>`可以是容器内的绝对路径，也可以是相对于工作目录的相对路径（工作目录可以用 WORKDIR 指令来指定）。目标路径不需要事先创建，如果目录不存在会在复制文件前先行创建缺失目录。
 
-此外，还需要注意一点，使用 COPY 指令，源文件的各种元数据都会保留。比如读、写、执行权限、文件变更时间等。这个特性对于镜像定制很有用。特别是构建相关文件都在使用 Git 进行管理的时候。
+此外，还需要注意一点，**使用 COPY 指令，源文件的各种元数据都会保留。比如读、写、执行权限、文件变更时间等**。这个特性对于镜像定制很有用。特别是构建相关文件都在使用 Git 进行管理的时候。
 
 
 
@@ -262,7 +266,9 @@ ENV VERSION=1.0 DEBUG=on \
 EXPOSE <port> [<port>...]
 ```
 
-EXPOSE 只是声明运行容器时提供的服务端口，这仅仅是一个声明，在运行容器的时候并不会因为这个声明就会开启端口服务，你依旧需要使用 -P 或者 -p 参数映射端口。在 Dockerfile 中写这样的端口声明有助于使用者理解这个镜像开放哪些服务端口，以便配置映射。
+**EXPOSE 只是声明运行容器时提供的服务端口，这仅仅是一个声明**，在运行容器的时候并不会因为这个声明就会开启端口服务，**你依旧需要使用 -P 或者 -p 参数映射端口**。
+
+> 在 Dockerfile 中写这样的端口声明有助于使用者理解这个镜像开放哪些服务端口，以便配置映射。
 
 ### 9. VOLUME
 
@@ -282,6 +288,12 @@ VOLUME ["/data"]
 - 卷会一直存在，直到没有任何容器在使用它
 
 VOLUME 让我们可以将源代码、数据或其它内容添加到镜像中，而又不并提交到镜像中，并使我们可以多个容器间共享这些内容。
+
+> 如果 Dockerfile 中有指定 Volume，那么每次删除容器(Volume不会被删除)后重新启动都会创建一个新的Volume，需要在 docker run 中通过 -v 参数指定一个固定名字才能复用。
+
+就算 Dockerfile 中不指定 Volume 也可以在启动时通过 -v 参数手动指定，Dockerfile 中的 Volume 关键字主要是防止启动的时候忘了加 -v 参数，最后导致数据丢失的一个保底。
+
+> 所有不管有没有 Volume ，需要持久化的时候都建议手动 -v 指定。
 
 
 
@@ -391,6 +403,10 @@ docker build --build-arg site=vaptcha.com -t illusory/test .
 ```
 
 这样我们构建了 itbilu/test 镜像，其中site会被设置为 vaptcha.com，由于没有指定 build_user，其值将是默认值illusory。
+
+> ENV(环境变量) 和 ARG(构建参数) 比较类似，但是实际上 ENV 会真正被填充到镜像的ENV中，而 ARG 只是在构建镜像时被替换，并不会真正写入到镜像中。
+>
+> 不过ARG的好处是可以通过 --build-arg  命令来更新，而不是去修改 Dockerfile。
 
 ### 14. ONBUILD
 

@@ -2,9 +2,9 @@
 
 ## 1. 概述
 
-**完整命令格式为：[ ENTRYPOINT CMD ]**，CMD 为ENTRYPOINT 的参数。 
+**CMD 和 ENTRYPOINT完整命令格式为：[ ENTRYPOINT CMD ]**，CMD 为ENTRYPOINT 的参数。 
 
-> Docker为我们提供了默认的 ENTRYPOINT ，即 `/bin/sh -c`。
+> Docker 为我们提供了默认的 ENTRYPOINT ，即 `/bin/sh -c`。
 
 所以如果Dockerfile中指定的是
 
@@ -31,9 +31,43 @@ ENTRYPOINT  ["./app"]
 
 
 
+## 2. demo
+
+### CMD
+
+```dockerfile
+FROM ubuntu:21.04
+CMD ["echo", "hello docker"]
+```
+
+该 Dockerfile 为 CMD，可以在 docker run 时覆盖掉，具体如下：
+
+```sh
+docker run echo "hello world"
+此时会 echo "hello world" 会覆盖掉 CMD 中指定的内容，所以最终会打印出 helo world
+```
 
 
-## 2. 资料
+
+### ENTRYPOINT
+
+```dockerfile
+FROM ubuntu:21.04
+ENTRYPOINT ["echo", "hello docker"]
+```
+
+该 Dockerfile 为 ENTRYPOINT，则不会被 docker run 指定的命苦覆盖掉，具体如下：
+
+```sh
+docker run echo "hello world"
+由于不会被覆盖掉，所以实际上指定的命令 echo "hello world" 被当成了参数，最终会打印出 hello docker echo hello world
+```
+
+
+
+
+
+## 3. 小结
 
 当 `CMD` 和 `ENTRYPOINT` 的使用总结如下：
 
@@ -49,6 +83,8 @@ ENTRYPOINT  ["./app"]
 * 如果 ENTRYPOINT 使用了 shell 模式，CMD 指令会被忽略。
 * 如果 ENTRYPOINT 使用了 exec 模式，CMD 指定的内容被追加为 ENTRYPOINT 指定命令的参数。
 * 如果 ENTRYPOINT 使用了 exec 模式，CMD 也应该使用 exec 模式。
+
+> 推荐使用 exec 模式，只有执行 shell 脚本的时候才使用 shell 模式。
 
 
 

@@ -2,6 +2,22 @@
 
 ## 1. Docker
 
+可以通过脚本一键安装，脚本下载命令如下：
+
+```sh
+# https://get.docker.com/
+curl -fsSL get.docker.com -o get-docker.sh
+
+# 下载后执行该脚本即可
+sh get-docker.sh
+```
+
+脚本需要 sudo 权限。
+
+会自动对操作系统版本进行判断，然后选择对应的命令进行安装，比较简单。
+
+或者根据下面的教程自己手动安装。
+
 ### 1. CentOS
 
 > 官方文档 https://docs.docker.com/engine/install/centos/
