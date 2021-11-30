@@ -122,7 +122,7 @@ func (rng *rngSource) Seed(seed int64) {
 }
 ```
 
-这个函数就是在设置 seed, 其实就是对 rng.vec 各个位置设置对应的值. rng.vec 的大小是 607.
+这个函数就是在设置 seed, 其实就是对 rng.vec 各个位置设置对应的值. rng.vec 的长度为 607.
 
 ```go
 func (rng *rngSource) Uint64() uint64 {
@@ -142,7 +142,7 @@ func (rng *rngSource) Uint64() uint64 {
 }
 ```
 
-我们在使用不管调用 Intn(), Int31n() 等其他函数, 最终调用到就是这个函数. 可以看到每次调用就是利用 rng.feed rng.tap 从 rng.vec 中取到两个值相加的结果返回了. 同时还是这个结果又重新放入 rng.vec.
+我们在使用不管调用 Intn(), Int31n() 等其他函数, 最终调用到就是这个函数. 可以看到每次调用就是利用 rng.feed、rng.tap 从 rng.vec 中取到两个值相加的结果返回了. 同时还是这个结果又重新放入 rng.vec.
 
 在这里需要注意使用 rng.go 的 rngSource 时, 由于 rng.vec 在获取随机数时会同时设置 rng.vec 的值, 当多 goroutine 同时调用时就会有数据竞争问题. math/rand 采用在调用 rngSource 时加锁  sync.Mutex 解决.
 
