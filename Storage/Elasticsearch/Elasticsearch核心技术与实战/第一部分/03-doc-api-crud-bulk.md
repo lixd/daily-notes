@@ -547,6 +547,15 @@ Payload
 Examples
 
 ```shell
+# 删除全部文档
+POST <index>/_delete_by_query 
+{
+  "query": {
+    "match_all": {}
+  }
+}
+
+# 删除指定文档
 POST /users/_delete_by_query
 {
   "query": {
@@ -555,6 +564,7 @@ POST /users/_delete_by_query
     }
   }
 }
+# 返回结果
 {
   "took" : 698,
   "timed_out" : false,

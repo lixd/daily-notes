@@ -35,7 +35,7 @@ UDP 方案具体流程如下图所示：
 
 ### 2. flannel0
 
-该方案使用时会在各个 Work 节点上运行一个Flannel 进程，同时创建一个 flannel0 ，而这个 flannel0 它是一个 TUN 设备（Tunnel 设备）。
+该方案使用时会在各个 Work 节点上运行一个Flannel 进程，同时创建一个 flannel0 设备，而这个 flannel0 它是一个 TUN 设备（Tunnel 设备）。
 
 在 Linux 中，TUN 设备是一种工作在三层（Network Layer）的虚拟网络设备。TUN 设备的功能非常简单，即：**在操作系统内核和用户应用程序之间传递 IP 包**。
 
