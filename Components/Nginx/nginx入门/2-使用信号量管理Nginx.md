@@ -54,7 +54,7 @@
 
 
 
-**reload 重载配置文件流程**
+### reload 重载配置文件流程
 
 * 1）向master进程发送HUP信号(reload命令)
 * 2）master进程检查配置语法是否正确
@@ -69,7 +69,7 @@
 
 
 
-**Nginx 热升级流程**
+### Nginx 热升级流程
 
 * 1）将旧的nginx文件替换成新的nginx文件
 
@@ -94,14 +94,6 @@
   * 回滚情形：向旧master发送HUP，拉起新的 worker ,向新的master发送QUIT，让新 master 和 worker 一起退出
 
   
-
-  
-
-
-
-
-
-## 
 
 
 

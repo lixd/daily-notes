@@ -2,6 +2,129 @@
 
 ## 1. 概述
 
+### 主要应用场景
+
+* 1）静态资源服务
+  * 通过本地文件系统提供服务
+* 2）反向代理服务
+  * Nginx的强大性能
+  * 缓存
+  * 负载均衡
+* 3）API服务
+  * OpenResty
+
+### 历史背景
+
+Nginx 为什么会出现？
+
+* 互联网的数据量快速增长
+  * 互联网的快速普及
+  * 全球化
+  * 物联网
+* 摩尔定律：硬件性能提升
+* 低效的 Apache
+  * 一个连接对应一个进程
+
+
+
+### 主要优点
+
+* 1）高并发、高性能
+* 2）可扩展性好
+* 3）高可靠
+* 4）热部署
+* 5）BSD许可证
+
+
+
+### 版本选择
+
+* Nginx
+  * 开源版：nginx.org
+  * 商业版：nginx.com
+* 阿里巴巴 Tengine
+  * 在阿里巴巴这个生态下，经历了非常严苛的考验，很多特性领先于Nginx的官方版本，所以Tengine修改了Nginx主干代码，框架被修改以后，Tengine遇到了问题，无法与Nginx官方版本同步升级
+* OpenResty
+  * 开源版：openresty.org
+  * 商业版：openresty.com
+
+一般使用开源版即可。
+
+
+
+### 文件夹组成
+
+```sh
+auto：编译相关配置
+CHANGES：更新日志
+CHANGES.ru：更新日志-俄语版
+conf：配置文件
+configure：编译配置
+contrib：语法
+html
+LICENSE
+Makefile
+man：用户手册
+objs：编译中间文件
+README
+src：源码
+```
+
+
+
+
+
+### 组成部分
+
+* Nginx 二进制可执行文件
+  * 由各个模块源码编译出的一个文件
+* nginx.conf 配置文件
+  * 控制 nginx 行为
+* access.log 访问日志
+  * 记录每一条 http 请求信息
+* error.log 错误日志
+  * 定位问题
+
+
+
+### 配置语法
+
+* 1）配置文件由指令与指令块构成
+* 2）每条指令以；分号结尾，指令与参数间以空格符号分隔
+* 3）指令块以｛｝大括号将多条指令组织在一起
+* 4）include语句允许组合多个配置文件以提升可维护性
+* 5）使用#符号添加注释，提高可读性
+* 6）使用$符号使用变量
+* 7）部分指令的参数支持正则表达式
+
+
+
+### Nginx 命令行
+
+* 格式：nginx -s reload
+
+* 帮助：-? -h
+
+* 使用指定的配置文件：-c
+
+* 指定配置指令：-g
+
+* 指定运行目录：-p
+
+* 发送信号：-s
+
+  * 立刻停止服务：stop
+
+    优雅的停止服务：quit
+
+    重载配置文件：reload
+
+    重新开始记录日志文件：reopen
+
+* 测试配置文件是否有语法错误：-t -T
+
+* 打印nginx的版本信息、编译信息等：-v -V
+
 
 
 ## 2. 常用配置
@@ -73,7 +196,7 @@ gzip_disable "MSIE [1-6]\.";
 
 
 
-### 2.autoindex
+### 2.autoindex 模块
 
 列出整个目录。
 
@@ -122,7 +245,7 @@ gzip_disable "MSIE [1-6]\.";
 
 
 
-### 4. log
+### 4. 访问日志格式
 
 设置日志格式
 
@@ -223,7 +346,7 @@ max_size   最大缓存空间，如果缓存空间满，默认覆盖掉缓存时
 
 
 
-### 6. GoAccess
+### 6. GoAccess 日志解析
 
 一个日志可视化工具。
 
@@ -261,3 +384,96 @@ nohup cat access.log | docker run -p 7890:7890 --rm -i -e LANG=$LANG allinurl/go
 
 
 
+### 7. SSL 握手时 Nginx 的性能瓶颈
+
+处理大文件和小文件时 Nginx 的瓶颈不一样：
+
+* 大文件
+  * 当我们处理大文件时，主要考虑对称加密算法的性能，比如说AES。
+  * 当我们面对大的文件处理的时候，可以考虑是否可将AES算法替换为更有效的算法或者把密码强度调的更小一些
+* 小文件
+  * 当以小文件为主时，主要考验的是Nginx的非对称加密的性能，比如说RSA如果我们处于小文件比较多的情况下，重点可能就是优化椭圆曲线算法的一些密码强度是不是可以有所降低；
+
+
+
+## 3. Openresty 初体验
+
+基于OpenResty用Lua语言实现简单服务。
+
+### 1. 安装
+
+安装流程和 Nginx 是一致的,都是下载解压编译3步走。
+
+1）下载，官网地址[openresty.org](https://openresty.org/)
+
+```sh
+$ wget https://openresty.org/download/openresty-1.19.3.2.tar.gz
+```
+
+
+
+2）解压
+
+```sh
+$ tar -zxvf openresty-1.19.3.2.tar.gz
+```
+
+目录结构如下：
+
+```sh
+bundle
+configure
+COPYRIGHT
+patches
+README.markdown
+README-windows.txt
+util
+```
+
+- 相比Nginx源代码目录相比少了很多东西，少了的东西在bundle目录下。build是编译后生成的目标中间文件
+- 在bundle目录中有很多模块，最核心的是Nginx源代码，nginx-相应的版本中，当前的openresty基于nginx-1.15-8这个版本进行二次开发。
+
+3）编译
+
+> 需要OpenSSL路径或者解压编译路径
+
+```sh
+$ ./configure --prefix=/home/openresty --with-openssl=/usr/local/src/openssl-1.0.2t
+$ gmake
+$ gmake install
+```
+
+如果已经安装过openresty了，这个时候可以把nginx的二进制文件拷贝到openresty的nginx的sbin版本中，做一次热部署/热升级。
+
+
+
+### 2. 添加Lua代码
+
+在nginx.conf 中实际是可以直接添加Lua代码，但是不能把Lua的语法Lua的源代码直接放在conf中，因为nginx的解析器它的配置语法是跟Lua代码时不相同的。
+
+在openresty的nginx lua模块中，它提供了几条指令，其中有一条指令是content_by_lua。content_by_lua是在http请求处理的内容生成阶段，我们用Lua代码来处理。
+
+
+
+openresty的Lua模块中提供了一些API 如ngx.say，会去生成http响应，浏览器在发起http请求中，它会在User-Agent这样的head中，去添加当前浏览器的类型，我是xxx,我用了什么样的内核，用ngx.req.ge_headers把用户请求中的头部取出来，然后找出User-Agent，把User-Agent值通过这样一种文本方式返回给浏览器中
+
+
+```conf
+location /lua{
+                default_type text/html;
+                content_by_lua '
+ngx.say("User-Agent: ",ngx.req.get_headers()["User-Agent"])
+                ';
+        }
+ 
+        location /{
+        
+            alias html/asinmy;
+        }
+```
+
+通过openresty的nginx lua模块，我们可以用它提供给我们的API完成很多功能，我们可以利用Lua本身的一些工具库把Lua语言添加进来参加我们生成响应的这样一个过程中。
+
+直接使用openresty提供的API或者Lua代码生成响应，为浏览器客户端提供服务。
+
+我们可以使用Lua语言以及提供的相应的API库直接去访 Redis,Mysql,Tomcat等这样的服务，然后把不同的响应通过程序逻辑组成相应的http响应返回给用户。

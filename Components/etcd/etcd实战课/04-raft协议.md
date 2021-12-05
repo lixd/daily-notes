@@ -132,7 +132,7 @@ Follower 在转换成 Candidate 状态前，先进入 PreCandidate 状态，不�
 
 下图是 Raft 日志复制过程中的日志细节图：
 
-![](assets/各节点raft日志状态.png)
+![](assets/raft日志图1.png)
 
 在日志图中，最上方的是日志条目**序号 / 索引**，日志由有序号标识的一个个条目组成，每个日志条目内容保存了 **Leader 任期号和提案内容**。最开始的时候，A 节点是 Leader，任期号为 1，A 节点 crash 后，B 节点通过选举成为新的 Leader， 任期号为 2。
 
