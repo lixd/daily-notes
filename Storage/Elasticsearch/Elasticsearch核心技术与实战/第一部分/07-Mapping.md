@@ -96,9 +96,9 @@ GET mapping_test/_mapping
   * 修改已有字段，一旦已经有数据写入，就不再支持修改字段定义
     
     * 因为 Lucene 实现的倒排索引，一旦生成后，就不允许修改
-* 如果希望改变字段类型，必须调用 Reindex API，重建索引
-=======
-  
+
+**如果希望改变字段类型，必须调用 Reindex API，重建索引。**
+
 * 新增加字段
   * Dynamic 设置为 true 时，一旦有新增字段的文档写入，Mapping 也同时被更新
   * Dynamic 设置为 false 时，Mapping 不会被更新，新增字段的数据无法被索引，但是信息会出现在`_sourcez`中

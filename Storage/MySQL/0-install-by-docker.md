@@ -11,6 +11,7 @@ services:
     image: mysql:8
     restart: always
     environment:
+      # 指定 root 账号的密码，即账号为root，密码为123456
       MYSQL_ROOT_PASSWORD: 123456
     command:
       --default-authentication-plugin=mysql_native_password
@@ -35,4 +36,6 @@ $ docker-compose up -d
 ```
 
 **注意**：连接MySQL8配置文件中的驱动要换成`com.mysql.cj.jdbc.Driver`
+
+
 

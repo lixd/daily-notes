@@ -1,11 +1,15 @@
-# 数据建模最佳实践
+# Mapping 数据建模最佳实践
 
 ## 1. 字段建模
+
+主要考虑以下几个方面：
 
 * 1）字段类型 
 * 2）是否要搜索及分词 
 * 3）是否要聚合及排序 
 * 4）是否要额外的存储
+
+
 
 ### 1. 字段类型 
 
@@ -19,6 +23,19 @@
   * 适用于 Filter（精确匹配），Sorting和Aggregation
 * 设置多字段类型
   * 默认会为文本类型设置成 text，并且设置一个 keyword的子字段
+  
+  * ```conf
+          "title": {
+            "type": "text",
+            "fields": {
+              "keyword": {
+                "type": "keyword",
+                "ignore_above": 256
+              }
+            }
+          }
+    ```
+  
   * 在处理人类语言时，通过增加`英文`、`拼音`和`标准`分词器，提高搜索结构
 
 **结构化数据**
@@ -30,6 +47,8 @@
 * 其他
   * 日期、布尔、地理信息
 
+
+
 ### 2. 检索
 
 * 如不需要检索、排序和聚合
@@ -39,6 +58,8 @@
 * 对需要检索的字段，可以通过如下配置，设定存储粒度
   * Index options / norms：不需要归一化数据时，可以关闭
 
+
+
 ### 3. 聚合及排序
 
 * 如不需要检索、排序和聚合
@@ -47,6 +68,8 @@
   * Doc_values / fielddata 设置成 false
 * **更新**、**聚合**查询频繁的 keyword 类型的字段
   * 推荐将 **eager_global_ordinals** 设置为 true
+
+
 
 ### 4. 额外存储
 
@@ -81,11 +104,15 @@
 
 ## 2. 最佳实践
 
+
+
 ### 1. 如何处理关联关系
 
 * 优先考虑 Denormalization
 * 当数据包含多数值对象，同时有查询需求 使用 Nested 嵌套对象
 * 关联文档更新非常频繁时推荐 Parent / Child 父子文档
+
+
 
 ### 2.  避免过多字段
 
@@ -104,6 +131,8 @@
 * Strict
   * 可以控制到字段级别
 
+
+
 ### 3. 避免正则查询
 
 **问题**
@@ -119,6 +148,8 @@
 **解决方案**
 
 将版本号拆分为 `marjor`、`minor`、`hot_fix`，查询时就可以指定查询了。
+
+
 
 ### 4. 避免空值引起的聚合不准
 
@@ -165,6 +196,8 @@ PUT ratings
 }
 ```
 
+
+
 ### 5. 将索引的 Mapping 加入 Meta 信息
 
 Mapping 的设置非常重要，需要从两个维度进行考虑
@@ -178,4 +211,54 @@ Mappings 设置是一个迭代的过程
 * 更新删除字段不允许（需要 Reindex 重建索引）
 * 最好能对 Mapping  加入 Meta 信息，更好的进行版本管理
 * 可以考虑将 Mapping 文件上传 git 进行管理
+
+
+
+## 3. 使用建议
+
+推荐的 Mapping 创建步骤如下：
+
+1. 创建一个临时的 Index，写入一些样本数据，利用 Dynamic Mapping 机制自动生成 Mapping
+2. 通过 访问 Mapping API 获得该临索引件的动态 Mapping 定义
+3. 修改自动创建的 Mapping（比如自动推断的类型可能不正确等），使用该配置创建你的索引
+4. 删除临时索引
+
+
+
+```json
+PUT article_v1
+{
+  "mappings": {
+    "properties": {
+      "classify": {
+        "type": "text"
+      },
+      "describe": {
+        "type": "text"
+      },
+      "process": {
+        "type": "long"
+      },
+      "questionNum": {
+        "type": "long"
+      },
+      "status": {
+        "type": "long"
+      },
+      "tid": {
+        "type": "keyword"
+      },
+      "title": {
+        "type": "text",
+        "fields": {
+          "keyword": {
+            "type": "keyword",
+            "ignore_above": 256
+          }
+        }
+      }
+    }
+  }
+}
+```
 
