@@ -4,8 +4,8 @@
 
 简单理解：
 
-* PV是具体实现
-* PVC是接口
+* PV 是具体实现
+* PVC 是接口
 * StorageClass 则是根据接口自动创建具体实现的插件
 
 
@@ -174,7 +174,7 @@ Dynamic Provisioning 机制工作的核心，在于一个名叫 StorageClass 的
 具体地说，StorageClass 对象会定义如下两个部分内容：
 
 * 1）第一，PV 的属性。比如，存储类型、Volume 的大小等等。
-* 2）第二，创建这种 PV 需要用到的存储插件。比如，Ceph 等等。
+* 2）第二，创建这种 PV 需要用到的存储插件。比如 NFS ，Ceph 等等。
 
 有了这样两个信息之后，Kubernetes 就能够根据用户提交的 PVC，找到一个对应的 StorageClass 了。然后，**Kubernetes 就会调用该 StorageClass 声明的存储插件，创建出需要的 PV**。
 
@@ -282,7 +282,7 @@ No events.
 
 需要注意的是，**StorageClass 并不是专门为了 Dynamic Provisioning 而设计的**。
 
-因为Kubernetes 只会将 StorageClass 相同的 PVC 和 PV 绑定起来，所以利用`storageClassName` 字段可以控制 PVC 和 PV 的绑定关系。
+因为 Kubernetes 只会将 StorageClass 相同的 PVC 和 PV 绑定起来，所以利用`storageClassName` 字段可以控制 PVC 和 PV 的绑定关系。
 
 
 
