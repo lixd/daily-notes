@@ -240,13 +240,11 @@ func (r *raft) becomePreCandidate() {
 
 重点是，成为 candidate 调用了 `r.reset(r.Term + 1)`，把 term +1 了。
 
-而 PreCandidate 则没有。
+而 PreCandidate 则没有，只是在发送消息的时候，PreCandidate 把消息中的 term +1 而已。
 
-这也就是为什么，在发送消息的时候，PreCandidate 把消息中的 term +1，` term = r.Term + 1`，而 Candidate 没有  term = r.Term。因为 Candidate 本身的 term 已经+1了。
+follower切换成为candidate之后会增加系统的term，但如果该节点无法联系上系统中的大多数节点那么这次状态切换会导致term毫无意义的增大。
 
-> 预选时 term 没有加1，此时etcd 集群依旧可以对外提供服务，而 正选时 term +1了，此时是没有 leader的，无法对外提供服务。
 
-因为影响比较大，所以增加了一个 预选功能，连预选都过不了，就没必要开启选举了，否则只会白白降低集群稳定性。
 
 
 
@@ -446,9 +444,5 @@ func (r *raft) handleHeartbeat(m pb.Message) {
 
 
 
-
-
 3）**预选**不会导致其他节点任期增加，模拟投票，如果能通过才正式开启选举。预选主要用于避免无效的选举。
-
-> 因为选举期间没有 Leader，此时 etcd 是无法对外提供服务的。
 
