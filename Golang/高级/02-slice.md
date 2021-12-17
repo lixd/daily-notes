@@ -1,5 +1,7 @@
 # Slice
 
+> 官方博客：[slices-intro](https://go.dev/blog/slices-intro)
+
 ## 1. 概述
 
 Go 语言中的 Slice 具体实现如下：
