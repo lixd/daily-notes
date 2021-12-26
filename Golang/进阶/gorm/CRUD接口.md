@@ -1,32 +1,65 @@
 # CRUD接口
 
+GORM 提供了很多封装好的方法及特效，但是不建议全部使用。
+
+越简单越好，建议使用接近原生SQL的方式，这样容易理解且更加通用。
+
 ## 1. 创建记录
 
+### create
+
 ```go
+// 推荐使用方式：定义一个结构体，填充字段
 user := User{Name: "Jinzhu", Age: 18, Birthday: time.Now()}
-db.Create(&user)
+result := db.Create(&user)
+
+// 不推荐：指定要创建的字段名，也就是user中部分生效，很容易产生迷惑
+// 更建议新建一个user结构体进行创建
+db.Select("Name", "Age", "CreatedAt").Create(&user)
+
+// 批量创建同推荐
+var users = []User{{Name: "jinzhu1"}, {Name: "jinzhu2"}, {Name: "jinzhu3"}}
+db.Create(&users)
+// 如果数量太多的话，可以分批次写入，指定每次写入的条数即可
+db.CreateInBatches(users, 100)
+
+
+// 不推荐：钩子相关的特性，类似于数据库里的trigger，隐蔽而迷惑，不易维护
+func (u *User) BeforeCreate(tx *gorm.DB) (err error){}
+
+// 不推荐：用Map硬编码创建记录，改动成本大
+db.Model(&User{}).Create(map[string]interface{}{
+  "Name": "jinzhu", "Age": 18,
+})
+
+// 争议点：gorm.Model中预定了数据库中的四个字段，是否应该把它引入到模型的定义中
+// 我个人不太喜欢将这四个字段强定义为数据库表中的字段名
+type Model struct {
+	ID        uint `gorm:"primarykey"`
+	CreatedAt time.Time
+	UpdatedAt time.Time
+	DeletedAt DeletedAt `gorm:"index"`
+}
 ```
 
-### 默认值
+### 默认值与零值
 
 可以通过tag指定默认值，如下：
 
 ```go
-type Animal struct {
+type User struct {
   ID   int64
-  Name string `gorm:"default:'galeone'"`
-  Age  int64
+  Name string `gorm:"default:galeone"`
+  Age  int64  `gorm:"default:18"`
 }
 ```
 
- 生成的 SQL 语句会排除没有值或值为零值的字段。 
-
-这个时候都会使用tag中指定的默认值(如果有的话)
+ 生成的 SQL 语句会排除没有值或值为零值的字段。，这个时候都会使用tag中指定的默认值(如果有的话)
 
 ```go
 var animal = Animal{Age: 99, Name: ""}
 db.Create(&animal)
-// Name为空字符串生成SQL被排除掉 
+// Name为空字符串生成SQL被排除掉， 但是会用默认值代替
 // INSERT INTO animals("age") values('99');
 // SELECT name from animals WHERE ID=111; // 返回主键为 111
 // animal.Name => 'galeone'
@@ -84,9 +117,7 @@ type User struct {
 
 查询的时候同理。
 
-字段定义没处理零值那么数据库中的NULL查询出来也会变成零值。
-
-处理了则可以区分出来了。
+字段定义没处理零值那么数据库中的NULL查询出来也会变成零值，处理了则可以区分出来了。
 
 定义为`指针`时查询出来的值为`NIL`
 
@@ -100,455 +131,104 @@ type User struct {
 
 > 推荐使用`sql.NullXXX`
 
-#### hook
+### Upset 及冲突
+
+可以通过 Clauses 配置写入数据冲突时执行的操作。
 
 ```go
-// BeforeCreate create之前可以对字段的值进行处理
-// 比例将明文密码加密
-func (user *User) BeforeCreate(scope *gorm.Scope) error {
-	scope.SetColumn("password", encodePwd(user.Password))
-	return nil
-}
+import "gorm.io/gorm/clause"
+
+// 在冲突时，什么都不做
+db.Clauses(clause.OnConflict{DoNothing: true}).Create(&user)
+
+// 在`id`冲突时，将列更新为默认值
+db.Clauses(clause.OnConflict{
+  Columns:   []clause.Column{{Name: "id"}},
+  DoUpdates: clause.Assignments(map[string]interface{}{"role": "user"}),
+}).Create(&users)
+// MERGE INTO "users" USING *** WHEN NOT MATCHED THEN INSERT *** WHEN MATCHED THEN UPDATE SET ***; SQL Server
+// INSERT INTO `users` *** ON DUPLICATE KEY UPDATE ***; MySQL
+
+// 使用SQL语句
+db.Clauses(clause.OnConflict{
+  Columns:   []clause.Column{{Name: "id"}},
+  DoUpdates: clause.Assignments(map[string]interface{}{"count": gorm.Expr("GREATEST(count, VALUES(count))")}),
+}).Create(&users)
+// INSERT INTO `users` *** ON DUPLICATE KEY UPDATE `count`=GREATEST(count, VALUES(count));
+
+// 在`id`冲突时，将列更新为新值
+db.Clauses(clause.OnConflict{
+  Columns:   []clause.Column{{Name: "id"}},
+  DoUpdates: clause.AssignmentColumns([]string{"name", "age"}),
+}).Create(&users)
+// MERGE INTO "users" USING *** WHEN NOT MATCHED THEN INSERT *** WHEN MATCHED THEN UPDATE SET "name"="excluded"."name"; SQL Server
+// INSERT INTO "users" *** ON CONFLICT ("id") DO UPDATE SET "name"="excluded"."name", "age"="excluded"."age"; PostgreSQL
+// INSERT INTO `users` *** ON DUPLICATE KEY UPDATE `name`=VALUES(name),`age=VALUES(age); MySQL
+
+// 在冲突时，更新除主键以外的所有列到新值。
+db.Clauses(clause.OnConflict{
+  UpdateAll: true,
+}).Create(&users)
+// INSERT INTO "users" *** ON CONFLICT ("id") DO UPDATE SET "name"="excluded"."name", "age"="excluded"."age", ...;
 ```
+
+
 
 ## 2. 查询
 
-### 1. 基本使用
 
-#### 1. 根据主键查
 
 ```go
-// 根据主键查询第一条记录
+// 不推荐： 我个人不太建议使用First/Last这种和原生SQL定义不一致的语法，扩展性也不好
+// 在这种情况下，我更建议采用Find+Order+Limit这样的组合方式，通用性也更强
 db.First(&user)
-//// SELECT * FROM users ORDER BY id LIMIT 1;
-
-// 随机获取一条记录
-db.Take(&user)
-//// SELECT * FROM users LIMIT 1;
-
-// 根据主键查询最后一条记录
 db.Last(&user)
-//// SELECT * FROM users ORDER BY id DESC LIMIT 1;
 
-// 查询所有的记录
-db.Find(&users)
-//// SELECT * FROM users;
+// 推荐：Find支持返回多个记录，是最常用的方法，但需要结合一定的限制
+result := db.Find(&users)
 
-// 查询指定的某条记录(仅当主键为整型时可用)
-db.First(&user, 10)
-//// SELECT * FROM users WHERE id = 10;
-```
-
-
-
-#### 2. WHERE
-
-```go
-// 获取第一个匹配的记录
+// 不推荐：条件查询的字段名采用hard code，体验不好
 db.Where("name = ?", "jinzhu").First(&user)
-
-// 获取所有匹配的记录
-db.Where("name = ?", "jinzhu").Find(&users)
-// IN
-db.Where("name IN (?)", []string{"jinzhu", "jinzhu 2"}).Find(&users)
-
-// Struct
-db.Where(&User{Name: "jinzhu", Age: 20}).First(&user)
-//// SELECT * FROM users WHERE name = "jinzhu" AND age = 20 ORDER BY id LIMIT 1;
-
-// Map
 db.Where(map[string]interface{}{"name": "jinzhu", "age": 20}).Find(&users)
-//// SELECT * FROM users WHERE name = "jinzhu" AND age = 20;
-```
 
-#### 3. NOT
+// 推荐：结合结构体的方式定义，体验会好很多
+// 但是，上面这种方法不支持结构体中Field为默认值的情况，如0，''，false等
+// 所以，更推荐采用下面这种方式，虽然会带来一定的hard code，但能指定要查询的结构体名称。
+db.Where(&User{Name: "jinzhu", Age: 20}).First(&user)
+db.Where(&User{Name: "jinzhu"}, "name", "Age").Find(&users)
 
- 作用与 `Where` 类似 
-
-```go
-db.Not("name", "jinzhu").First(&user)//// SELECT * FROM users WHERE name <> "jinzhu" ORDER BY id LIMIT 1;
-
-// Struct
-db.Not(User{Name: "jinzhu"}).First(&user)
-//// SELECT * FROM users WHERE name <> "jinzhu" ORDER BY id LIMIT 1;
-```
-
-#### 4. OR
-
-```go
-db.Where("role = ?", "admin").Or("role = ?", "super_admin").Find(&users)
-//// SELECT * FROM users WHERE role = 'admin' OR role = 'super_admin';
-
-// Struct
-db.Where("name = 'jinzhu'").Or(User{Name: "jinzhu 2"}).Find(&users)
-//// SELECT * FROM users WHERE name = 'jinzhu' OR name = 'jinzhu 2';
-```
-
-#### 5. 内联条件
-
-在查询语句中直接添加条件
-
-```go
-// 通过主键获取 (只适用于整数主键)
-db.First(&user, 23)
-//// SELECT * FROM users WHERE id = 23;
-// 如果是一个非整数类型，则通过主键获取
-db.First(&user, "id = ?", "string_primary_key")
-//// SELECT * FROM users WHERE id = 'string_primary_key';
-
-```
-
-#### 6. FirstOrInit
-
- 获取匹配的第一条记录，否则根据给定的条件初始化一个新的对象 (仅支持 struct 和 map 条件) 
-
-```go
-// 未找到
-db.FirstOrInit(&user, User{Name: "non_existing"})
-//// user -> User{Name: "non_existing"}
-
-// 找到
-db.Where(User{Name: "Jinzhu"}).FirstOrInit(&user)
-//// user -> User{Id: 111, Name: "Jinzhu", Age: 20}
-db.FirstOrInit(&user, map[string]interface{}{"name": "jinzhu"})
-//// user -> User{Id: 111, Name: "Jinzhu", Age: 20}
-```
-
-**Attrs**
-
-同FirstOrInit，只是把初始化参数和查询条件分开了。
-
-> 同时如果 where 用的结构体则会把 where 条件也用于初始化
-
-```go
-// 未找到db.Where(User{Name: "non_existing"}).Attrs(User{Age: 20}).FirstOrInit(&user)//// SELECT * FROM USERS WHERE name = 'non_existing' ORDER BY id LIMIT 1;//// user -> User{Name: "non_existing", Age: 20}
-```
-
-**Assign**
-
- 不管记录是否找到，都将参数赋值给 struct. 
-
-#### 7. FirstOrCreate
-
- 获取匹配的第一条记录, 否则根据给定的条件创建一个新的记录 (仅支持 struct 和 map 条件) 
-
-```go
-// 未找到
-db.FirstOrCreate(&user, User{Name: "non_existing"})
-//// INSERT INTO "users" (name) VALUES ("non_existing");
-//// user -> User{Id: 112, Name: "non_existing"}
-
-// 找到
-db.Where(User{Name: "Jinzhu"}).FirstOrCreate(&user)
-//// user -> User{Id: 111, Name: "Jinzhu"}
-```
-
-**Attrs**
-
-同上
-
-```go
-// 未找到
-db.Where(User{Name: "non_existing"}).Attrs(User{Age: 20}).FirstOrCreate(&user)
-//// SELECT * FROM users WHERE name = 'non_existing' ORDER BY id LIMIT 1;
-//// INSERT INTO "users" (name, age) VALUES ("non_existing", 20);
-//// user -> User{Id: 112, Name: "non_existing", Age: 20}
-```
-
-### 2. 高级查询
-
-#### 1. 子查询
-
-```go
-db.Where("amount > ?", db.Table("orders").Select("AVG(amount)").Where("state = ?", "paid").SubQuery()).Find(&orders)
-// SELECT * FROM "orders"  WHERE "orders"."deleted_at" IS NULL AND (amount > (SELECT AVG(amount) FROM "orders"  WHERE (state = 'paid')));
-
-```
-
-
-
-#### 2. SELECT
-
-指定查询字段，默认会查询所有
-
-```go
-db.Select("name, age").Find(&users)
-//// SELECT name, age FROM users;
-
-db.Select([]string{"name", "age"}).Find(&users)
-//// SELECT name, age FROM users;
-
-db.Table("users").Select("COALESCE(age,?)", 42).Rows()
-//// SELECT COALESCE(age,'42') FROM users;
-```
-
-#### 3. ORDER
-
- 设置第二个参数 reorder 为 `true` ，可以覆盖前面定义的排序条件。 
-
-```go
+// 推荐：指定排序
 db.Order("age desc, name").Find(&users)
-//// SELECT * FROM users ORDER BY age desc, name;
 
-// 多字段排序
-db.Order("age desc").Order("name").Find(&users)
-//// SELECT * FROM users ORDER BY age desc, name;
-
-// 覆盖排序
-db.Order("age desc").Find(&users1).Order("age", true).Find(&users2)
-//// SELECT * FROM users ORDER BY age desc; (users1)
-//// SELECT * FROM users ORDER BY age; (users2)
-```
-
-#### 4. LIMIT
-
-```go
-db.Limit(3).Find(&users)
-//// SELECT * FROM users LIMIT 3;
-
-// -1 取消 Limit 条件
-db.Limit(10).Find(&users1).Limit(-1).Find(&users2)
-//// SELECT * FROM users LIMIT 10; (users1)
-//// SELECT * FROM users; (users2)
-
-```
-
-#### 5. OFFSET
-
-```go
-db.Offset(3).Find(&users)
-//// SELECT * FROM users OFFSET 3;
-
-// -1 取消 Offset 条件
-db.Offset(10).Find(&users1).Offset(-1).Find(&users2)
-//// SELECT * FROM users OFFSET 10; (users1)
-//// SELECT * FROM users; (users2)
-```
-
-#### 6. COUNT
-
-```go
-db.Where("name = ?", "jinzhu").Or("name = ?", "jinzhu 2").Find(&users).Count(&count)
-//// SELECT * from USERS WHERE name = 'jinzhu' OR name = 'jinzhu 2'; (users)
-//// SELECT count(*) FROM users WHERE name = 'jinzhu' OR name = 'jinzhu 2'; (count)
-
-db.Model(&User{}).Where("name = ?", "jinzhu").Count(&count)
-//// SELECT count(*) FROM users WHERE name = 'jinzhu'; (count)
-
-db.Table("deleted_users").Count(&count)
-//// SELECT count(*) FROM deleted_users;
-```
-
- **注意** `Count` 必须是链式查询的最后一个操作 ，因为它会覆盖前面的 `SELECT`，但如果里面使用了 `count` 时不会覆盖 
-
-#### 7. Group & Having
-
-```go
-rows, err := db.Table("orders").Select("date(created_at) as date, sum(amount) as total").Group("date(created_at)").Rows()
-for rows.Next() {
-  ...
-}
-
-rows, err := db.Table("orders").Select("date(created_at) as date, sum(amount) as total").Group("date(created_at)").Having("sum(amount) > ?", 100).Rows()
-for rows.Next() {
-  ...
-}
-
-type Result struct {
-  Date  time.Time
-  Total int64
-}
-db.Table("orders").Select("date(created_at) as date, sum(amount) as total").Group("date(created_at)").Having("sum(amount) > ?", 100).Scan(&results)
-```
-
-
-
-#### 8. JOINS
-
-```go
-rows, err := db.Table("users").Select("users.name, emails.email").Joins("left join emails on emails.user_id = users.id").Rows()
-for rows.Next() {
-  ...
-}
-
-db.Table("users").Select("users.name, emails.email").Joins("left join emails on emails.user_id = users.id").Scan(&results)
-
-// 多连接及参数
-db.Joins("JOIN emails ON emails.user_id = users.id AND emails.email = ?", "jinzhu@example.org").Joins("JOIN credit_cards ON credit_cards.user_id = users.id").Where("credit_cards.number = ?", "411111111111").Find(&user)
-```
-
-#### 9. Pluck
-
- 查询 model 中的一个列作为切片，如果您想要查询多个列，您应该使用 [`Scan`](https://gorm.io/zh_CN/docs/query.html#Scan) 
-
-```go
-var ages []int64
-db.Find(&users).Pluck("age", &ages)
-```
-
-#### 10. Scan
-
- 扫描结果至一个 struct. 
-
-```go
-type Result struct {
-  Name string
-  Age  int
-}
-
-var result Result
-db.Table("users").Select("name, age").Where("name = ?", "Antonio").Scan(&result)
-
-// 原生 SQL
-db.Raw("SELECT name, age FROM users WHERE name = ?", "Antonio").Scan(&result)
-```
-
-#### 11. 其他查询选项
-
-```go
-// 为查询 SQL 添加额外的 SQL 操作
-db.Set("gorm:query_option", "FOR UPDATE").First(&user, 10)
-//// SELECT * FROM users WHERE id = 10 FOR UPDATE;
+// 推荐：限制查询范围，结合Find
+db.Limit(10).Offset(5).Find(&users)
 ```
 
 
 
 ## 3. 更新
 
-### 0. 常用更新
+
 
 ```go
-db.Model(&model.User{}).Where("id = ? ", id).Update(&user)
+// 不推荐：单字段的更新，不常用
+db.Model(&User{}).Where("active = ?", true).Update("name", "hello")
 
-db.Model(&model.User{}).Where("id = ? ", id).Update("name",user.Name,"age",user.Age)
-```
+// 不推荐：指定主键的多字段更新，但不支持默认类型
+db.Model(&user).Updates(User{Name: "hello", Age: 18, Active: false})
 
-Model 指定更新哪张表 where 指定条件 update 传入一个结构体会更新其中有变化且为非零值的字段。
+// 不推荐：指定主键的多字段的更新，但字段多了硬编码很麻烦
+db.Model(&user).Updates(map[string]interface{}{"name": "hello", "age": 18, "active": false})
 
-也可以指定更新字段
+// 推荐：指定主键的多字段的更新，指定要更新的字段，*为全字段
+db.Model(&user).Select("Name", "Age").Updates(User{Name: "new_name", Age: 0})
+db.Model(&user).Select("*").Updates(User{Name: "jinzhu", Role: "admin", Age: 0})
 
-```go
-db.Model(&model.User{}).Where("id = ? ", id).Update("name",user.Name,"age",user.Age)
-```
-
-或者传一个 map 也行
-
-```go
-db.Model(&model.User{}).Where("id = ? ", id).Update(map[string]interface{}{"name":user.Name,"age":user.Age})
-```
-
-
-
-
-
-### 1. 更新所有字段
-
- Save会更新所有字段，即使你没有赋值 
-
-如果记录不存在则会新建。
-
-```go
-`db.First(&user)user.Name = "jinzhu 2"user.Age = 100db.Save(&user)//// UPDATE users SET name='jinzhu 2', age=100, birthday='2016-01-01', updated_at = '2013-11-17 21:34:10' WHERE id=111;`
-```
-
-### 2. 更新修改字段
-
- 如果你只希望更新指定字段，可以使用`Update`或者`Updates` 
-
-```go
-// 根据给定的条件更新单个属性
-db.Model(&user).Where("active = ?", true).Update("name", "hello")
-//// UPDATE users SET name='hello', updated_at='2013-11-17 21:34:10' WHERE id=111 AND active=true;
-
-// 使用 map 更新多个属性，只会更新其中有变化的属性
-db.Model(&user).Updates(map[string]interface{}{"name": "hello", "age": 18, "actived": false})
-//// UPDATE users SET name='hello', age=18, actived=false, updated_at='2013-11-17 21:34:10' WHERE id=111;
-
-// 使用 struct 更新多个属性，只会更新其中有变化且为非零值的字段
-db.Model(&user).Updates(User{Name: "hello", Age: 18})
-//// UPDATE users SET name='hello', age=18, updated_at = '2013-11-17 21:34:10' WHERE id = 111;
+// 推荐：指定更新条件的多字段的更新
+db.Model(User{}).Where("role = ?", "admin").Updates(User{Name: "hello", Age: 18})
 ```
 
 
-
-### 3. 更新选定字段
-
- 如果你想更新或忽略某些字段，你可以使用 `Select`，`Omit` 
-
-```go
-db.Model(&user).Select("name").Updates(map[string]interface{}{"name": "hello", "age": 18, "actived": false})
-//// UPDATE users SET name='hello', updated_at='2013-11-17 21:34:10' WHERE id=111;
-
-db.Model(&user).Omit("name").Updates(map[string]interface{}{"name": "hello", "age": 18, "actived": false})
-//// UPDATE users SET age=18, actived=false, updated_at='2013-11-17 21:34:10' WHERE id=111;
-
-```
-
-Updates指定多字段也只会更新SELECT选择的字段，Omit则会排除掉不想更新的字段。
-
-### 4. 无 Hooks 更新
-
-上面的更新操作会自动运行 model 的 `BeforeUpdate`, `AfterUpdate` 方法，更新 `UpdatedAt` 时间戳, 在更新时保存其 `Associations`, 如果你不想调用这些方法，你可以使用 `UpdateColumn`， `UpdateColumns`
-
-```go
-// 更新单个属性，类似于 `Update`
-db.Model(&user).UpdateColumn("name", "hello")
-//// UPDATE users SET name='hello' WHERE id = 111;
-
-// 更新多个属性，类似于 `Updates`
-db.Model(&user).UpdateColumns(User{Name: "hello", Age: 18})
-//// UPDATE users SET name='hello', age=18 WHERE id = 111;
-
-```
-
-### 5. 批量更新
-
- 批量更新时 Hooks 不会运行 
-
-```go
-db.Table("users").Where("id IN (?)", []int{10, 11}).Updates(map[string]interface{}{"name": "hello", "age": 18})
-//// UPDATE users SET name='hello', age=18 WHERE id IN (10, 11);
-
-// 使用 struct 更新时，只会更新非零值字段，若想更新所有字段，请使用map[string]interface{}
-db.Model(User{}).Updates(User{Name: "hello", Age: 18})
-//// UPDATE users SET name='hello', age=18;
-
-// 使用 `RowsAffected` 获取更新记录总数
-db.Model(User{}).Updates(User{Name: "hello", Age: 18}).RowsAffected
-```
-
-### 6. 使用 SQL 表达式更新
-
-比如字段在原来的基础上调整就可以用到这个。
-
-```go
-DB.Model(&product).Update("price", gorm.Expr("price * ? + ?", 2, 100))
-//// UPDATE "products" SET "price" = price * '2' + '100', "updated_at" = '2013-11-17 21:34:10' WHERE "id" = '2';
-
-DB.Model(&product).Updates(map[string]interface{}{"price": gorm.Expr("price * ? + ?", 2, 100)})
-//// UPDATE "products" SET "price" = price * '2' + '100', "updated_at" = '2013-11-17 21:34:10' WHERE "id" = '2';
-
-DB.Model(&product).UpdateColumn("quantity", gorm.Expr("quantity - ?", 1))
-//// UPDATE "products" SET "quantity" = quantity - 1 WHERE "id" = '2';
-
-DB.Model(&product).Where("quantity > 1").UpdateColumn("quantity", gorm.Expr("quantity - ?", 1))
-//// UPDATE "products" SET "quantity" = quantity - 1 WHERE "id" = '2' AND quantity > 1;
-
-```
-
-
-
-### 7. 修改 Hooks 中的值
-
- 如果你想修改 `BeforeUpdate`, `BeforeSave` 等 Hooks 中更新的值，你可以使用 `scope.SetColumn`, 例如 
-
-```go
-func (user *User) BeforeSave(scope *gorm.Scope) (err error) {
-  if pw, err := bcrypt.GenerateFromPassword(user.Password, 0); err == nil {
-    scope.SetColumn("EncryptedPassword", pw)
-  }
-}
-```
 
 ## 4. 删除
 

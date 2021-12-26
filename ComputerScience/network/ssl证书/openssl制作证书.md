@@ -45,6 +45,8 @@ openssl genrsa -out ca.key 2048
 
 **.csr**
 
+> CA 证书其实不需要csr
+
 ```sh
 openssl req -new -key ca.key -out ca.csr  -subj "/C=GB/L=China/O=lixd/CN=www.lixueduan.com"
 ```

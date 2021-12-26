@@ -91,15 +91,11 @@ realip模块由于覆盖了`binary_remote_addr`和`remote_addr`两个值，所�
 
 #### realIP 指令
 
-##### set_real_ip_form
-
-指定只处理 哪些 ip 发起的请求 比如 指定只处理集群中的某几台机器。
-
 Syntax: **set_real_ip_form ** address|CIDR|unix;
 Default: -
 Context:http,server,location
 
-
+作用：指定只处理 哪些 ip 发起的请求 比如 指定只处理集群中的某几台机器。
 
 ##### real_ip_header
 
@@ -758,7 +754,7 @@ Syntax：try_files ... uri; 或者  try_files ...=code;
 
 Default: ---
 
-Content：server，location
+Context：server，location
 
 例如
 
@@ -784,7 +780,7 @@ Syntax：**mirror** uri|off；
 
 Default：mirror off；
 
-Content：http,server,location
+Context：http,server,location
 
 **mirror_request_body**：指定是否需要把 body 也转发过去。
 
@@ -792,7 +788,7 @@ Syntax：**mirror_request_body** on|off;
 
 Default：mirror_request_body on;
 
-Content：http,server,location
+Context：http,server,location
 
 
 
@@ -812,7 +808,7 @@ Syntax：**alias** path；
 
 Default：---
 
-Content：location
+Context：location
 
 
 
@@ -822,7 +818,7 @@ Syntax：**root** path；
 
 Default：---
 
-Content：http,server,location,if in location
+Context：http,server,location,if in location
 
 
 
@@ -858,7 +854,7 @@ Syntax：**server_name_in_redirect** on|off;
 
 Default：server_name_in_redirect off；
 
-Content：http,server,location
+Context：http,server,location
 
 **port_in_redirect**：返回重定向时，是否带上端口。
 
@@ -866,7 +862,7 @@ Syntax：**port_in_redirect** on|off;
 
 Default：port_in_redirect on；
 
-Content：http,server,location
+Context：http,server,location
 
 **absolute_redirect**：重定向时，是否返回绝对路径。为 true 时返回绝对路径，false 时只返回相对路径。
 
@@ -874,7 +870,7 @@ Syntax：**absolute_redirect** on|off;
 
 Default：absolute_redirect on；
 
-Content：http,server,location
+Context：http,server,location
 
 
 
@@ -890,7 +886,7 @@ Syntax：**index** file ...;
 
 Default：index index.html;
 
-Content：http,server,location
+Context：http,server,location
 
 可以定义多个文件，会按照先后顺序处理。优先返回第一个，如果第一个文件不存在就会去找第二个，以此类推。
 
@@ -926,7 +922,7 @@ Syntax：**autoindex** on|off;
 
 Default：autoindex off；
 
-Content：http,server,location
+Context：http,server,location
 
 
 
@@ -936,7 +932,7 @@ Syntax：**autoindex_exact_size** on|off;
 
 Default：autoindex_exact_size on；
 
-Content：http,server,location
+Context：http,server,location
 
 
 
@@ -946,7 +942,7 @@ Syntax：**autoindex_format** html|xml|json|jsonp;
 
 Default：autoindex_format html；
 
-Content：http,server,location
+Context：http,server,location
 
 **autoindex_localtime**：是否显示本地实际。
 
@@ -954,7 +950,7 @@ Syntax：**autoindex_localtime** on|off;
 
 Default：autoindex_localtime off；
 
-Content：http,server,location
+Context：http,server,location
 
 
 

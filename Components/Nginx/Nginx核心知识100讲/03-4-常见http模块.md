@@ -34,7 +34,7 @@ Syntax：**sub_filter** string replacement;
 
 Default：--
 
-Content：http，server，location
+Context：http，server，location
 
 
 
@@ -44,7 +44,7 @@ Syntax：**sub_filter_last_modified** on|off；
 
 Default：sub_filter_last_modified  off;
 
-Content：http，server，location
+Context：http，server，location
 
 **sub_filter_once**：是否只替换一次，off 时会扫描完整的 body 替换所有满足条件的内容。
 
@@ -52,7 +52,7 @@ Syntax：**sub_filter_once** on|off;
 
 Default：sub_filter_once on;
 
-Content：http，server，location
+Context：http，server，location
 
 **sub_filter_types**：只针对什么类型的文件进行替换，`*`表示所有内容都进行替换。
 
@@ -60,7 +60,7 @@ Syntax:**sub_filter_types** mime-type ...;
 
 Default：sub_filter_types text/html;
 
-Content：http，server，location
+Context：http，server，location
 
 
 
@@ -80,7 +80,7 @@ Syntax：**add_before_body** uri;
 
 Default：--
 
-Content：http，server，location
+Context：http，server，location
 
 **add_after_body**：在 body 之后增加内容。
 
@@ -88,7 +88,7 @@ Syntax：**add_after_body** uri;
 
 Default：--
 
-Content：http，server，location
+Context：http，server，location
 
 
 
@@ -98,7 +98,7 @@ Syntax：**addition_types** mime-type;
 
 Default：addition_types text/html;
 
-Content：http，server，location
+Context：http，server，location
 
 
 
@@ -128,7 +128,7 @@ Syntax：**valid_referers** none|blocke|server_names|string...;
 
 Default：--
 
-Content：server，location
+Context：server，location
 
 
 
@@ -136,7 +136,7 @@ Syntax：**referer_hash_bucket_size** size；
 
 Default：referer_hash_bucket_size 64；
 
-Content：server，location
+Context：server，location
 
 
 
@@ -144,7 +144,7 @@ Syntax：**referer_hash_max_size** size;
 
 Default：referer_hash_max_size 2048；
 
-Content：server，location
+Context：server，location
 
 
 
@@ -218,7 +218,7 @@ Syntax：**secure_link** expression；
 
 Default：--
 
-Content：http,server,location
+Context：http,server,location
 
 
 
@@ -226,7 +226,7 @@ Syntax：**secure_link_md5** expression;  // 指定加密方式
 
 Default：--
 
-Content：http,server,location
+Context：http,server,location
 
 
 
@@ -234,7 +234,7 @@ Syntax:**secure_link_secret** word; // 指定加密密钥
 
 Default：--
 
-Content：location
+Context：location
 
 
 
@@ -323,7 +323,7 @@ Syntax：**map** string $variable {...};
 
 Default：--
 
-Content：http
+Context：http
 
 
 
@@ -331,7 +331,7 @@ Syntax：**map_hash_bucket_size** size；
 
 Default：map_hash_bucket_size 32|64|128；
 
-Content：http
+Context：http
 
 
 
@@ -339,7 +339,7 @@ Syntax：**map_hash_max_size** size；
 
 Default：map_hash_max_size 2048；
 
-Content：http
+Context：http
 
 
 
@@ -430,7 +430,7 @@ Syntax：**spilt_clients** string $variable {...}
 
 Default：---
 
-Content：http
+Context：http
 
 
 
@@ -470,7 +470,7 @@ Syntax：**geo** [$address] $variable {...}
 
 Default：---
 
-Content：http
+Context：http
 
 
 
@@ -533,7 +533,7 @@ Syntax：**geoip_country** file;
 
 Default： --
 
-Content：http
+Context：http
 
 
 
@@ -541,7 +541,7 @@ Syntax：**geoip_proxy** address |CIDR
 
 Default： --
 
-Content：http
+Context：http
 
 **变量**
 
@@ -560,7 +560,7 @@ Syntax：**geoip_city** file；
 
 Default： --
 
-Content：http
+Context：http
 
 **变量**
 

@@ -28,7 +28,7 @@ http{
 
 比较重要的是其中的`http`、`server`、`location`3 个。
 
-**指令的 content**
+**指令的 Context**
 
 ```shell
 Syntax log_format name [esapce=default|json|node] string...;
@@ -41,7 +41,7 @@ Default access_log logs/access.log combined ...;
 Context http,server,location,if in location,limit_except;
 ```
 
-可以看到其中`access_log`命令的 Content 比`log_format`命令多一些，如果配置放在错误的 Context 中会直接报错。
+可以看到其中`access_log`命令的 Context 比`log_format`命令多一些，如果配置放在错误的 Context 中会直接报错。
 
 
 

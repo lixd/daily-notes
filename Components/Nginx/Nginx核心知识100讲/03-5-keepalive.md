@@ -25,7 +25,7 @@ Syntax：**keepalive_disable** none|browser ...;
 
 Default：keepalive_disable msie6;
 
-Content：http,server,location
+Context：http,server,location
 
 
 
@@ -35,7 +35,7 @@ Syntax：**keepalive_request** number;
 
 Default：keepalive_request 100；
 
-Content：http,server,location
+Context：http,server,location
 
 
 
@@ -45,4 +45,4 @@ Syntax：**keepalive_timeout** timeout [header_timeout];
 
 Default：keepalive_timeout 75s;
 
-Content：http,server,location
+Context：http,server,location

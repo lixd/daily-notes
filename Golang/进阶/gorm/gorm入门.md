@@ -1,19 +1,18 @@
 # gorm入门教程
 
-## 1. 概述
 
-官网` https://gorm.io/docs/index.html `
 
-github` https://github.com/jinzhu/gorm `
+* [官网](https://gorm.io/docs/index.html)
 
-当前支持MySQL、PostgresSQL、sqlite3、SQL Server等4个数据库。
+* [Github](https://github.com/go-gorm/gorm)
 
-## 2. 模型定义
+
+
+## 1. 模型定义
 
 ```go
 type Student struct {
-	gorm.Model
-	// PhoneNumber string `gorm:"UNIQUE;NOT NULL"` // 唯一、非空约束
+	gorm.Model // 支持嵌
 	// 非空约束列推荐使用sql.NullXXX类型
 	PhoneNumber sql.NullString `gorm:"type:varchar(20);UNIQUE;NOT NULL"`                      // 唯一约束和非空约束
 	Name        string         `gorm:"column:newName;type:varchar(20);DEFAULT:'defaultName'"` // 列名类型默认值
@@ -23,28 +22,40 @@ type Student struct {
 }
 ```
 
-gorm支持一下tags
+GORM 倾向于约定，而不是配置。默认情况下，GORM 使用 `ID` 作为主键，使用结构体名的 `蛇形复数` 作为表名，字段名的 `蛇形` 作为列名，并使用 `CreatedAt`、`UpdatedAt` 字段追踪创建、更新时间
 
-### 结构体标记
+> 约定大于配置
 
-多个tag用分号`;`隔开
 
-| 结构体标记（Tag） | 描述                                                     | 格式                                                         |
-| :---------------- | :------------------------------------------------------- | ------------------------------------------------------------ |
-| Column            | 指定列名                                                 | `gorm:"column:newName`                                       |
-| Type              | 指定列数据类型                                           | `gorm:"type:varchar(20)`                                     |
-| Size              | 指定列大小, 默认值255                                    | `gorm:"size:255`和type冲突`type:varchar(20);size:255 `这肯定是不行的 |
-| PRIMARY_KEY       | 将列指定为主键                                           | `gorm:"PRIMARY_KEY`                                          |
-| UNIQUE            | 将列指定为唯一                                           | `gorm:"UNIQUE`                                               |
-| DEFAULT           | 指定列默认值                                             | `gorm:"DEFAULT:defaultValue` string类型需要加单引号''不然会报错 |
-| PRECISION         | 指定列精度                                               |                                                              |
-| NOT NULL          | 将列指定为非 NULL                                        | `gorm:"NOT NULL` 推荐该列使用sql.NULLXXX类型 否则基本类型会有默认值永远也不会出现NULL的情况 |
-| AUTO_INCREMENT    | 指定列是否为自增类型                                     | `gorm:"AUTO_INCREMENT`                                       |
-| INDEX             | 创建具有或不带名称的索引, 如果多个索引同名则创建复合索引 | `gorm:"index:indexName`不指定名字会有默认名字`gorm:"index`如果找到其他相同名称的索引则创建组合索引 |
-| UNIQUE_INDEX      | 和 `INDEX` 类似，只不过创建的是唯一索引                  | 同上                                                         |
-| EMBEDDED          | 将结构设置为嵌入                                         |                                                              |
-| EMBEDDED_PREFIX   | 设置嵌入结构的前缀                                       |                                                              |
-| -                 | 忽略此字段                                               |                                                              |
+
+### Tags
+
+声明 model 时，tag 是可选的，GORM 支持以下 tag： tag 名大小写不敏感，但建议使用 `camelCase` 风格
+
+| 标签名                 | 说明                                                         |
+| :--------------------- | :----------------------------------------------------------- |
+| column                 | 指定 db 列名                                                 |
+| type                   | 列数据类型，推荐使用兼容性好的通用类型，例如：所有数据库都支持 bool、int、uint、float、string、time、bytes 并且可以和其他标签一起使用，例如：`not null`、`size`, `autoIncrement`… 像 `varbinary(8)` 这样指定数据库数据类型也是支持的。在使用指定数据库数据类型时，它需要是完整的数据库数据类型，如：`MEDIUMINT UNSIGNED not NULL AUTO_INCREMENT` |
+| size                   | 指定列大小，例如：`size:256`                                 |
+| primaryKey             | 指定列为主键                                                 |
+| unique                 | 指定列为唯一                                                 |
+| default                | 指定列的默认值                                               |
+| precision              | 指定列的精度                                                 |
+| scale                  | 指定列大小                                                   |
+| not null               | 指定列为 NOT NULL                                            |
+| autoIncrement          | 指定列为自动增长                                             |
+| autoIncrementIncrement | 自动步长，控制连续记录之间的间隔                             |
+| embedded               | 嵌套字段                                                     |
+| embeddedPrefix         | 嵌入字段的列名前缀                                           |
+| autoCreateTime         | 创建时追踪当前时间，对于 `int` 字段，它会追踪秒级时间戳，您可以使用 `nano`/`milli` 来追踪纳秒、毫秒时间戳，例如：`autoCreateTime:nano` |
+| autoUpdateTime         | 创建/更新时追踪当前时间，对于 `int` 字段，它会追踪秒级时间戳，您可以使用 `nano`/`milli` 来追踪纳秒、毫秒时间戳，例如：`autoUpdateTime:milli` |
+| index                  | 根据参数创建索引，多个字段使用相同的名称则创建复合索引，查看 [索引](https://gorm.io/zh_CN/docs/indexes.html) 获取详情 |
+| uniqueIndex            | 与 `index` 相同，但创建的是唯一索引                          |
+| check                  | 创建检查约束，例如 `check:age > 13`，查看 [约束](https://gorm.io/zh_CN/docs/constraints.html) 获取详情 |
+| <-                     | 设置字段写入的权限， `<-:create` 只创建、`<-:update` 只更新、`<-:false` 无写入权限、`<-` 创建和更新权限 |
+| ->                     | 设置字段读的权限，`->:false` 无读权限                        |
+| -                      | 忽略该字段，`-` 无读写权限                                   |
+| comment                | 迁移时为字段添加注释                                         |
 
 
 
@@ -53,10 +64,6 @@ gorm支持一下tags
 gorm中的关联是逻辑关联，并不会在数据库中创建外键之类的。
 
 > 一般数据库也不需要使用外键，会降低性能，数据完整性主要通过逻辑进行控制。
-
-
-
-
 
 | 结构体标记（Tag）                | 描述                               |
 | :------------------------------- | :--------------------------------- |
@@ -135,8 +142,6 @@ func (u User) TableName() string {
     return "users"
   }
 }
-// 禁用默认表名的复数形式，如果置为 true，则 `User` 的默认表名是 `user`
-db.SingularTable(true)
 ```
 
 #### 更改默认表名称
@@ -179,17 +184,22 @@ type User struct {
 
 
 
-## 3. 连数据库
+## 2. 连数据库
 
-MySQL大概是这样的,参数也一般从配置文件读
+MySQL大概是这样的：
 
 ```go
-	// 1.建立连接
-	// DSN (Data Source Name)格式: [username[:password]@][protocol[(address)]]/dbname[?param1=value1&...&paramN=valueN]
-	// eg: root:123456@tcp(192.168.100.111:3306)/sampdb?charset=utf8&parseTime=True&loc=Local&timeout=10s
-	dsn := fmt.Sprintf("%s:%s@tcp(%s:%d)/%s?charset=utf8&parseTime=True&loc=Local&timeout=%s",
-		c.Username, c.Password, c.Host, c.Port, c.Database, c.Timeout)
-	MySQL, err = gorm.Open("mysql", dsn)
+// 1.建立连接
+// DSN (Data Source Name)格式: [username[:password]@][protocol[(address)]]/dbname[?param1=value1&...&paramN=valueN]
+// eg: root:123456@tcp(192.168.100.111:3306)/sampdb?charset=utf8&parseTime=True&loc=Local
+db, err := gorm.Open(mysql.New(mysql.Config{
+  DSN: "gorm:gorm@tcp(127.0.0.1:3306)/gorm?charset=utf8&parseTime=True&loc=Local", // DSN data source name
+  DefaultStringSize: 256, // string 类型字段的默认长度
+  DisableDatetimePrecision: true, // 禁用 datetime 精度，MySQL 5.6 之前的数据库不支持
+  DontSupportRenameIndex: true, // 重命名索引时采用删除并新建的方式，MySQL 5.7 之前的数据库和 MariaDB 不支持重命名索引
+  DontSupportRenameColumn: true, // 用 `change` 重命名列，MySQL 8 之前的数据库和 MariaDB 不支持重命名列
+  SkipInitializeWithVersion: false, // 根据当前 MySQL 版本自动配置
+}), &gorm.Config{})
 ```
 
 
