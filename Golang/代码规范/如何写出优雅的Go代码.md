@@ -29,28 +29,7 @@ Go 语言比较常见并且使用广泛的代码规范就是官方提供的 [Go 
 >
 > 其他IDE可能需要配置一下才能使用。
 
-### 2. golint
-
-作为官方提供的静态检查工具。
-
-> 不过不支持定制化的功能
-
-**安装**
-
-```shell
-go get -u golang.org/x/lint/golint
-```
-
-**使用**
-
-```shell
-#指定检查给定目录下的所有文件
-golint ./
-```
-
-
-
-### 3. golangci-lint
+### 2. golangci-lint
 
 这也是一个静态检查工具，不过是可定制化的。
 
@@ -77,19 +56,11 @@ golangci-lint run ./
 
 > 具体配置信息看这里https://golangci-lint.run/usage/configuration/
 
-
-
-
-
 更推荐的方法是在基础库或者框架中使用 `golint` 进行静态检查（或者同时使用 `golint` 和 `golangci-lint`），在其他的项目中使用可定制化的 `golangci-lint` 来进行静态检查。
 
 因为在基础库和框架中施加强限制对于整体的代码质量有着更大的收益。
 
-### 4. Revive 
-
-同样的静态检查工具，比golint快，用法也是相同的。
-
-### 5. 配置
+### 3. 配置
 
 goland中则可以将这几个工具添加到`File watchers`中，每次文件变化时会自动触发。
 
