@@ -55,7 +55,7 @@ spec:
 
 HPA控制器并不监控底层的各种informer比如Pod、Deployment、ReplicaSet等资源的变更，而是**每次处理完成后都将当前HPA对象重新放入延迟队列中**，从而触发下一次的检测，如果你没有修改默认这个时间是15s, 也就是说再进行一次一致性检测之后，即时度量指标超量也至少需要15s的时间才会被HPA感知到
 
-Pod 水平自动扩缩器的实现是一个控制回路，由控制器管理器的 `--horizontal-pod-autoscaler-sync-period` 参数指定周期（默认值为 15 秒）。
+Pod 水平自动扩缩器的实现是一个控制回路，由控制器管理器的 `--horizontal-pod-autoscaler-sync-period` 参数指定周期（**默认值为 15 秒**）。如果需要设置horizontal-pod-autoscaler-sync-period可以在Master Node上的/etc/default/kube-controller-manager中修改。
 
 > 即每个周期 15s。
 

@@ -58,3 +58,22 @@ go mod init <项目模块名称>（module名称可与文件名不同）
 #处理依赖关系
 go mod tidy
 ```
+
+
+
+
+
+## 重建 go.mod
+
+先移除 go.mod 中的所有内容，只保留 module 和 go 版本号即可。
+
+```go
+module xxx
+
+go 1.17
+```
+
+
+
+然可以通过 `go get ./...`让它查找依赖，并记录在`go.mod`文件中
+

@@ -28,24 +28,28 @@ $ wget http://nginx.org/download/nginx-1.19.0.tar.gz
 
 ```sh
 $ yum install -y gcc gcc-c++
+$ apt-get install build-essential 
 ```
 
 **安装pcre软件包（使nginx支持http rewrite模块）**
 
 ```sh
 $ yum install -y pcre pcre-devel
+$ apt-get install libpcre3 libpcre3-dev
 ```
 
 **安装 openssl-devel（使 nginx 支持 ssl）**
 
 ```sh
 $ yum install -y openssl openssl-devel 
+$ apt-get install openssl libssl-dev
 ```
 
 **安装zlib**
 
 ```sh
 $ yum install -y zlib zlib-devel gd gd-devel
+$ apt-get install zlib1g-dev
 ```
 
 

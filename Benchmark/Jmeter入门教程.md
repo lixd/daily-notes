@@ -32,7 +32,7 @@ JDK官网下载地址：`http://www.oracle.com/technetwork/java/javase/downloads
 
 ### 3.1 接口地址
 
-`http://www.baidu.com/s?ie=utf-8&wd=幻境云图`
+`http://www.baidu.com/s?ie=utf-8&wd=指月小筑`
 
 ### 3.2 请求参数
 
@@ -70,7 +70,7 @@ JDK官网下载地址：`http://www.oracle.com/technetwork/java/javase/downloads
 
 右键点击“线程组” -> “添加” -> “Sampler” -> “HTTP请求” 
 
-对于我们的接口`http://www.baidu.com/s?ie=utf-8&wd=幻境云图`性能测试，可以参考如下填写： 
+对于我们的接口`http://www.baidu.com/s?ie=utf-8&wd=指月小筑`性能测试，可以参考如下填写： 
 
 * web服务器
   * 协议：http 
@@ -252,4 +252,50 @@ version             : 5.1.1 r1855137
 2、脚本中存在中文，去除中文
 
 3、脚本中存在类似于jp@gc - Active Threads Over Time 监听器，去除监听器（查看结果树和聚合报告可以保留）
+
+
+
+
+
+## 6. 其他
+
+### 随机数
+
+> [Jmeter 随机数](https://blog.csdn.net/alice_tl/article/details/88725006)
+
+Jmeter 内置有 Random 和 UUID 两个方法用来生成随机数。
+
+
+
+Random使用方式：${__Random( param1,param2 ,param3 )}
+
+- param1为随机数的下限
+- param2为随机数的上限
+- param3为存储随机数的变量名，是选填项。
+
+具体使用：
+
+加上随机数范围是 100~200，,再传递参数时，直接将参数指定为`${__Random( 100,200,xxx)}` 即可。
+
+> 直接作为参数使用时，第三个参数可以不填
+
+
+
+如果想作为公共变量，让多个请求都使用则可以使用 Sampler 来实现。
+
+右键线程组，添加-->Sampler-->Debug Sampler，然后把名称直接改成 `${__Random( 100,200,id)}` 即可。
+
+> 这里是创建了一个叫做 id 的变量。
+
+如果是希望生成电话号码，尾号为这些随机数，则可以再新建一个Debug Sample，名字改成`123456789${id}` 这样套娃即可。
+
+UUID使用方式：${__UUID}
+
+示例：'businessNo':'${__UUID}
+
+*那么Random和UUID两个函数有什么差别呢？*
+
+Random生成随机数，是可能会重复的。UUID是一定不会出现重复的。
+
+所以建议使用UUID函数。
 

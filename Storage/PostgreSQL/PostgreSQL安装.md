@@ -38,7 +38,7 @@ host    all             all             10.1.123.0/24            md5
 
 
 ```yaml
-version: '2'
+version: '3'
 services:
   postgres:
     image: postgres:latest
@@ -51,9 +51,11 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_DB: postgres
       POSTGRES_PASSWORD: 123456
-   	  PGDATA: /var/lib/postgresql/data/pgdata
-   	volumes:
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
       - ./data:/var/lib/postgresql/data/pgdata
+      # 自定义配置文件，如果需要的话
+      - ./postgresql.conf.sample:/usr/share/postgresql/postgresql.conf.sample:rw
 ```
 
 
