@@ -782,3 +782,121 @@ type TGIHeader struct {
 
 切片是对数组的封装，更加通用和方便。
 
+需要注意的是 切片提供了裁剪语法：
+
+```go
+// buf2中只包含 buf 的前32个元素
+buf2:=buf[0:32]
+```
+
+虽然可以通过裁剪得到新元素，但是二者还是共用一个底层数组。
+
+> 即上面例子中修改buf2还是会影响到buf
+
+
+
+还有切片扩容后会创建一个新的底层数组，并将元素从旧数组中拷贝过去。
+
+正是因为有开辟新数组的可能，所以每次 append 的结果都需要用一个变量来接收，因为可能 append 后返回的不在是以前那个 Slice 了。
+
+
+
+### Maps
+
+与切片一样，map 也是引用类型。
+
+map 可使用一般的复合字面语法进行构建，其键 - 值对使用逗号分隔，因此可在初始化时很容易地构建它们。
+
+```go
+var timeZone = map[string]int{
+	"UTC":  0*60*60,
+	"EST": -5*60*60,
+	"CST": -6*60*60,
+	"MST": -7*60*60,
+	"PST": -8*60*60,
+}
+```
+
+从 map 中取值会返回两个参数：
+
+```go
+seconds, ok = timeZone[tz]
+```
+
+参数1为 key 对应的 value，参数2表示map中是否存在该key。
+
+参数2主要用户区分零值的情况，key 不存在时，取值会放回零值。
+
+
+
+### Print
+
+```go
+fmt.Printf("Hello %d\n", 23)
+fmt.Fprint(os.Stdout, "Hello ", 23, "\n")
+fmt.Println("Hello", 23)
+fmt.Println(fmt.Sprint("Hello ", 23))
+```
+
+* %+v 会为结构体的每个字段添上字段名；
+
+* 而 %#v 将完全按照 Go 的语法打印值。
+
+若你想控制自定义类型的默认格式，只需为该类型定义一个具有 String() string 签名的方法。对于我们简单的类型 T，可进行如下操作。
+
+```go
+func (t *T) String() string {
+	return fmt.Sprintf("%d/%g/%q", t.a, t.b, t.c)
+}
+fmt.Printf("%v\n", t)
+```
+
+
+
+注：**不要通过调用 Sprintf 来构造自定义类型的 String 方法**，因为它会无限递归你的的 String 方法。
+
+> 因为 Sprintf 需要调用自定义类型的 String 方法把我们的自定义类型转成字符串形式。
+>
+> 如果 String 中又使用了 Sprintf 则会无限循环递归调用。
+
+比如下面这个例子：
+
+```go
+type MyString string
+
+func (m MyString) String() string {
+    // Sprintf 会调用 m 的 String 方法把 m 转成字符串
+   // 然后 String 方法又调用了 Sprintf 就会无限循环
+	return fmt.Sprintf("MyString=%s", m) // Error: will recur forever.
+}
+func (m MyString) String() string {
+    // 手动转成string类型 则 Sprintf 不会调用 String 方法
+	return fmt.Sprintf("MyString=%s", string(m)) // OK: note conversion.
+}
+```
+
+
+
+### Append
+
+```go
+func append(slice []T, elements ...T) []T
+```
+
+append 会在切片末尾追加元素并返回结果。
+
+```go
+x := []int{1,2,3}
+x = append(x, 4, 5, 6)
+fmt.Println(x)
+```
+
+如果想将一个切片追加到另一个切片中，很简单：在调用的地方使用 ...，就像这样：
+
+```go
+x := []int{1,2,3}
+y := []int{4,5,6}
+x = append(x, y...) // 添加...即可
+fmt.Println(x)
+```
+

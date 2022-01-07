@@ -61,3 +61,9 @@ k8s 安装好后，再安装一下 kubuctl 就算是完成了。
 
 最后只能本地访问，要远程访问的话可以加个Nginx。
 
+bookinfo 项目用到了 websocket，proxy_pass 中需要指定用 http1.1。
+
+        location / {
+            proxy_http_version 1.1;
+            proxy_pass http://192.168.49.2:32177; # 代理接口地址
+        }
