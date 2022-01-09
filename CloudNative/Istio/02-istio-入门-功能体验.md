@@ -2,7 +2,7 @@
 
 ## 1. 示例
 
-根据官方文档，安装Istio并运行示例服务。
+根据官方文档，安装Istio并运行示例 bookinfo 服务。
 
 [入门](https://istio.io/latest/zh/docs/setup/getting-started)
 
