@@ -745,6 +745,15 @@ spec:
 
 
 
+需要 `PeerAuthentication` 和`DestinationRule`两者配合进行设置。
+
+- `PeerAuthentication` 用于配置 Sidecar 接收的 mTLS 流量类型。
+  - 开启后，若外部请求未使用TLS则会被拒绝
+- `DestinationRule` 用于配置 Sidecar 发送的 TLS 流量类型。
+  - 如果不配置出流量TLS，则可能会被`PeerAuthentication`拦截。
+
+
+
 ### 请求认证
 
 请求认证则需要配置两部分：

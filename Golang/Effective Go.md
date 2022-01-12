@@ -2,6 +2,8 @@
 
 > [《Effective Go》原文](https://go.dev/doc/effective_go)
 >
+> [《Effective Go》中文](https://go-zh.org/doc/effective_go.html)
+>
 > [《Effective Go》中英双语版](https://github.com/bingohuang/effective-go-zh-en)
 
 
@@ -900,3 +902,431 @@ x = append(x, y...) // 添加...即可
 fmt.Println(x)
 ```
 
+
+
+
+
+## Initialization
+
+### Constants
+
+Go 中的常量就是常量，在编译时被创建，即使是定义成了局部变量。而由于编译时的限制，常量只能是 数字、字符、字符串和布尔。或者是能被编译器求值的常量表达式，比如`1 << 3 `是常量表达式，而`math.Sin(math.Pi/4)`则不是，因为 math.Sin 函数需要在运行时调用。
+
+同时Go中提供了iota用于创建枚举常量，就像这样：
+
+```go
+type ByteSize float64
+
+const (
+    _           = iota // ignore first value by assigning to blank identifier
+    KB ByteSize = 1 << (10 * iota)
+    MB
+    GB
+    TB
+    PB
+    EB
+    ZB
+    YB
+)
+```
+
+
+
+
+
+### Variables
+
+变量和常量类似，不过变量的初始化语句可以是在运行时计算的表达式。
+
+```go
+var (
+    home   = os.Getenv("HOME")
+    user   = os.Getenv("USER")
+    gopath = os.Getenv("GOPATH")
+)
+```
+
+
+
+
+
+### The init function
+
+Go 中每个文件都可以定义 0个或多个 init 方法来做初始化的工作。
+
+比如：
+
+```go
+func init() {
+	if user == "" {
+		log.Fatal("$USER not set")
+	}
+	if home == "" {
+		home = "/home/" + user
+	}
+	if gopath == "" {
+		gopath = home + "/go"
+	}
+	// gopath may be overridden by --gopath flag on command line.
+	flag.StringVar(&gopath, "gopath", gopath, "override default GOPATH")
+}
+```
+
+init 方法在 package 被导入时就会执行。
+
+社区比较推崇显式初始化，所以一般除了 main 文件其他地方不建议用 init  方法，因为这是对调用者透明的。
+
+
+
+### Order
+
+Go 中初始化顺序如下：
+
+package、const、var、init()、main。
+
+即先导包，按照import顺序，从上往下初始化。
+
+main.go 中先后导入了A、B两个包，则先初始化A，A中又导入了其他包则继续初始化A中导入的包，A导包结束后，在a中按const、var、init()顺序初始化，至此，A初始化完成，继续初始化B，B结束后，在轮到main.go 初始化，同样是const、var、init()、main这个顺序。
+
+如图所示：
+
+![](https://img-blog.csdn.net/20180829114922652?watermark/2/text/aHR0cHM6Ly9ibG9nLmNzZG4ubmV0L2x1bmh1aTE5OTRf/font/5a6L5L2T/fontsize/400/fill/I0JBQkFCMA==/dissolve/70)
+
+
+
+> [Go init 顺序](https://blog.csdn.net/lunhui1994_/article/details/82181056)
+
+即最底层依赖需要最先初始化。
+
+
+
+
+
+
+
+## Methods
+
+### Pointers vs. Values
+
+在 Go 中我们可以为任何已命名的类型（除了指针或接口）定义方法； 接收者可不必为结构体。
+
+指针接收者或值接收者的区别在于：**值方法可通过指针和值调用， 而指针方法只能通过指针来调用**。
+
+> 可以通过指针调用值接收方法是因为编译器的语法糖，实际是对指针解引用后通过值来调用的。而值不能调用指针接收者，是有的值是不可取地址的。
+
+
+### 包装方法
+
+实际上编译器有时候还会生成值方法的**包装方法**。
+
+> 即：在编译时为值接收者的方法，生成一个指针接收者的方法。
+
+**主要是为了满足使用 interface 来调用的情况**。
+
+因为 interface 是动态类型，调用值接收方法时需要根据 interface 中的data 指针找到数据并拷贝到栈上去，但是不知道具体类型，所以不能在编译生成相关拷贝数据的指令，导致interface直接不能用值接收者方法。
+
+因此需要在编译时生成指针接收者方法，因为地址不需要指定具体类型，大小也都是一样的，就没有这个问题。
+
+
+
+但是并不是所有值接收者方法都会被 interface 调用，所以不会在可执行文件中给全部值接收者方法生成包装方法，编译器也会自动裁剪掉那些用不上的包装方法。
+
+> 但是如果代码中是通过反射在调用，编译器就无法判断是否有用了，所以都会保留下来。
+
+
+
+
+
+## Interfaces and other types
+
+### Interfaces
+
+ if something can do *this*, then it can be used here。
+
+Go 中的 interface 是一组方法的集合也是一种类型，只有实现了集合中的方法，就可以说是这个类型。
+
+比如下面的`MyError`结构实现了 error interface 中的 Error 方法，因此 MyError 就实现了 error 接口，MyError 就可以当做是 error 类型来用。
+
+```go
+type error interface {
+	Error() string
+}
+type MyError struct {
+	Err string
+	Msg string
+}
+
+func (m MyError) Error() string {
+	return m.Err
+}
+```
+
+
+
+Go 中实现接口不像 Java 需要显式的 implement，Go 的接口实现都是隐式的，更加灵活。
+
+> 可以让接口定义方和实现方解耦。
+
+
+
+### Conversions
+
+Go 中可以通过`type(xxx)`的方式，进行类型转换，Go 中通常会使用类型转换的方式来访问不同的方法集。
+
+例如：
+
+```go
+type Sequence []int
+
+// Methods required by sort.Interface.
+func (s Sequence) Len() int {
+    return len(s)
+}
+func (s Sequence) Less(i, j int) bool {
+    return s[i] < s[j]
+}
+func (s Sequence) Swap(i, j int) {
+    s[i], s[j] = s[j], s[i]
+}
+
+func (s Sequence) String() string {
+    // Sequence 实现了 sort.Interface 因此可以排序
+	sort.IntSlice(s).Sort()
+    // 将s从Sequence类型转为[]int类型，[]int 类型实现了String方法，因此 Sequence 类型就可以不用在实现 String方法了。
+	return fmt.Sprint([]int(s))
+}
+```
+
+
+
+### Interface conversions and type assertions
+
+**Interface conversions**
+
+Type switchs 也是类型转换的一种。
+
+它接受一个接口，在 switch 中根据其判断选择对应的 case， 并在某种意义上将其转换为该种类型：
+
+```go
+type Stringer interface {
+	String() string
+}
+
+var value interface{} // Value provided by caller.
+switch str := value.(type) {
+case string:
+	return str
+case Stringer:
+	return str.String()
+}
+```
+
+如果是 string 类型则直接返回，如果是 Stringer 类型则调用 String 方法转为 string 后在返回，这种方式对于混合类型来说非常完美。
+
+
+
+**type assertions**
+
+如果已经知道是某种类型了，就可以直接使用`value.(typeName)`语法提取，就像这样：
+
+```go
+str := value.(string)
+```
+
+然后，这种写法如果转换失败则会 panic，为避免这种情况，需要使用以下写法，它能安全地判断该值是否为字符串：
+
+```go
+str, ok := value.(string)
+if ok {
+	fmt.Printf("string value is: %q\n", str)
+} else {
+	fmt.Printf("value is not a string\n")
+}
+```
+
+若类型断言失败，则 ok 为 false，str 为零值。
+
+
+
+### Generality
+
+Go 中接口的灵活实现可以使得我们不暴露具体实现，而仅对外暴露接口。对调用者可以专注于接口而非具体实现，对提供者则可以避免在每个具体实现上重复编写文档。
+
+> 若返回具体实现，调用者则需要关注该类型具体实现了哪些方法，若返回接口则一眼能看出该接口有哪些方法。
+
+
+
+例如在 hash 库中，crc32.NewIEEE 和 adler32.New 都返回接口类型 hash.Hash32。要在 Go 程序中用 Adler-32 算法替代 CRC-32， 只需修改构造函数调用即可，其余代码则不受算法改变的影响。
+
+```go
+type Hash32 interface {
+	Hash
+	Sum32() uint32
+}
+
+// crc32.NewIEEE
+func New(tab *Table) hash.Hash32 {
+	if tab == IEEETable {
+		ieeeOnce.Do(ieeeInit)
+	}
+	return &digest{0, tab}
+}
+
+// adler32.New
+func New() hash.Hash32 {
+	d := new(digest)
+	d.Reset()
+	return d
+}
+```
+
+
+
+### Interfaces and methods
+
+由于几乎任何类型都能添加方法，而只要实现了接口中的方法就算实现了接口，因此几乎任何类型都能满足一个接口。
+
+例如 http 包中，只要实现了 Handler 接口中的 ServeHTTP 方法就能用于处理 http 请求。
+
+```go
+type Handler interface {
+    ServeHTTP(ResponseWriter, *Request)
+}
+```
+
+就像这样：
+
+```go
+// Simple counter server.
+type Counter struct {
+	n int
+}
+
+func (ctr *Counter) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	ctr.n++
+	fmt.Fprintf(w, "counter = %d\n", ctr.n)
+}
+```
+
+具体调用：
+
+```go
+import "net/http"
+...
+ctr := new(Counter)
+http.Handle("/counter", ctr)
+```
+
+
+
+
+
+## The blank identifier
+
+### The blank identifier in multiple assignment
+
+空白标识符`_`在 Go 中的作用，有点像Unix 系统中往`/dev/null` 文件里写数据。它表示只写的值，在需要变量但不需要实际值的地方用作占位符。
+
+> 一般用于丢弃某个值
+
+比如在 for range 中丢弃 index：
+
+```go
+for _, v := range list {
+
+}
+```
+
+当然也可以用来丢弃错误：
+
+```go
+// Bad! This code will crash if path does not exist.
+fi, _ := os.Stat(path)
+if fi.IsDir() {
+	fmt.Printf("%s is a directory\n", path)
+}
+```
+
+不过这是非常不推荐的写法，在 Go 中每个错误都尽量检查一下。
+
+
+
+### Unused imports and variables
+
+在 Go 中导入某个包或声明变量后，如果未使用则会报错。
+
+> 未使用的包会让程序膨胀并拖慢编译速度， 而已初始化但未使用的变量不仅会浪费计算能力，还有可能暗藏着更大的 Bug。
+
+
+
+```go
+package main
+
+import (
+    "fmt"
+    "io"
+    "log"
+    "os"
+)
+
+func main() {
+    fd, err := os.Open("test.go")
+    if err != nil {
+        log.Fatal(err)
+    }
+    // TODO: use fd.
+}
+```
+
+比如上述代码中由于逻辑未完全实现，导致导入的`fmt`和`io`两个包没有使用到，而产生了错误，此时可以这样处理：
+
+```go
+var _ = fmt.Printf // For debugging; delete when done.
+var _ io.Reader    // For debugging; delete when done. 
+```
+
+定义两个变量，使得这个两个包被使用，然后再用空白标识符解决变量未使用的问题。
+
+
+
+### Import for side effect
+
+有时候导入某个包只想用到里面的`init`方法，并不会调用其他功能，比如`pprof`，此时就需要用到空白标识符使其不报错：
+
+```go
+import (
+	_ "net/http/pprof"
+)
+```
+
+
+
+### Interface checks
+
+Go 中接口非常灵活，只需要使用接口中的方法即可。但是有时候接口定义和实现离得比较远，或者接口中方法较多，很难一眼看出某个类型是否实现了该接口。
+
+
+
+**大部分接口转换都是静态的**，因此会在编译时检测。 例如，将一个 `*os.File` 传入一个接收 io.Reader 的函数将无法通过编译， 除非 `*os.File` 实现了 io.Reader 接口。
+
+
+
+**但是有的接口检查会在运行时进行**，例如，[encoding/json](https://go-zh.org/pkg/encoding/json/) 包定义了一个 [Marshaler](https://github.com/bingohuang/effective-go-zh-en/blob/master/Marshaler) 接口。当 JSON 编码器接收到一个实现了该接口的值，那么该编码器就会调用该值的编组方法， 将其转换为 JSON，而非进行标准的类型转换。 编码器在运行时通过 [类型断言](https://go-zh.org/doc/effective_go.html#interface_conversions) 检查其属性，就像这样：
+
+```go
+m, ok := val.(json.Marshaler)
+```
+
+而如果该类型没有实现这个接口，就不能把值转成 JSON 格式。
+
+为了避免这种问题，可以**手动增加一个静态转换来进行接口转换检测**，就像这样：
+
+```go
+var _ json.Marshaler = (*RawMessage)(nil)
+```
+
+如果 *RawMessage 没有实现 json.Marshaler 接口在编译时就会被检测出来。
+
+> 在这个声明中出现空白标识符，即表示该声明的存在只是为了类型检查。
+
+**但是不要每个接口都这样用，只有不存在静态类型转换时才需要这种声明来检测。**

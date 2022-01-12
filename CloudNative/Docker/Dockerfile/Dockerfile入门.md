@@ -163,7 +163,7 @@ RUN pwd          # 输出结果应该是/test/demo
 
 ### 5.  COPY
 
-COPY 文件夹的时候最外层文件夹会被丢弃，要保留的话只能在目标路径增加一层。
+**COPY 文件夹的时候最外层文件夹会被丢弃，要保留的话只能在目标路径增加一层。**
 
 ```dockerfile
 COPY  ./conf/folder /root/conf/folder
