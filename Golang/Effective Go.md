@@ -1330,3 +1330,431 @@ var _ json.Marshaler = (*RawMessage)(nil)
 > 在这个声明中出现空白标识符，即表示该声明的存在只是为了类型检查。
 
 **但是不要每个接口都这样用，只有不存在静态类型转换时才需要这种声明来检测。**
+
+
+
+## Embedding
+
+Go 中 提倡组合，不提倡继承。
+
+> 当然，Go 中也没有继承。
+
+
+
+### 组合与继承
+
+组合一般理解为 has-a 的关系，继承是 is-a 的关系，两者都能起到代码复用的作用。
+
+```go
+继承的优缺点
+优点：
+1，类继承简单粗爆，直观，关系在编译时静态定义。
+2，被复用的实现易于修改，sub可以覆盖super的实现。
+缺点：
+1，无法在运行时变更从super继承来的实现（也不一定是缺点）
+2，sub的部分实现通常定义在super中。
+3，sub直接面对super的实现细节，因此破坏了封装。
+4，super实现的任何变更都会强制子类也进行变更，因为它们的实现联系在了一起。
+5，如果在新的问题场景下继承来的实现已过时或不适用，所以必须重写super或继承来的实现。
+由于在类继承中，实现的依存关系，对子类进行复用可能会有问题。有一个解决办法是，只从协议或抽象基类继承(子类型化)，国为它们只对很少的实现，而协议则没有实现。
+
+组合的优缺点
+对象组合让我们同时使用多个对象，而每个对象都假定其他对象的接口正常运行。因此，为了在系统中正常运行，它们的接口都需要经过精心的设计。下面我就来说说他的优缺点
+优点：
+1，不会破坏封装，因为只通过接口来访问对象；
+2，减少实现的依存关系，因为实面是通过接口来定义的；
+3，可以在运行时将任意对象替换为其他同类型的对象；
+4，可以保持类的封装以专注于单一任务；
+5，类和他的层次结构能保持简洁，不至于过度膨胀而无法管理；
+缺点：
+1，涉及对象多；
+2，系统的行为将依赖于不同对象间的关系，而不是定义于单个类中；
+3，现成的组件总是不太够用，从而导致我们要不停的定义新对象。
+```
+
+
+
+小结，组合相对于继承的优点在于：
+
+* 1）可以利用面向接口编程原则的一系列优点，封装性好，耦合性低
+* 2）相对于继承的编译期确定实现，组合的运行态指定实现，更加灵活
+* 3）组合是非侵入式的，继承是侵入式的
+
+
+
+Go 中提供的结构体嵌入语法就是组合的一种，通过嵌入(组合)可以让代码更加灵活。
+
+比如 io.Reader 和 io.Writer 接口：
+
+```go
+type Reader interface {
+	Read(p []byte) (n int, err error)
+}
+
+type Writer interface {
+	Write(p []byte) (n int, err error)
+}
+```
+
+如果需要定义一个有 Read 和 Write 方法的接口只需要这样：
+
+```go
+// ReadWriter is the interface that combines the Reader and Writer interfaces.
+type ReadWriter interface {
+	Reader
+	Writer
+}
+```
+
+这样 ReadWriter 就包含了Read 和 Write 方法。
+
+
+
+结构体也类似：
+
+```go
+// ReadWriter stores pointers to a Reader and a Writer.
+// It implements io.ReadWriter.
+type ReadWriter struct {
+	*Reader  // *bufio.Reader
+	*Writer  // *bufio.Writer
+}
+```
+
+ReadWriter 接口体中嵌入了`*bufio.Reader`和`*bufio.Writer`，而`*bufio.Reader`和`*bufio.Writer`又分别实现了`Read`、`Write`接口。这样
+
+ReadWriter 结构体也就实现了 `Read`、`Write`接口，同样也实现了上面的`ReadWriter`接口。
+
+
+
+### 匿名嵌入和有名嵌入
+
+结构体嵌入分类有名嵌入和匿名嵌入，比如：
+
+```go
+// 匿名嵌入
+type ReadWriter1 struct {
+	*Reader  // *bufio.Reader
+	*Writer  // *bufio.Writer
+}
+
+// 有名嵌入
+type ReadWriter2 struct {
+	reader *Reader // *bufio.Reader
+	writer *Writer // *bufio.Writer
+}
+```
+
+匿名嵌入和有名嵌入最大区别在于：**二者调用方法的方式不同**。
+
+匿名嵌入可以直接通过结构体进行调用：
+
+```go
+rw:=ReadWriter1{xxx} // 初始化
+rw.Read() // 直接调用，就像 ReadWriter1 结构体本身就实现了 Read 方法一样。
+rw.Write()
+```
+
+而有名嵌入则需要通过具体字段来调用：
+
+```go
+rw:=ReadWriter2{xxx} // 初始化
+rw.reader.Read() // 需要通过reader字段才能调用Read方法
+rw.writer.Write()
+```
+
+
+
+根据调用方式可以知道，使用有名嵌入的ReadWriter2结构体本身其实是没有Read和Write方法，因此也就没有实现ReadWriter接口。
+
+需要手动进行包装：
+
+```go
+func (rw *ReadWriter2) Read(p []byte) (n int, err error) {
+	return rw.reader.Read(p)
+}
+
+func (rw *ReadWriter2) Write(p []byte) (n int, err error){
+	return rw.writer.Write(p)
+}
+```
+
+这样才能当做 ReadWriter 接口使用，而匿名嵌入则没有这个问题。
+
+
+
+当然也不能任何地方都用匿名嵌入，因为匿名嵌入存在一个问题：由于没有给字段指定名字，若字段名冲突时则会被覆盖掉。
+
+覆盖规则为：**外层覆盖内层，若同层则会报错**。
+
+外层覆盖内层：
+
+```go
+type T1 struct {
+	Name string
+}
+type T2 struct {
+	T4
+	Age string
+}
+type T4 struct {
+	Age string
+}
+
+type T3 struct {
+	Name string
+	T1
+	T2
+}
+
+func main() {
+	t := T3{
+		Name: "name-t3",
+		T1: T1{
+			Name: "name-t1",
+		},
+		T2: T2{
+			T4: T4{
+				Age: "age-t4",
+			},
+			Age: "age-t2",
+		},
+	}
+	fmt.Println("name:", t.Name) // name-t3
+	fmt.Println("age:", t.Age) // age-t2
+}
+```
+
+根据输出可以看到：
+
+* T1 中的 Name 被 T3 的 Name 覆盖了
+* T4 中的 Age 被 T2 中的 Age 覆盖了
+
+即：**外层覆盖内层**。
+
+
+
+```go
+// 同层嵌入字段冲突，定义时就报错
+type Reader struct {
+	io.Reader
+	bufio.Reader
+}
+// 若是内层嵌入了同名字段则会在调用时才报错
+// 意味着如果不会使用这些字段，就不会报错
+type T1 struct {
+	Name string
+}
+type T2 struct {
+	Name string
+}
+type T3 struct {
+	T1
+	T2
+}
+
+func main() {
+    t:=T3{xxx} // 初始化
+    fmt.Println("name:", t.Name) // 报错：ambigouos reference 'Name'
+}
+```
+
+小结：
+
+* 最外层冲突直接报错
+* 内层冲突则在用到该字段时才报错。
+
+
+
+## Concurrency
+
+Go 中的口号是：
+
+> Do not communicate by sharing memory; instead, share memory by communicating.
+>
+> 不要通过共享内存来通信，而应通过通信来共享内存。
+
+
+
+Go 中利用 channel 来共享变量，以实现访问控制。若将通信(communication )看做同步器(synchronizer)， 那就完全不需要其它同步(synchronization)了。例如，Unix 管道就与这种模型完美契合。
+
+> if the communication is the synchronizer, there's still no need for other synchronization
+
+虽然 Go 的并发处理方式来源于Communicating Sequential Processes (CSP)，但是也可以看做是 Unix pipes 的类型安全泛化。
+
+>  Although Go's approach to concurrency originates in Hoare's Communicating Sequential Processes (CSP), it can also be seen as a type-safe generalization of Unix pipes.
+
+
+
+
+
+### Goroutines
+
+Goroutine 具有简单的模型：它是与其它 goroutine 并发运行在同一地址空间的函数。
+
+它是轻量级的，消耗只比分配栈空间多一点，而且栈空间初始化时很小，堆空间会根据需要进行分配和释放，so they are cheap。
+
+
+
+使用也很简单，只需要在函数调用前增加`go`关键字，就像这样：
+
+```go
+go list.Sort()  // run list.Sort concurrently; don't wait for it.
+```
+
+需要注意的是Goroutine 和 for range 配合使用时的闭包问题：
+
+```go
+for req := range queue {
+    sem <- 1
+    go func() {
+        process(req) // Buggy; see explanation below.
+        <-sem
+    }()
+}
+```
+
+上述代码中所有Goroutine 实际上会共享一个req 值，而不是想象中的每个Goroutine一个。
+
+因为：在 Go 的 for 循环中，该循环变量在每次迭代时会被复用。
+
+解决办法：将 req 的值作为实参传入到该 goroutine 的闭包中。
+
+```go
+for req := range queue {
+    sem <- 1
+    go func(req *Request) {
+        process(req)
+        <-sem
+    }(req)
+}
+```
+
+ 另一种解决方案就是以相同的名字创建新的变量：
+
+```go
+for req := range queue {
+		req := req // Create new instance of req for the goroutine.
+		sem <- 1
+		go func() {
+			process(req)
+			<-sem
+		}()
+	}
+```
+
+`req := req`这种写法看起来会有点奇怪，但在 Go 中这样做是比较常见的。使用相同的名字获得了该变量的一个新的版本， 以此来屏蔽循环变量，使它对每个 goroutine 保持唯一。
+
+
+
+第一种解决方法更容易理解，第二种则更简洁，不过对新手来说可能比较迷惑。
+
+
+
+### Channels
+
+Goroutines 一般会和 channel 配合使用，通常的做法是使用 channel 来做完成时的信号处理。
+
+channel 使用 make 来初始化。
+
+```go
+ci := make(chan int)            // unbuffered channel of integers
+cj := make(chan int, 0)         // unbuffered channel of integers
+cs := make(chan *os.File, 100)  // buffered channel of pointers to Files
+```
+
+> 需要注意的是 Channel 默认就会分配在堆上，因为会在多个 Goroutine 之间共享。
+
+
+
+
+
+### Channels of channels
+
+channel 在 Go 是 first-class value，因此可以被分配并像其它值到处传递。
+
+常见用法是，在 chan 传递的元素中再放置一个 chan，以接收返回值，就像这样：
+
+```go
+type Request struct {
+	args        []int
+	f           func([]int) int
+	resultChan  chan int
+}
+
+func sum(a []int) (s int) {
+	for _, v := range a {
+		s += v
+	}
+	return
+}
+
+request := &Request{[]int{3, 4, 5}, sum, make(chan int)}
+// Send request
+clientRequests <- request
+// Wait for response.
+fmt.Printf("answer: %d\n", <-request.resultChan)
+```
+
+处理方如下：
+
+```go
+for req := range queue {
+    // process logic
+    req.resultChan <- req.f(req.args) // 通过req中的chan将结果再传递给调用方
+}
+```
+
+
+
+
+
+### Parallelization
+
+这些设计的另一个应用是在多 CPU 核心上实现并行计算。
+
+如果计算过程能够被分为几块可独立执行的过程，它就可以在每块计算结束时向信道发送信号，从而实现并行处理。
+
+例如：
+
+具体处理逻辑，处理完成后通过 chan 告知调用方。
+
+```go
+type Vector []float64
+
+// Apply the operation to v[i], v[i+1] ... up to v[n-1].
+func (v Vector) DoSome(i, n int, u Vector, c chan int) {
+	for ; i < n; i++ {
+		v[i] += u.Op(v[i])
+	}
+	c <- 1    // signal that this piece is done
+}
+```
+
+具体调用逻辑，启动和 CPU 个数一样的 Goroutine ，使每个 Goroutine 分别运行在不同 CPU 核心上，以实现并行计算。
+
+```go
+const NCPU = 4  // number of CPU cores
+
+func (v Vector) DoAll(u Vector) {
+	c := make(chan int, NCPU)  // Buffering optional but sensible.
+	for i := 0; i < NCPU; i++ {
+		go v.DoSome(i*len(v)/NCPU, (i+1)*len(v)/NCPU, u, c)
+	}
+	// Drain the channel.
+	for i := 0; i < NCPU; i++ {
+		<-c    // wait for one task to complete
+	}
+	// All done.
+}
+```
+
+
+
+
+
+### A leaky buffer
+
+没看明白。。
+
+[leaky_buffer](https://go.dev/doc/effective_go#leaky_buffer)
