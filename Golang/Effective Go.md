@@ -1758,3 +1758,156 @@ func (v Vector) DoAll(u Vector) {
 没看明白。。
 
 [leaky_buffer](https://go.dev/doc/effective_go#leaky_buffer)
+
+
+
+
+
+
+
+## Errors
+
+方法提供者一般会给调用者返回某种类型的错误提示。
+
+Go 中错误为 error 类型，这是一个内建接口：
+
+```go
+type error interface {
+	Error() string
+}
+```
+
+library writer 应该定义自己的错误类型来实现 error 接口，以返回除了错误之外的其他信息，如上下文之类的。
+
+就像这样：
+
+```go
+// PathError records an error and the operation and
+// file path that caused it.
+type PathError struct {
+	Op string    // "open", "unlink", etc.
+	Path string  // The associated file.
+	Err error    // Returned by the system call.
+}
+
+func (e *PathError) Error() string {
+	return e.Op + " " + e.Path + ": " + e.Err.Error()
+}
+```
+
+PathError 的 Error 会生成如下错误信息：
+
+```go
+open /etc/passwx: no such file or directory
+```
+
+这比只返回`不存在该文件或目录`更加有用。
+
+错误字符串应尽可能地指明它们的来源，例如产生该错误的包名前缀。例如在 image 包中，由于未知格式导致解码错误的字符串为 `image: unknown format`。
+
+若调用者关心错误的完整细节，可使用类型选择或者类型断言来查看特定错误，并抽取其细节。
+
+
+
+**推荐使用 pkg/error 包来对 error 进行包装，以提供更多信息。**
+
+
+
+### Panic
+
+如果真的是遇到不可恢复的问题，可以使用 panic 函数。内建的 panic 函数，它会产生一个运行时错误并终止程序。
+
+比如程序在初始化时发现没有提供相关配置，导致程序无法正常运行，此时就可以使用 panic：
+
+```go
+var user = os.Getenv("USER")
+
+func init() {
+	if user == "" {
+		panic("no value for $USER")
+	}
+}
+```
+
+
+
+
+
+### Recover
+
+当 panic 被调用后（包括不明确的运行时错误，例如切片检索越界或类型断言失败）， 程序将立刻终止当前函数的执行，并开始执行之前添加的 defer 函数，执行完成后程序退出。
+
+Go 中提供了 Recover 函数来使得panic中的程序恢复到正常运行状态。
+
+需要注意的是 必须在 panic 之前使用 defer 来调用 recover才行，就像这样：
+
+```go
+func server(workChan <-chan *Work) {
+	for work := range workChan {
+		go safelyDo(work)
+	}
+}
+
+func safelyDo(work *Work) {
+	defer func() {
+		if err := recover(); err != nil {
+			log.Println("work failed:", err)
+		}
+	}()
+	do(work)
+}
+```
+
+do 方法会触发 panic，随后会被 safelyDo 中的 recover 恢复。这样就不会影响到 server 方法。
+
+
+
+注：直接调用 recover 方法总是会返回 nil，必须在 defer 中调用才行。而 defer 中的函数可以捕获 panic 且不受 panic 影响。
+
+例如 safelyDo 中的 defer 中的 log 方法不会因为触发了 panic 就不打印了。
+
+> 翻译过来不好理解，可能有错，贴一些原文：
+>
+> Because `recover` always returns `nil` unless called directly from a deferred function, deferred code can call library routines that themselves use `panic` and `recover` without failing. As an example, the deferred function in `safelyDo` might call a logging function before calling `recover`, and that logging code would run unaffected by the panicking state.
+
+
+
+
+
+通过 recovery pattern，可以避免因为 panic 而导致的问题。也可以借此来简化复杂软件中的错误处理问题：
+
+regexp 包的理想化实现，以局部的错误类型调用 panic 来报告解析错误：
+
+```go
+// Error 是解析错误的类型，它满足 error 接口。
+type Error string
+func (e Error) Error() string {
+	return string(e)
+}
+
+// error 是 *Regexp 的方法，它通过用一个 Error 触发 Panic 来报告解析错误。
+func (regexp *Regexp) error(err string) {
+	panic(Error(err))
+}
+
+// Compile 返回该正则表达式解析后的表示。
+func Compile(str string) (regexp *Regexp, err error) {
+	regexp = new(Regexp)
+	// doParse will panic if there is a parse error.
+	defer func() {
+		if e := recover(); e != nil {
+			regexp = nil    // 清理返回值。
+			err = e.(Error) // 若它不是解析错误，将重新触发 Panic。
+		}
+	}()
+	return regexp.doParse(str), nil
+}
+```
+
+内部捕获panic后，进行类型断言，`err = e.(Error)`, 若 error 不是解析错误，将重新触发 Panic。
+
+这种模式让报告解析错误变得更容易。
+
+**尽管这种模式很有用，但它应当仅在包内使用**。Parse 会将其内部的 panic 调用转为 error 值，它并不会向调用者暴露出 panic。这是个值得遵守的良好规则。
+
+> 不过这种重新触发Panic的惯用法会在产生实际错误时改变Panic的值。

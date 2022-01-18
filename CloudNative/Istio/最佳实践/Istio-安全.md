@@ -4,6 +4,8 @@
 
 Isito 安全分为 认证、授权两部分。
 
+Istio 中有一个 identity 的概念，用于标记服务基本信息。 workload 交互时需要先根据Id来交换证书。
+
 ## 2. 认证
 
 Istio 提供了以下两种认证：
@@ -33,9 +35,7 @@ Istio 提供了以下两种认证：
 
 
 
-#### 
-
-
+#### Authentication
 
 * Mutual TLS authentication
   * Istio 中在客户端 Sidecar 和服务端 Sidecar 建立 mTLS。
