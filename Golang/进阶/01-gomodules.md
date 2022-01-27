@@ -77,3 +77,18 @@ go 1.17
 
 然可以通过 `go get ./...`让它查找依赖，并记录在`go.mod`文件中
 
+
+
+## FAQ
+
+**是否需要提交 `go.sum`  文件?**
+
+官方推荐提交。
+
+[官方wiki-should-i-commit-my-gosum-file-as-well-as-my-gomod-file](https://github.com/golang/go/wiki/Modules#should-i-commit-my-gosum-file-as-well-as-my-gomod-file)
+
+
+
+
+
+> [超详细解读 Go Modules 应用](https://iswbm.com/273.html)
