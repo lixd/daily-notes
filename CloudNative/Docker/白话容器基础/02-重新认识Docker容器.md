@@ -116,7 +116,7 @@ Volume 一般存放位置是`/var/lib/docker/volumes/[VOLUME_ID]/_data`
 
 Docker 容器全景图如下所示：
 
-![](../assets/docker-full.jpg)
+![](assets/docker-full.jpg)
 
 这个容器进程“python app.py”，运行在由 Linux Namespace 和 Cgroups 构成的隔离环境里；而它运行所需要的各种文件，比如 python，app.py，以及整个操作系统文件，则由多个联合挂载在一起的 rootfs 层提供。
 

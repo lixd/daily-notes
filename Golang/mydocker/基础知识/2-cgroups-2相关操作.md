@@ -4,7 +4,7 @@
 
 ## 1. hierarchy 
 
-### mount
+### 创建
 
 由于Linux Cgroups是基于内核中的cgroup virtual filesystem的，所以
 
@@ -28,7 +28,7 @@ $ mount -t cgroup -o cpuset cg1 ./cg1
 
 > hierarchy 创建的时候就会就会自动创建一个 cgroup 以作为 cgroup树中的 root 节点。
 
-### umount
+### 删除
 
 删除 hierarchy 则是卸载。
 
@@ -133,7 +133,7 @@ dev@ubuntu:~/cgroup/demo$ cat /home/dev/release_demo.log
 
 ## 2. cgroup
 
-### mkdir
+### 创建
 
 创建cgroup很简单，在父cgroup或者hierarchy 目录下新建一个目录就可以了。
 
@@ -149,7 +149,7 @@ $ mkdir cgroup-cpu-1
 
 
 
-### rmdir
+### 删除
 
 删除也很简单，删除对应**目录**即可。
 
@@ -159,6 +159,7 @@ $ mkdir cgroup-cpu-1
 
 ```shell
 $ rmdir cgroup-cpu
+# 如果cgroup中有进程正在本限制，也会出现这个错误，需要先停掉对应进程，或者把进程移动到另外的 cgroup 中(比如父cgroup)
 rmdir: failed to remove 'cgroup-cpu': Device or resource busy
 ```
 

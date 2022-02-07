@@ -6,7 +6,7 @@
 >
 > [Red Hat---资源管理指南](https://access.redhat.com/documentation/zh-cn/red_hat_enterprise_linux/7/html/resource_management_guide/chap-introduction_to_control_groups)
 >
-> [Linux Cgroup系列（01）：Cgroup概述](https://segmentfault.com/a/1190000006917884)
+> 
 >
 > [Control groups series by Neil Brown](https://lwn.net/Articles/604609/)
 >
@@ -16,11 +16,15 @@
 
 > 注：本文所有操作在 Ubuntu20.04 root 用户下进行。
 
-
+[Linux Cgroup系列（01）：Cgroup概述](https://segmentfault.com/a/1190000006917884)
 
 [Linux Cgroup系列（02）：创建并管理cgroup](https://segmentfault.com/a/1190000007241437)
 
+[Linux Cgroup系列（03）：限制cgroup的进程数（subsystem之pids）](https://segmentfault.com/a/1190000007468509)
 
+[Linux Cgroup系列（04）：限制cgroup的内存使用（subsystem之memory）](https://segmentfault.com/a/1190000008125359)
+
+[Linux Cgroup系列（05）：限制cgroup的CPU使用（subsystem之cpu）](https://segmentfault.com/a/1190000008323952)
 
 
 
