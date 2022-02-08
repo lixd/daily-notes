@@ -1,5 +1,31 @@
 # Test
 
+> [Go单测从零到溜系列0—单元测试基础](https://www.liwenzhou.com/posts/Go/golang-unit-test-0)
+>
+> [GoLang快速上手单元测试（思想、框架、实践）](https://learnku.com/articles/52896)
+
+常见命令
+
+指定运行某个文件中的测试用例,**一定要带上被测试的原文件，有多个则指定多个**。
+
+```shell
+go test -v wechat_test.go wechat.go
+```
+
+测试文件下的具体方法命令
+
+```shell
+go test -v -test.run TestRefreshAccessToken
+# windows 下要加引号
+go test -v -"test.run" TestRefreshAccessToken
+# 或者用 -run=xxx也行
+go test -v -run=Test_dfuVHelper_Generate
+```
+
+
+
+
+
 ## 1. 概述
 
 Go语言中的测试依赖go test命令。编写测试代码和编写普通的Go代码过程是类似的，并不需要学习新的语法、规则或工具。
