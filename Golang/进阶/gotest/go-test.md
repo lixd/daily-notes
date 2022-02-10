@@ -219,3 +219,18 @@ go test 会将打印的内容与 下面的注释`Output`对比，相同则通过
 		})
 ```
 
+### 3. 跳过某些测试用例
+
+为了节省时间支持在单元测试时跳过某些耗时的测试用例。
+
+```go
+func TestTimeConsuming(t *testing.T) {
+    if testing.Short() {
+        t.Skip("short模式下会跳过该测试用例")
+    }
+    ...
+}
+```
+
+当执行`go test -short`时就不会执行上面的`TestTimeConsuming`测试用例。
+

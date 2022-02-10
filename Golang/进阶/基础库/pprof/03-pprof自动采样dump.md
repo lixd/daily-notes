@@ -36,7 +36,9 @@
 
 
 
-这个问题最好的解决办法是 `continuous profiling`，不过这个理念需要公司的监控系统配合，实现成本较高。
+这个问题最好的解决办法是 `持续分析(Continuous profiling)`，不过这个理念需要公司的监控系统配合，实现成本较高。
+
+> 社区已经有了开源的持续分析平台：[pyroscope](https://github.com/pyroscope-io/pyroscope)
 
 在监控系统完善前我们也可以先弄个简易版本。
 
