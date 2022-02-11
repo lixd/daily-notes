@@ -1,12 +1,18 @@
 # Test
 
+> [testing包的官方文档](https://pkg.go.dev/testing)
+>
 > [Go单测从零到溜系列0—单元测试基础](https://www.liwenzhou.com/posts/Go/golang-unit-test-0)
+>
+> [Go单测从零到溜系列1—网络测试](https://www.liwenzhou.com/posts/Go/golang-unit-test-1/)
 >
 > [GoLang快速上手单元测试（思想、框架、实践）](https://learnku.com/articles/52896)
 
 常见命令
 
-指定运行某个文件中的测试用例,**一定要带上被测试的原文件，有多个则指定多个**。
+指定运行某个文件中的测试用例
+
+> 一定要带上被测试的原文件，有多个则指定多个。
 
 ```shell
 go test -v wechat_test.go wechat.go
@@ -15,11 +21,13 @@ go test -v wechat_test.go wechat.go
 测试文件下的具体方法命令
 
 ```shell
-go test -v -test.run TestRefreshAccessToken
-# windows 下要加引号
-go test -v -"test.run" TestRefreshAccessToken
-# 或者用 -run=xxx也行
-go test -v -run=Test_dfuVHelper_Generate
+go test -v -run Test_dfu_Generate
+```
+
+性能测试
+
+```shell
+go test -bench=.
 ```
 
 
@@ -28,19 +36,47 @@ go test -v -run=Test_dfuVHelper_Generate
 
 ## 1. 概述
 
-Go语言中的测试依赖go test命令。编写测试代码和编写普通的Go代码过程是类似的，并不需要学习新的语法、规则或工具。
+Go 语言中的测试依赖 go test 命令。编写测试代码和编写普通的 Go 代码过程是类似的，并不需要学习新的语法、规则或工具。
 
-go test命令是一个按照一定约定和组织的测试代码的驱动程序。在包目录内，所有以**`_test.go`**为后缀名的源代码文件都是go test测试的一部分，不会被go build编译到最终的可执行文件中。
+go test 命令是一个按照一定约定和组织的测试代码的驱动程序。在包目录内，所有以**`_test.go`**为后缀名的源代码文件都是 go test 测试的一部分，不会被 go build 编译到最终的可执行文件中。
 
-在`*_test.go`文件中有三种类型的函数，单元测试函数、基准测试函数和示例函数。
+在 `*_test.go` 文件中有三种类型的函数，单元测试函数、基准测试函数和示例函数。
 
-| 类型     | 格式                  | 作用                           |
-| -------- | --------------------- | ------------------------------ |
-| 测试函数 | 函数名前缀为Test      | 测试程序的一些逻辑行为是否正确 |
-| 基准函数 | 函数名前缀为Benchmark | 测试函数的性能                 |
-| 示例函数 | 函数名前缀为Example   | 为文档提供示例文档             |
+| 类型     | 格式                   | 作用                           |
+| -------- | ---------------------- | ------------------------------ |
+| 测试函数 | 函数名前缀为 Test      | 测试程序的一些逻辑行为是否正确 |
+| 基准函数 | 函数名前缀为 Benchmark | 测试函数的性能                 |
+| 示例函数 | 函数名前缀为 Example   | 为文档提供示例文档             |
 
-**测试文件以`_test.go`结尾**，且放在同一位置，例如
+具体如下：
+
+```go
+// 测试函数
+func TestXxx(t *testing.T) { ... }  
+// 基准函数
+func BenchmarkXxx(b *testing.B) { ... }
+// 示例函数
+func ExamplePrintln() {
+    Println("The output of\nthis example.")
+    // Output: The output of
+    // this example.
+}
+func ExamplePerm() {
+    for _, value := range Perm(4) {
+        fmt.Println(value)
+    }
+
+    // Unordered output: 4
+    // 2
+    // 1
+    // 3
+    // 0
+}
+```
+
+
+
+**测试文件以 `_test.go` 结尾**，且和被测试文件放在同一目录，例如：
 
 ```shell
   test
@@ -50,6 +86,8 @@ go test命令是一个按照一定约定和组织的测试代码的驱动程序�
        —— calc_test.go
 ```
 
+
+
 ## 2. go test
 
 `go test` 是 Go 语言自带的测试工具，其中包含的是两类，`单元测试`和`性能测试`。
@@ -58,19 +96,44 @@ go test命令是一个按照一定约定和组织的测试代码的驱动程序�
 
 ### 1. 运行模式
 
+go test 分为本地目录模式和包列表模式。
+
 #### 1. 本地目录模式
 
-在**没有包参数**（例如 `go test` 或 `go test -v` ）调用时发生。
+> local directory mode
+
+在**不指定包参数**调用时发生，例如 `go test` 或 `go test -v` 。
 
 在此模式下， `go test` 编译当前目录中找到的包和测试，然后运行测试二进制文件。在这种模式下，caching 是禁用的。在包测试完成后，go test 打印一个概要行，显示测试状态、包名和运行时间。
 
+
+
 #### 2. 包列表模式
 
-在**使用显式包参数**调用 `go test` 时发生（例如 `go test math` ， `go test ./...` 甚至是 `go test .` ）。
+>  package list mode
+
+在**显式指定包参数**调用 `go test` 时发生，例如 `go test math` ， `go test ./...` 甚至是 `go test .`。
 
 > 该模式下会使用 cache 来避免不必要的重复测试。
 
-在此模式下，go 测试编译并测试在命令上列出的每个包。如果一个包测试通过， `go test` 只打印最终的 ok 总结行。如果一个包测试失败， `go test` 将输出完整的测试输出。如果使用 `-bench` 或 `-v` 标志，则 `go test` 会输出完整的输出，甚至是通过包测试，以显示所请求的基准测试结果或详细日志记录。
+在此模式下，go 测试编译并测试在命令上列出的每个包。如果一个包测试通过， `go test` 只打印最终的 ok 总结行。
+
+如果一个包测试失败， `go test` 将输出完整的测试输出。**如果使用 `-bench` 或 `-v` 标志，则 `go test` 会输出完整的输出**，甚至是通过包测试，以显示所请求的基准测试结果或详细日志记录。
+
+
+
+二者最大的区别就是 包列表模式 会缓存测试结果（如果满足缓存要求的话）。
+
+以下参数都是可以进行缓存的：
+
+- -cpu
+-  -list
+-  -parallel
+-  -run
+-  -short
+-  -v
+
+如果测试中只包含这些可以缓存的参数，那么本次结果就会被缓存。可以通过使用`-count=1`参数来关闭缓存。
 
 
 
@@ -81,7 +144,7 @@ go test命令是一个按照一定约定和组织的测试代码的驱动程序�
 #### 1. 语法 
 
 ```go
-go test [-c] [-i] [build flags] [packages] [flags for test binary]
+go test [build/test flags] [packages] [build/test flags & test binary flags]
 ```
 
 
