@@ -1,14 +1,20 @@
 # etcd blotdb
 
+> [blotdb 源码分析](https://github.com/ZhengHe-MD/learn-bolt)
+
 ## 1. 概述
 
-etcd 适合读多写少的场景主要和底层 boltdb 有关。本文通过一个写请求在 boltdb 中执行的简要流程，分析其背后的 boltdb 的磁盘文件布局，从而了解 page、node、bucket 等核心数据结构的原理与作用，搞懂 boltdb 基于 B+ tree、各类 page 实现查找、更新、事务提交的原理 。
+etcd 适合读多写少的场景主要和底层 [boltdb](https://github.com/boltdb/bolt) 有关。本文通过一个写请求在 boltdb 中执行的简要流程，分析其背后的 boltdb 的磁盘文件布局，从而了解 page、node、bucket 等核心数据结构的原理与作用，搞懂 boltdb 基于 B+ tree、各类 page 实现查找、更新、事务提交的原理 。
+
+> etcd 中使用的是 etcd 社区基于 boltdb fork 的一个 [版本](https://github.com/etcd-io/bbolt) ，etcd 社区负责维护此版本。
+>
+> boltdb 作者认为 boltdb 已经足够成熟稳定，经过了大规模生产环境检验，新特性和优化点合入会对 boltdb稳定性造成一定的影响，个人没更多时间再投入到 boltdb上，因此 boltdb 项目变成 archived 状态。
 
 
 
-## 2. 磁盘布局
+### 磁盘布局
 
-boltdb 文件指的是你 etcd 数据目录下的 member/snap/db 的文件， etcd 的 key-value、lease、meta、member、cluster、auth 等所有数据存储在其中。etcd 启动的时候，会通过 mmap 机制将 db 文件映射到内存，后续可从内存中快速读取文件中的数据。写请求通过 fwrite 和 fdatasync 来写入、持久化数据到磁盘。
+boltdb 文件指的是你 etcd 数据目录下的 `member/snap/db` 的文件， etcd 的 key-value、lease、meta、member、cluster、auth 等所有数据存储在其中。etcd 启动的时候，会通过 **mmap 机制**将 db 文件映射到内存，后续可从内存中快速读取文件中的数据。写请求通过 fwrite 和 fdatasync 来写入、持久化数据到磁盘。
 
 blotdb 磁盘布局如下图：
 
@@ -33,9 +39,9 @@ boltdb 逻辑上通过 B+ tree 来管理 branch/leaf page， 实现快速查找�
 
 
 
-## 3. API
+## 2 API
 
-*boltdb 作为一个库，提供了什么 API 给 client 访问写入数据？*
+**boltdb 作为一个库，提供了什么 API 给 client 访问写入数据？**
 
 boltdb 提供了非常简单的 API 给上层业务使用，当我们执行一个 put hello 为 world 命令时，boltdb 实际写入的 key 是版本号，value 为 mvccpb.KeyValue 结构体。
 
@@ -49,7 +55,7 @@ if err != nil {
    log.Fatal(err)
 }
 defer db.Close()
-// 参数true表示创建一个写事务，false读事务
+// 参数true表示创建一个写事务，false则为读事务
 tx,err := db.Begin(true)
 if err != nil {
    return err
@@ -74,13 +80,19 @@ if err := tx.Commit(); err != nil {
 
 
 
-## 4. 核心数据结构
+## 3. 核心数据结构
 
 boltdb 整个文件由一个个 page 组成。最开头的两个 page 描述 db 元数据信息，而它正是在 client 调用 boltdb Open API 时被填充的。那么描述磁盘页面的 page 数据结构是怎样的呢？元数据页又含有哪些核心数据结构？
 
-boltdb 本身自带了一个工具 bbolt，它可以按页打印出 db 文件的十六进制的内容，下面我们就使用此工具来揭开 db 文件的神秘面纱。
+boltdb 本身自带了一个工具 [bbolt](https://github.com/etcd-io/bbolt/blob/master/cmd/bbolt/main.go)，它可以按页打印出 db 文件的十六进制的内容，下面我们就使用此工具来揭开 db 文件的神秘面纱。
 
-下图左边的十六进制是执行如下[bbolt dump](https://github.com/etcd-io/bbolt/blob/master/cmd/bbolt/main.go)命令，所打印的 boltdb 第 0 页的数据，图的右边是对应的 page 磁盘页结构和 meta page 的数据结构。
+下图左边的十六进制是执行如下 [bbolt dump](https://github.com/etcd-io/bbolt/blob/master/cmd/bbolt/main.go) 命令，所打印的 boltdb 第 0 页的数据，图的右边是对应的 page 磁盘页结构和 meta page 的数据结构。
+
+```shell
+$ ./bbolt dump ./infra1.etcd/member/snap/db 0
+```
+
+
 
 ![](assets/blot/etcd-blotdb-dump.webp)
 
@@ -88,7 +100,12 @@ boltdb 本身自带了一个工具 bbolt，它可以按页打印出 db 文件的
 
 我们先了解下 page 磁盘页结构，如上图所示，它由页 ID(id)、页类型 (flags)、数量 (count)、溢出页数量 (overflow)、页面数据起始位置 (ptr) 字段组成。
 
-页类型目前有如下四种：0x01 表示 branch page，0x02 表示 leaf page，0x04 表示 meta page，0x10 表示 freelist page。
+页类型目前有如下四种：
+
+* 0x01 表示 branch page
+* 0x02 表示 leaf page
+* 0x04 表示 meta page
+* 0x10 表示 freelist page。
 
 数量字段仅在页类型为 leaf 和 branch 时生效，溢出页数量是指当前页面数据存放不下，需要向后再申请 overflow 个连续页面使用，页面数据起始位置指向 page 的载体数据，比如 meta page、branch/leaf 等 page 的内容。
 
@@ -136,7 +153,9 @@ members_removed
 meta
 ```
 
- meta page 中的，有一个名为 root、类型 bucket 的重要数据结构，如下所示，bucket 由 root 和 sequence 两个字段组成，root 表示该 bucket 根节点的 page id。注意 meta page 中的 bucket.root 字段，存储的是 db 的 root bucket 页面信息，你所看到的 key/lease/auth 等 bucket 都是 root bucket 的子 bucket。
+ meta page 中的，有一个名为 root、类型 bucket 的重要数据结构，如下所示，bucket 由 root 和 sequence 两个字段组成，root 表示该 bucket 根节点的 page id。
+
+> 注意 meta page 中的 bucket.root 字段，存储的是 db 的 root bucket 页面信息，你所看到的 key/lease/auth 等 bucket 都是 root bucket 的子 bucket。
 
 ```go
 type bucket struct {
@@ -245,7 +264,7 @@ Overflow: 0
 
 
 
-## API 原理
+## 4. API 原理
 
 ### open
 
@@ -275,7 +294,7 @@ boltdb 在内存中通过 node 数据结构来存储 page 磁盘页内容，它�
 
 
 
-## 6. 事务提交原理
+## 5. 事务提交原理
 
 当你的代码执行 tx.Commit API 时，它才会将我们上面保存到 node 内存数据结构中的数据，持久化到 boltdb 中。下图我给出了一个事务提交的流程图，接下来我就分别和你简要分析下各个核心步骤。
 
@@ -297,7 +316,7 @@ boltdb 在内存中通过 node 数据结构来存储 page 磁盘页内容，它�
 
 
 
-## 7. 小结 
+## 6. 小结 
 
 * db 文件由 meta page、freelist page、branch page、leaf page、free page 组成
 *  Open API 获取 db 对象，其通过 mmap 将 db 文件映射到内存，构建 meta page，校验 meta page 的有效性

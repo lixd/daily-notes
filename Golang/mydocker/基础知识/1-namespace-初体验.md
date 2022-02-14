@@ -1,16 +1,185 @@
 # Namespace 初体验
 
-## 1. 概述
+Docker 基础知识之 Namespace 篇。
 
-Docker 主要依赖于 namespace、cgroups 和 UnionFS 技术，而 Docker 是由 Go 编写的，本栏目主要是记录了用 Go 编写一个自己的 Docker。
+主要内容为：
 
-该章节主要为 Go 中操作 namespace 的演示。
+* 1）Namespace 介绍
+* 2）Go 语言操作 Namespace 演示
 
 
 
-## 2. 示例
+## 1. Namespace 概述
 
-### UTS Namespace
+### 简介
+
+**Linux Namespace 是 Linux 提供的一种内核级别环境隔离的方法**，使得处于不同 namespace 的进程拥有独立的全局系统资源，改变一个 namespace 中的系统资源只会影响当前 namespace 里的进程，对其他 namespace 中的进程没有影响。
+
+> Namespace 就是对资源的隔离
+
+
+
+目前，Linux 内核里面实现了 8 种不同类型的 namespace。
+
+| 分类                   | 系统调用参数    | 隔离内容                             | 相关内核版本                                                 |
+| ---------------------- | --------------- | ------------------------------------ | ------------------------------------------------------------ |
+| **Mount namespaces**   | CLONE_NEWNS     | Mount points                         | [Linux 2.4.19](https://lwn.net/2001/0301/a/namespaces.php3)  |
+| **UTS namespaces**     | CLONE_NEWUTS    | Hostname and NIS domain name         | [Linux 2.6.19](https://lwn.net/Articles/179345/)             |
+| **IPC namespaces**     | CLONE_NEWIPC    | System V IPC, POSIX message queues   | [Linux 2.6.19](https://lwn.net/Articles/187274/)             |
+| **PID namespaces**     | CLONE_NEWPID    | Process IDs                          | [ Linux 2.6.24](https://lwn.net/Articles/259217/)            |
+| **Network namespaces** | CLONE_NEWNET    | Network devices, stacks, ports, etc. | [始于Linux 2.6.24 完成于 Linux 2.6.29](https://lwn.net/Articles/219794/) |
+| **User namespaces**    | CLONE_NEWUSER   | User and group IDs                   | [始于 Linux 2.6.23 完成于 Linux 3.8)](https://lwn.net/Articles/528078/) |
+| **Cgroup namespace**   | CLONE_NEWCGROUP | Cgroup root directory                | [Linux 4.6](https://lkml.org/lkml/2016/3/18/564)             |
+| **Time namespace**     | CLONE_NEWTIME   | Boot and monotonic                   | [Linux 5.6](https://www.phoronix.com/scan.php?page=news_item&px=Time-Namespace-In-Linux-5.6) |
+
+> **注意：** 由于 Cgroup namespace 在 4.6 的内核中才实现，并且和 cgroup v2 关系密切，现在普及程度还不高，比如 docker 现在就还没有用它。
+
+
+
+### 相关API
+
+和 namespace 相关的函数只有四个，这里简单的看一下：
+
+* clone
+* setns
+* unshare
+* ioctl_ns
+
+
+
+[clone](https://man7.org/linux/man-pages/man2/clone.2.html)： 创建一个新的进程并把他放到新的namespace中：
+
+```c
+ int clone(int (*fn)(void *), void *stack, int flags, void *arg, ...
+                 /* pid_t *parent_tid, void *tls, pid_t *child_tid */ );
+
+flags： 
+    指定一个或者多个上面的CLONE_NEW*（当然也可以包含跟namespace无关的flags）， 
+    这样就会创建一个或多个新的不同类型的namespace， 
+    并把新创建的子进程加入新创建的这些namespace中。
+```
+
+
+
+[setns](https://man7.org/linux/man-pages/man2/setns.2.html)： 将当前进程加入到已有的namespace中
+
+```c
+int setns(int fd, int nstype);
+
+fd： 
+    指向/proc/[pid]/ns/目录里相应namespace对应的文件，
+    表示要加入哪个namespace
+
+nstype：
+    指定namespace的类型（上面的任意一个CLONE_NEW*）：
+    1. 如果当前进程不能根据fd得到它的类型，如fd由其他进程创建，
+    并通过UNIX domain socket传给当前进程，
+    那么就需要通过nstype来指定fd指向的namespace的类型
+    2. 如果进程能根据fd得到namespace类型，比如这个fd是由当前进程打开的，
+    那么nstype设置为0即可
+```
+
+
+
+[unshare](https://man7.org/linux/man-pages/man2/unshare.2.html): 使当前进程退出指定类型的 namespace，并加入到新创建的 namespace（相当于创建并加入新的namespace）
+
+```c
+int unshare(int flags);
+
+flags：
+    指定一个或者多个上面的CLONE_NEW*，
+    这样当前进程就退出了当前指定类型的namespace并加入到新创建的namespace
+```
+
+
+
+[ioctl_ns](https://man7.org/linux/man-pages/man2/ioctl_ns.2.html)：查询 namespace 信息。
+
+```c
+new_fd = ioctl(fd, request);
+fd: 指向/proc/[pid]/ns/目录里相应namespace对应的文件
+request: 
+	NS_GET_USERNS: 返回指向拥有用户的文件描述符namespace fd引用的命名空间
+    NS_GET_PARENT: 返回引用父级的文件描述符由fd引用的命名空间的命名空间。
+```
+
+
+
+**clone 和 unshare 的区别**
+
+clone 和 unshare 的功能都是创建并加入新的 namespace， 他们的区别是：
+
+- unshare 是使当前进程加入新的 namespace
+- clone 是创建一个新的子进程，然后让子进程加入新的 namespace，而当前进程保持不变
+
+
+
+### 查看进程所属的 namespaces
+
+系统中的每个进程都有 `/proc/[pid]/ns/` 这样一个目录，里面包含了这个进程所属 namespace 的信息，里面每个文件的描述符都可以用来作为 setns 函数(后面会介绍)的参数。
+
+```shell
+#查看当前bash进程所属的namespace
+ lixd  ~  ls -l /proc/$$/ns
+total 0
+lrwxrwxrwx 1 lixd lixd 0 Jan  6 19:00 cgroup -> 'cgroup:[4026531835]'
+lrwxrwxrwx 1 lixd lixd 0 Jan  6 19:00 ipc -> 'ipc:[4026532227]'
+lrwxrwxrwx 1 lixd lixd 0 Jan  6 19:00 mnt -> 'mnt:[4026532241]'
+lrwxrwxrwx 1 lixd lixd 0 Jan  6 19:00 net -> 'net:[4026531992]'
+lrwxrwxrwx 1 lixd lixd 0 Jan  6 19:00 pid -> 'pid:[4026532243]'
+lrwxrwxrwx 1 lixd lixd 0 Jan  6 19:00 pid_for_children -> 'pid:[4026532243]'
+lrwxrwxrwx 1 lixd lixd 0 Jan  6 19:00 user -> 'user:[4026531837]'
+lrwxrwxrwx 1 lixd lixd 0 Jan  6 19:00 uts -> 'uts:[4026532242]'
+```
+
+以`ipc:[4026532227]`为例，ipc 是 namespace 的类型，4026532227 是 inode number。
+
+**如果两个进程的 ipc namespace 的 inode number一样，说明他们属于同一个 namespace**，这条规则对其他类型的 namespace 也同样适用。
+
+
+
+### namespace limit
+
+`/proc/sys/user` 目录中公开了对各种命名空间数量的限制，具体如下：
+
+```shell
+$ tree /proc/sys/user/
+/proc/sys/user/
+├── max_cgroup_namespaces
+├── max_inotify_instances
+├── max_inotify_watches
+├── max_ipc_namespaces
+├── max_mnt_namespaces
+├── max_net_namespaces
+├── max_pid_namespaces
+├── max_user_namespaces
+└── max_uts_namespaces
+
+$ cat /proc/sys/user/max_pid_namespaces
+6784
+```
+
+
+
+### namespace lifetime
+
+当一个 namespace 中的所有进程都结束或者移出该 namespace 时，该 namespace 将会被销毁。
+
+不过也有一些特殊情况，可以再没有进程的时候保留 namespace：
+
+* 存在打开的 FD，或者对 `/proc/[pid]/ns/*` 执行了 bind mount
+* 存在子 namespace
+* 它是一个拥有一个或多个非用户 namespace 的 namespace。
+* 它是一个 PID namespace，并且有一个进程通过 `/proc/[pid]/ns/pid_for_children` 符号链接引用了这个 namespace。
+* 它是一个 Time namespace，并且有一个进程通过 `/proc/[pid]/ns/time_for_children` 符号链接引用了这个 namespace。
+* 它是一个 IPC namespace，并且有一个 mqueue 文件系统的 mount 引用了该 namespace
+* 它是一个 PIDnamespace，并且有一个 proc 文件系统的 mount 引用了该 namespace  
+
+
+
+## 2. Go 演示
+
+### UTS
 
 **UTS Namespace主要用来隔离nodename和domainname两个系统标识**。在UTS Namespace里面，每个Namespace允许有自己的hostname.
 
@@ -119,9 +288,7 @@ DESKTOP-9K4GB6E
 
 
 
-
-
-### IPC Namespace
+### IPC
 
 **IPC Namespace 用来隔离 sys V IPC和 POSIX message queues**。每个 IPC Namespace 都有自己的 Sys V IPC 和 POSIX message queues。
 
@@ -179,7 +346,7 @@ key        msqid      owner      perms      used-bytes   messages
 
 
 
-### PID Namespace
+### PID
 
 **PID Namespace是用来隔离进程ID的**。同样一个进程在不同的PID Namespace里可以拥有不同的PID。这样就可以理解，在docker container 里面，使用ps -ef经常会发现，在容器内，前台运行的那个进程PID是1，但是在容器外，使用ps -ef会发现同样的进程却有不同的PID，这就是PID Namespace做的事情。
 
@@ -258,7 +425,7 @@ root@DESKTOP-9K4GB6E:/home/lixd/projects/docker/mydocker# echo $$
 
 
 
-### Mount Namespace
+### Mount
 
 **Mount Namespace用来隔离各个进程看到的挂载点视图**。在不同Namespace的进程中，看到的文件系统层次是不一样的。 在Mount Namespace中调用mount()和umount()仅仅只会影响当前Namespace内的文件系统，而对全局的文件系统是没有影响的。
 
@@ -329,9 +496,7 @@ root        11     1  0 13:13 pts/2    00:00:00 ps -ef
 
 
 
-
-
-### User Namespace
+### User
 
 User Narespace 主要是隔离用户的用户组ID。也就是说，一个进程的 UserID 和GroupID 在不同的 User Namespace 中可以是不同的。比较常用的是，在宿主机上以一个非root用户运行创建一个User Namespace,然后在User Namespace里面却映射成root用户。这意味着，这个进程在User Namespace里面有root 权限，但是在User Namespace外面却没有root 的权限。
 
@@ -372,9 +537,7 @@ uid=65534(nobody) gid=65534(nogroup) groups=65534(nogroup)
 
 
 
-
-
-### Network Namespace
+### Network
 
 Network Namespace 是用来隔离网络设备、IP 地址端口等网络栈的 Namespace。Network Namespace 可以让每个容器拥有自己独立的(虛拟的)网络设备，而且容器内的应用可以绑定到自己的端口，每个 Namespace 内的端口都不会互相冲突。在宿主机上搭建网桥后，就能很方便地实现容器之间的通信，而且不同容器上的应用可以使用相同的端口。
 
@@ -440,7 +603,18 @@ nobody@DESKTOP-9K4GB6E:/home/lixd/projects/docker/mydocker$ ip addr
 
 ## 3. 小结
 
-创建 Namespace 其实很简单，只需要一个系统调用即可。
+* 1）本质：Linux Namespace 是 Linux 提供的一种内核级别环境隔离的方法，本质就是对全局系统资源的一种封装隔离。
+* 2）使用：Namespace API 一共 4个，最常用的就是 clone，而 Go 已经把 clone 调用给封装好了，使用时只需要传入不同参数即可控制创建不同 Namespace。
 
-而 Go 中也直接把 clone 调用给封装好了，只需要传入不同参数即可控制创建不同 Namespace。
 
+
+
+
+## 4. 参考文档
+
+- [overview of Linux namespaces](https://man7.org/linux/man-pages/man7/namespaces.7.html)
+- [Namespaces in operation, part 1: namespaces overview](https://lwn.net/Articles/531114/)
+- [Linux namespaces](https://www.wikiwand.com/en/Linux_namespaces)
+- [Linux_namespaces](https://en.wikipedia.org/wiki/Linux_namespaces)
+- [DOCKER基础技术：LINUX NAMESPACE（上）](https://coolshell.cn/articles/17010.html)
+- [DOCKER基础技术：LINUX NAMESPACE（下）](https://coolshell.cn/articles/17029.html)
