@@ -471,16 +471,17 @@ world
 
 
 
-## 4. Downward API
+## 4. [Downward API](https://kubernetes.io/docs/tasks/inject-data-application/environment-variable-expose-pod-information/)
 
 它的作用是：让 Pod 里的容器能够直接获取到这个 Pod API 对象本身的信息。
 
 不过，需要注意的是，Downward API 能够获取到的信息，**一定是 Pod 里的容器进程启动之前就能够确定下来的信息**。
 
+> 可以通过环境变量和 volume 两种方式注入到容器中。
+
 举个例子
 
 ```yaml
-
 apiVersion: v1
 kind: Pod
 metadata:
@@ -516,6 +517,102 @@ spec:
 ```
 
 在这个 Pod 的 YAML 文件中，我定义了一个简单的容器，声明了一个 projected 类型的 Volume。只不过这次 Volume 的数据来源，变成了 Downward API。而这个 Downward API Volume，则声明了要暴露 Pod 的 **metadata.labels** 信息给容器。
+
+
+
+### 使用案例
+
+将应用中的限流改成自动根据CPU占用率进行限流，上限后发现在某云产商提供的 k8s 集群中，容器里读不到 cgroups 限制信息。
+
+> 底层使用基于 [Kata](https://katacontainers.io/) 的安全沙箱容器。不同于Docker，Kata Containers是一个开放源代码社区，**致力于通过轻量级虚拟机来构建安全的容器运行时**，这些虚拟机的感觉和性能类似于容器，但是使用硬件虚拟化技术作为第二防御层，可以提供更强的工作负载隔离。
+>
+> 因此读取 cgroup 这个方式行不通。
+
+比如`cpu.cfs_period_us`和`cpu.cfs_quota_us`，不过可以`cpuact.stat`却可以看到，配合上`/proc/stat`可以计算出当前的 CPU 占用情况。
+
+> 差了一个总的 CPU Limit信息。
+
+于是决定使用 Downward API 以环境变量方式注入到 容器中去，这样就解决了问题。
+
+具体配置如下：
+
+```yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: kubernetes-downwardapi-volume-example-2
+spec:
+  containers:
+    - name: client-container
+      image: k8s.gcr.io/busybox:1.24
+      command: ["sh", "-c"]
+      args:
+      - while true; do
+          echo -en '\n';
+          if [[ -e /etc/podinfo/cpu_limit ]]; then
+            echo -en '\n'; cat /etc/podinfo/cpu_limit; fi;
+          if [[ -e /etc/podinfo/cpu_request ]]; then
+            echo -en '\n'; cat /etc/podinfo/cpu_request; fi;
+          if [[ -e /etc/podinfo/mem_limit ]]; then
+            echo -en '\n'; cat /etc/podinfo/mem_limit; fi;
+          if [[ -e /etc/podinfo/mem_request ]]; then
+            echo -en '\n'; cat /etc/podinfo/mem_request; fi;
+          sleep 5;
+        done;
+      resources:
+        requests:
+          memory: "512Mi"
+          cpu: "250m"
+        limits:
+          memory: "512Mi"
+          cpu: "250m"
+      volumeMounts:
+        - name: podinfo
+          mountPath: /etc/podinfo
+  volumes:
+    - name: podinfo
+      downwardAPI:
+        items:
+          - path: "cpu_limit"
+            resourceFieldRef:
+              # 指定获取那个container的
+              containerName: client-container
+              # 具体是什么资源
+              resource: limits.cpu
+              # 单位
+              divisor: 1m
+          - path: "cpu_request"
+            resourceFieldRef:
+              containerName: client-container
+              resource: requests.cpu
+              divisor: 1m
+          - path: "mem_limit"
+            resourceFieldRef:
+              containerName: client-container
+              resource: limits.memory
+              divisor: 1Mi
+          - path: "mem_request"
+            resourceFieldRef:
+              containerName: client-container
+              resource: requests.memory
+              divisor: 1Mi
+```
+
+一定要写`divisor`以限制单位：
+
+* CPU为 1m
+* Memory 为 1Mi
+
+容器中获取到的数据如下：
+
+```shell
+LIMIT_CPU:  250
+LIMIT_MEM:  512
+REQUEST_CPU:  250
+REQUEST_MEM:  512
+```
+
+
 
 
 
