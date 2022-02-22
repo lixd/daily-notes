@@ -120,7 +120,7 @@ stress: info: [7] dispatching hogs: 0 cpu, 0 io, 1 vm, 0 hdd
 通过`pstree -pl`查看进程关系：
 
 ```shell
- lixd  /mnt/c/Users/意琦行  pstree -pl
+$pstree -pl
 init(1)─┬─init(8)───init(9)───fsnotifier-wsl(10)
         ├─init(12)───init(13)─┬─exe(20618)─┬─sh(20623)───stress(20624)───stress(20625)
         │                     │            ├─{exe}(20619)
