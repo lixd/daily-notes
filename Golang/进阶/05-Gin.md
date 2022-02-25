@@ -52,6 +52,33 @@ func main() {
 
 ## 3. 参数匹配
 
+### 概述
+
+几种常见的ContentType:
+
+* application/x-www-form-urlencoded
+* multipart/form-data
+* application/json
+
+对于GET请求，Content-Type可以省略，默认为 application/x-www-form-urlencoded。
+Gin 会根据 Content-Type 和 Tag 进行参数绑定。
+
+常见 tag 包括 `form`和 `json`,例如：
+
+```go
+type Query struct {
+   Page int `form:"page"`
+   Size int `json:"size"`
+}
+```
+
+
+
+* form tag 可以接收 QueryString，也可以接收 application/x-www-form-urlencoded 和 multipart/form-data。
+* json tag 只能接收 application/json。
+
+
+
 gin 中参数匹配相关的方法：
 
 单个参数相关：
