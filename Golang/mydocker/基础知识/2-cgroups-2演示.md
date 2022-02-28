@@ -4,15 +4,7 @@
 
 
 
-> [Linux Cgroup系列（03）：限制cgroup的进程数（subsystem之pids）](https://segmentfault.com/a/1190000007468509)
->
-> [Linux Cgroup系列（04）：限制cgroup的内存使用（subsystem之memory）](https://segmentfault.com/a/1190000008125359)
->
-> [Linux Cgroup系列（05）：限制cgroup的CPU使用（subsystem之cpu）](https://segmentfault.com/a/1190000008323952)
-
-
-
-# 1. pids
+## 1. pids
 
 **pids subsystem 功能是限制cgroup及其所有子孙cgroup里面能创建的总的task数量**。
 
@@ -20,9 +12,7 @@
 
 
 
-
-
-## 创建子cgroup
+### 创建子cgroup
 
 创建子cgroup，取名为test
 
@@ -48,7 +38,7 @@ cgroup.clone_children  cgroup.procs  notify_on_release  pids.current  pids.event
 
 
 
-## 限制进程数
+### 限制进程数
 
 首先是将当前bash加入到cgroup中，并修改`pids.max`的值，为了便于测试，这里就限制为1：
 
@@ -87,7 +77,7 @@ cgroup.clone_children  cgroup.procs  notify_on_release  pids.current  pids.event
 
 
 
-## 当前cgroup和子cgroup之间的关系
+### 当前cgroup和子cgroup之间的关系
 
 当前cgroup中的pids.current和pids.max代表了当前cgroup及所有子孙cgroup的所有进程，所以子孙cgroup中的pids.max大小不能超过父cgroup中的大小。
 
@@ -151,7 +141,7 @@ dev@dev:/sys/fs/cgroup/pids/test/subtest$ ls
 
 
 
-## pids.current > pids.max的情况
+### pids.current > pids.max的情况
 
 并不是所有情况下都是pids.max >= pids.current，在下面两种情况下，会出现pids.max < pids.current 的情况：
 
@@ -161,23 +151,25 @@ dev@dev:/sys/fs/cgroup/pids/test/subtest$ ls
 
 
 
-## 小结
+### 小结
 
 总的来说，pids subsystem 是比较简单的。
 
 
 
-# 2. cpu
+## 2. cpu
 
-在cgroup里面，跟CPU相关的子系统有[cpusets](https://www.kernel.org/doc/Documentation/cgroup-v1/cpusets.txt)、[cpuacct](https://www.kernel.org/doc/Documentation/cgroup-v1/cpuacct.txt)和[cpu](https://www.kernel.org/doc/Documentation/scheduler/sched-bwc.txt)。
+在cgroup里面，跟CPU相关的子系统有 [cpusets](https://www.kernel.org/doc/Documentation/cgroup-v1/cpusets.txt)、[cpuacct ](https://www.kernel.org/doc/Documentation/cgroup-v1/cpuacct.txt)和 [cpu](https://www.kernel.org/doc/Documentation/scheduler/sched-bwc.txt)。
 
-* 其中cpuset主要用于设置CPU的亲和性，可以限制cgroup中的进程只能在指定的CPU上运行，或者不能在指定的CPU上运行，同时cpuset还能设置内存的亲和性。设置亲和性一般只在比较特殊的情况才用得着，所以这里不做介绍。
+* 其中 cpuset 主要用于设置 CPU 的亲和性，可以限制 cgroup 中的进程只能在指定的 CPU 上运行，或者不能在指定的 CPU上运行，同时 cpuset 还能设置内存的亲和性。设置亲和性一般只在比较特殊的情况才用得着，所以这里不做介绍。
 
-* cpuacct包含当前cgroup所使用的CPU的统计信息，信息量较少，有兴趣可以去看看它的文档，这里不做介绍。
+* cpuacct 包含当前 cgroup 所使用的 CPU 的统计信息，信息量较少，有兴趣可以去看看它的文档，这里不做介绍。
 
-本节只介绍cpu子系统，包括怎么限制cgroup的CPU使用上限及相对于其它cgroup的相对值。
+本节只介绍 cpu 子系统，包括怎么限制 cgroup 的 CPU 使用上限及相对于其它 cgroup 的相对值。
 
-## 创建子cgroup
+
+
+### 创建子 cgroup
 
 通用是创建子目录即可。
 
@@ -225,7 +217,7 @@ shares有两个特点：
 
 
 
-## 演示
+### 演示
 
 ```shell
 #继续使用上面创建的子cgroup： test
@@ -295,15 +287,15 @@ throttled_time 166752684900
 
 
 
-## 小结
+### 小结
 
-使用cgroup限制CPU的使用率比较纠结，用cfs_period_us & cfs_quota_us吧，限制死了，没法充分利用空闲的CPU，用shares吧，又没法配置百分比，极其难控制。总之，使用cgroup的cpu子系统需谨慎。
-
-
+使用 cgroup 限制 CPU 的使用率比较纠结，用 cfs_period_us & cfs_quota_us 吧，限制死了，没法充分利用空闲的 CPU，用 shares 吧，又没法配置百分比，极其难控制。总之，使用 cgroup 的 cpu 子系统需谨慎。
 
 
 
-# 3. memory
+
+
+## 3. memory
 
 相比之下 memory subsystem 就要复杂许多。
 
@@ -322,7 +314,7 @@ throttled_time 166752684900
 
 
 
-## 创建子cgroup
+### 创建子cgroup
 
 在/sys/fs/cgroup/memory下创建一个子目录即创建了一个子cgroup
 
@@ -365,7 +357,7 @@ memory.kmem.tcp.limit_in_bytes  memory.move_charge_at_immigrate
 
 
 
-## 添加进程
+### 添加进程
 
 也是往cgroup中添加进程只要将进程号写入cgroup.procs就可以了。
 
@@ -380,7 +372,7 @@ root@DESKTOP-9K4GB6E:/sys/fs/cgroup/memory/test# top
 
 
 
-## 设置限额
+### 设置限额
 
 设置限额很简单，写文件memory.limit_in_bytes就可以了。
 
@@ -471,7 +463,7 @@ cgroup里面继续申请内存的进程。
 
 
 
-## 触发控制
+### 触发控制
 
 通过修改`memory.oom_control`文件，可以控制 subsystem 在物理内存达到上限时的行为。文件中包含以下3个参数：
 
@@ -624,9 +616,9 @@ root@DESKTOP-9K4GB6E:/sys/fs/cgroup/memory/test# ~/mem-allocate
 
 
 
-## 其他
+### 其他
 
-### 进程迁移（migration）
+#### 进程迁移（migration）
 
 当一个进程从一个cgroup移动到另一个cgroup时，默认情况下，该进程已经占用的内存还是统计在原来的cgroup里面，不会占用新cgroup的配额，但新分配的内存会统计到新的cgroup中（包括swap out到交换空间后再swap in到物理内存中的部分）。
 
@@ -643,21 +635,27 @@ disable：echo 0 > memory.move_charge_at_immigrate
 
 > 注意：迁移内存占用数据是比较耗时的操作。
 
-### 移除cgroup
+
+
+#### 移除cgroup
 
 当memory.move_charge_at_immigrate为0时，就算当前cgroup中里面的进程都已经移动到其它cgropu中去了，由于进程已经占用的内存没有被统计过去，当前cgroup有可能还占用很多内存，当移除该cgroup时，占用的内存需要统计到谁头上呢？答案是依赖memory.use_hierarchy的值，如果该值为0，将会统计到root cgroup里；如果值为1，将统计到它的父cgroup里面。
 
-### force_empty
+**force_empty**
 
 当向memory.force_empty文件写入0时（echo 0 > memory.force_empty），将会立即触发系统尽可能的回收该cgroup占用的内存。该功能主要使用场景是移除cgroup前（cgroup中没有进程），先执行该命令，可以尽可能的回收该cgropu占用的内存，这样迁移内存的占用数据到父cgroup或者root cgroup时会快些。
 
-### memory.swappiness
+
+
+**memory.swappiness**
 
 该文件的值默认和全局的swappiness（/proc/sys/vm/swappiness）一样，修改该文件只对当前cgroup生效，其功能和全局的swappiness一样，请参考[Linux交换空间](https://segmentfault.com/a/1190000008125116)中关于swappiness的介绍。
 
 > 注意：有一点和全局的swappiness不同，那就是如果这个文件被设置成0，就算系统配置的有交换空间，当前cgroup也不会使用交换空间。
 
-### memory.use_hierarchy
+
+
+**memory.use_hierarchy**
 
 该文件内容为0时，表示不使用继承，即父子cgroup之间没有关系；当该文件内容为1时，子cgroup所占用的内存会统计到所有祖先cgroup中。
 
@@ -682,7 +680,9 @@ dev@dev:/sys/fs/cgroup/memory/test$ sudo sh -c "echo 0 > ../memory.use_hierarchy
 sh: echo: I/O error
 ```
 
-### memory.soft_limit_in_bytes
+
+
+**memory.soft_limit_in_bytes**
 
 有了hard limit（memory.limit_in_bytes），为什么还要soft limit呢？hard limit是一个硬性标准，绝对不能超过这个值，而soft limit可以被超越，既然能被超越，要这个配置还有啥用？先看看它的特点
 
@@ -695,21 +695,22 @@ sh: echo: I/O error
 
 > 注意： 当系统内存吃紧且cgroup达到soft limit时，系统为了把当前cgroup的内存使用量控制在soft limit下，在收到当前cgroup新的内存分配请求时，就会触发回收内存操作，所以一旦到达这个状态，就会频繁的触发对当前cgroup的内存回收操作，会严重影响当前cgroup的性能。
 
-### memory.pressure_level
+
+
+**memory.pressure_level**
 
 这个文件主要用来监控当前cgroup的内存压力，当内存压力大时（即已使用内存快达到设置的限额），在分配内存之前需要先回收部分内存，从而影响内存分配速度，影响性能，而通过监控当前cgroup的内存压力，可以在有压力的时候采取一定的行动来改善当前cgroup的性能，比如关闭当前cgroup中不重要的服务等。目前有三种压力水平：
 
-#### low
+* low
+  * 意味着系统在开始为当前cgroup分配内存之前，需要先回收内存中的数据了，这时候回收的是在磁盘上有对应文件的内存数据。
 
-意味着系统在开始为当前cgroup分配内存之前，需要先回收内存中的数据了，这时候回收的是在磁盘上有对应文件的内存数据。
+* medium
+  * 意味着系统已经开始频繁为当前cgroup使用交换空间了。
 
-#### medium
+* critical
+  * 快撑不住了，系统随时有可能kill掉cgroup中的进程。
 
-意味着系统已经开始频繁为当前cgroup使用交换空间了。
 
-#### critical
-
-快撑不住了，系统随时有可能kill掉cgroup中的进程。
 
 如何配置相关的监听事件呢？和memory.oom_control类似，大概步骤如下：
 
@@ -720,7 +721,9 @@ sh: echo: I/O error
 
 > 注意： 多个level可能要创建多个event_fd，好像没有办法共用一个（本人没有测试过）
 
-### Memory thresholds
+
+
+**Memory thresholds**
 
 我们可以通过cgroup的事件通知机制来实现对内存的监控，当内存使用量穿过（变得高于或者低于）我们设置的值时，就会收到通知。使用方法和memory.oom_control类似，大概步骤如下：
 
@@ -729,7 +732,9 @@ sh: echo: I/O error
 3. 往cgroup.event_control中写入这么一串：`<event_fd> <usage_in_bytes_fd> <threshold>`
 4. 然后通过读event_fd得到通知
 
-### stat file
+
+
+**stat file**
 
 这个文件包含的统计项比较细，需要一些内核的内存管理知识才能看懂，这里就不介绍了（怕说错）。详细信息可以参考[Memory Resource Controller](https://www.kernel.org/doc/Documentation/cgroup-v1/memory.txt)中的“5.2 stat file”。这里有几个需要注意的地方：
 
@@ -739,9 +744,18 @@ sh: echo: I/O error
 
 
 
-## 小结
+### 小结
 
-本节没有介绍swap和kernel相关的内容，不过在实际使用过程中一定要留意swap空间，如果系统使用了交换空间，那么设置限额时一定要注意一点，那就是当cgroup的物理空间不够时，内核会将不常用的内存swap out到交换空间上，从而导致一直不触发oom killer，而是不停的swap out／in，导致cgroup中的进程运行速度很慢。如果一定要用交换空间，最好的办法是限制swap+物理内存的额度，虽然我们在这篇中没有介绍这部分内容，但其使用方法和限制物理内存是一样的，只是换做写文件memory.memsw.limit_in_bytes罢了。
+本节没有介绍 swap 和 kernel 相关的内容，不过在实际使用过程中一定要留意 swap 空间，如果系统使用了交换空间，那么设置限额时一定要注意一点，那就是当 cgroup 的物理空间不够时，内核会将不常用的内存 swap out 到交换空间上，从而导致一直不触发 oom killer，而是不停的 swap out／in，导致 cgroup 中的进程运行速度很慢。
+
+如果一定要用交换空间，最好的办法是限制 swap+物理内存 的额度，虽然我们在这篇中没有介绍这部分内容，但其使用方法和限制物理内存是一样的，只是换做写文件 memory.memsw.limit_in_bytes 罢了。
 
 
 
+## 4. 参考
+
+[cgroups(7) — Linux manual page](https://man7.org/linux/man-pages/man7/cgroups.7.html)
+
+[美团技术团队---Linux资源管理之cgroups简介](https://tech.meituan.com/2015/03/31/cgroups.html)
+
+[Red Hat---资源管理指南](https://access.redhat.com/documentation/zh-cn/red_hat_enterprise_linux/7/html/resource_management_guide/chap-introduction_to_control_groups)

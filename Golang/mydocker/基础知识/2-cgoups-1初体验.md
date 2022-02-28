@@ -1,51 +1,29 @@
 ## Linux Cgroups
 
-> 相关教程
->
-> [美团技术团队---Linux资源管理之cgroups简介](https://tech.meituan.com/2015/03/31/cgroups.html)
->
-> [Red Hat---资源管理指南](https://access.redhat.com/documentation/zh-cn/red_hat_enterprise_linux/7/html/resource_management_guide/chap-introduction_to_control_groups)
->
-> 
->
-> [Control groups series by Neil Brown](https://lwn.net/Articles/604609/)
->
-> [cgroups man page](https://man7.org/linux/man-pages/man7/cgroups.7.html)
+> 注：本文所有操作在 Ubuntu20.04 下进行。
 
+ 
 
+## 1. 什么是 Cgroups
 
-> 注：本文所有操作在 Ubuntu20.04 root 用户下进行。
+**Cgroups 是 Linux 下的一种将进程按组进行管理的机制，它提供了对一组进程及将来子进程的资源限制控制和统计的能力**。
 
-[Linux Cgroup系列（01）：Cgroup概述](https://segmentfault.com/a/1190000006917884)
+这些资源包括 CPU、内存、存储、网络等。通过 Cgroups 可以方便地限制某个进程的资源占用，并且可以实时地监控进程的监控与统计信息
 
-[Linux Cgroup系列（02）：创建并管理cgroup](https://segmentfault.com/a/1190000007241437)
+Cgroups 分 [v1](https://link.segmentfault.com/?enc=fmG2KlYIlmuPBWA%2BS75wdQ%3D%3D.98u3vavuU%2BB9DEpQfRyd9dBOX7nXmAirC5p02OOH5gqaHj%2BAFOLBgIzzO8UNOveGi7RLa9syda8SekeDfxxK2A%3D%3D) 和 [v2](https://link.segmentfault.com/?enc=uvlqJXHQ79GOOcGOajMwiA%3D%3D.MUeSO3oJAwWsJJbGizZtlyik3Fo%2FvfFBhlMmlgMWOJzxMpqEOk0jKouI9uzphxeOQlBe8SxWfMMvityCERbxGw%3D%3D) 两个版本，v1实现较早，功能比较多，但是由于它里面的功能都是零零散散的实现的，所以规划的不是很好，导致了一些使用和维护上的不便，v2的出现就是为了解决v1中这方面的问题，在最新的4.5内核中，Cgroups v2 声称已经可以用于生产环境了，但它所支持的功能还很有限，随着v2一起引入内核的还有cgroup namespace。
 
-[Linux Cgroup系列（03）：限制cgroup的进程数（subsystem之pids）](https://segmentfault.com/a/1190000007468509)
-
-[Linux Cgroup系列（04）：限制cgroup的内存使用（subsystem之memory）](https://segmentfault.com/a/1190000008125359)
-
-[Linux Cgroup系列（05）：限制cgroup的CPU使用（subsystem之cpu）](https://segmentfault.com/a/1190000008323952)
-
-
-
-## 1. 什么是cgroup
-
-**Linux Cgroups提供了对一组进程及将来子进程的资源限制控制和统计的能力**，这些资源包括CPU、内存、存储、网络等。通过Cgroups,可以方便地限制某个进程的资源占用，并且可以实时地监控进程的监控与统计信息
-
-cgroup分[v1](https://link.segmentfault.com/?enc=fmG2KlYIlmuPBWA%2BS75wdQ%3D%3D.98u3vavuU%2BB9DEpQfRyd9dBOX7nXmAirC5p02OOH5gqaHj%2BAFOLBgIzzO8UNOveGi7RLa9syda8SekeDfxxK2A%3D%3D)和[v2](https://link.segmentfault.com/?enc=uvlqJXHQ79GOOcGOajMwiA%3D%3D.MUeSO3oJAwWsJJbGizZtlyik3Fo%2FvfFBhlMmlgMWOJzxMpqEOk0jKouI9uzphxeOQlBe8SxWfMMvityCERbxGw%3D%3D)两个版本，v1实现较早，功能比较多，但是由于它里面的功能都是零零散散的实现的，所以规划的不是很好，导致了一些使用和维护上的不便，v2的出现就是为了解决v1中这方面的问题，在最新的4.5内核中，cgroup v2声称已经可以用于生产环境了，但它所支持的功能还很有限，随着v2一起引入内核的还有cgroup namespace。v1和v2可以混合使用，但是这样会更复杂，所以一般没人会这样用。
+> v1和v2可以混合使用，但是这样会更复杂，所以一般没人会这样用。
 
 
 
 ### 1. 三部分组件
 
-**cgroup是Linux下的一种将进程按组进行管理的机制**。
-
 cgroup主要包括下面几部分：
 
-* **cgroups本身**：cgroup是对进程分组管理的一种机制，一个cgroup包含一组进程，并可以在这个cgroup上增加Linux subsystem的各种参数配置，将- -组进程和一-组subsystem的系统参数关联起来。
+* **cgroups本身**：cgroup 是对进程分组管理的一种机制，一个 cgroup 包含一组进程，并可以在这个 cgroup上增加 Linux subsystem 的各种参数配置，将一组进程和一组 subsystem 的系统参数关联起来。
 
-- **subsystem**： 一个subsystem就是一个内核模块，他被关联到一颗cgroup树之后，就会在树的每个节点（进程组）上做具体的操作。subsystem经常被称作"resource controller"，因为它主要被用来调度或者限制每个进程组的资源，但是这个说法不完全准确，因为有时我们将进程分组只是为了做一些监控，观察一下他们的状态，比如perf_event subsystem。到目前为止，Linux支持12种subsystem，比如限制CPU的使用时间，限制使用的内存，统计CPU的使用情况，冻结和恢复一组进程等，后续会对它们一一进行介绍。
-- **hierarchy**：一个hierarchy可以理解为一棵cgroup树，树的每个节点就是一个进程组，每棵树都会与零到多个subsystem关联。在一颗树里面，会包含Linux系统中的所有进程，但每个进程只能属于一个节点（进程组）。系统中可以有很多颗cgroup树，每棵树都和不同的subsystem关联，一个进程可以属于多颗树，即一个进程可以属于多个进程组，只是这些进程组和不同的subsystem关联。目前Linux支持12种subsystem，如果不考虑不与任何subsystem关联的情况（systemd就属于这种情况），Linux里面最多可以建12颗cgroup树，每棵树关联一个subsystem，当然也可以只建一棵树，然后让这棵树关联所有的subsystem。当一颗cgroup树不和任何subsystem关联的时候，意味着这棵树只是将进程进行分组，至于要在分组的基础上做些什么，将由应用程序自己决定，systemd就是一个这样的例子。
+- **subsystem**： 一个 subsystem 就是一个内核模块，他被关联到一颗cgroup 树之后，就会在树的每个节点（进程组）上做具体的操作。subsystem 经常被称作"resource controller"，因为它主要被用来调度或者限制每个进程组的资源，但是这个说法不完全准确，因为有时我们将进程分组只是为了做一些监控，观察一下他们的状态，比如 perf_event subsystem。到目前为止，Linux 支持 12种 subsystem，比如限制 CPU 的使用时间，限制使用的内存，统计 CPU 的使用情况，冻结和恢复一组进程等，后续会对它们一一进行介绍。
+- **hierarchy**：一个 hierarchy 可以理解为一棵 cgroup 树，树的每个节点就是一个进程组，每棵树都会与零到多个 subsystem 关联。在一颗树里面，会包含 Linux 系统中的所有进程，但每个进程只能属于一个节点（进程组）。系统中可以有很多颗 cgroup 树，每棵树都和不同的 subsystem 关联，一个进程可以属于多颗树，即一个进程可以属于多个进程组，只是这些进程组和不同的 subsystem 关联。目前 Linux 支持 12种 subsystem，如果不考虑不与任何 subsystem关联的情况（systemd 就属于这种情况），Linux 里面最多可以建12颗cgroup树，每棵树关联一个 subsystem，当然也可以只建一棵树，然后让这棵树关联所有的 subsystem。当一颗 cgroup树不和任何 subsystem 关联的时候，意味着这棵树只是将进程进行分组，至于要在分组的基础上做些什么，将由应用程序自己决定，systemd 就是一个这样的例子。
 
 
 
@@ -283,9 +261,11 @@ cgdelete cpu:./mycgroup
 
 
 
+## 3. 演示
+
 ### 1. 新 hierarchy 方式
 
-#### 创建 hierarchy 
+**创建 hierarchy **
 
 首先，要创建并挂载一个 hierarchy。
 
@@ -312,9 +292,7 @@ cgroup.clone_children  cgroup.procs  cgroup.sane_behavior  notify_on_release  re
 
 * tasks 标识该cgroup下面的进程ID，如果把一个进程ID写到tasks文件中，便会将相应的进程加入到这个cgroup中。
 
-
-
-#### 创建子 cgroup
+**创建子 cgroup**
 
 然后，从刚创建好的 hierarchy 上 cgroup 根节点中扩展出两个子 cgroup：
 
@@ -347,7 +325,7 @@ cgroup.clone_children  cgroup.procs  cgroup.sane_behavior  notify_on_release  re
 
 
 
-#### 在 cgroup 中添加和移动进程
+**在 cgroup 中添加和移动进程**
 
 一个进程在一个Cgroups的hierarchy中，只能在一个cgroup节点上存在，系统的所有进程都会默认在根节点上存在。
 
@@ -381,19 +359,19 @@ cgroup-1# cat /proc/7575/cgroup
 
 
 
-#### 通过subsystem限制 cgroup中的进程
+**通过subsystem限制 cgroup中的进程**
 
-在上面创建hierarchy的时候，这个hierarchy并没有关联到任何的subsystem,所以没办法通过那个hierarchy中的cgroup 节点限制进程的资源占用。
+在上面创建 hierarchy 的时候，这个 hierarchy 并没有关联到任何的subsystem ,所以没办法通过那个 hierarchy 中的 cgroup 节点限制进程的资源占用。
 
-> 即 只能在创建hierarchy时指定要关联哪些subsystem，创建后就无法修改。
+> 即 只能在创建 hierarchy 时指定要关联哪些 subsystem，创建后就无法修改。
 
-其实系统默认已经为每个subsystem创建了一个默认的hierarchy,比如memory的hierarchy。
+其实系统默认已经为每个 subsystem 创建了一个默认的 hierarchy,比如memory 的 hierarchy。
 
 
 
 ### 2. 子 cgroup 方式
 
-在很多使用systemd的系统中，比如ubuntu 16.04，systemd已经帮我们将各个subsystem和cgroup树关联并挂载好了：
+在很多使用 systemd 的系统中，systemd 已经帮我们将各个 subsystem 和cgroup 树关联并挂载好了：
 
 ```shell
 DESKTOP-9K4GB6E# mount |grep cgroup
@@ -417,7 +395,7 @@ cgroup-test on /home/lixd/cgroup-test type cgroup (rw,relatime,name=cgroup-test)
 
 
 
-因此我们可以直接在对应cgroup树下创建子cgroup即可。
+因此我们可以直接在对应 cgroup 树下创建子 cgroup 即可。
 
 直接进到 /sys/fs/cgroup/cpu 目录创建 cgroup-cpu 子目录即可：
 
@@ -448,9 +426,9 @@ DESKTOP-9K4GB6E# while : ; do : ; done &
 12887 root      25   5   14912   1912      0 R 100.0   0.0   0:33.31 zsh 
 ```
 
-果然这个PID=12887的进程占用了差不多100%的CPU。
+果然这个 PID=12887 的进程占用了差不多 100% 的 CPU。
 
-结下来我们就通过Cgroups对其进行限制，这里就用前面创建的 cgroup-cpu 控制组。
+结下来我们就通过 Cgroups 对其进行限制，这里就用前面创建的 cgroup-cpu 控制组。
 
 我们可以通过查看 container 目录下的文件，看到 container 控制组里的 CPU quota 还没有任何限制（即：-1），CPU period 则是默认的 100  ms（100000  us）：
 
@@ -486,7 +464,29 @@ PID USER      PR  NI    VIRT    RES    SHR S  %CPU  %MEM     TIME+ COMMAND
 
 
 
-## 3. 小结
+## 4. 小结
 
 cgroups 是 linux 内核提供的功能，由于牵涉的概念比较多，所以不太容易理解。本文试图通过简单的描述和 Demo 帮助大家理解 cgroups。
 
+**Cgroups 是 Linux 下的一种将进程按组进行管理的机制，它提供了对一组进程及将来子进程的资源限制控制和统计的能力**。
+
+cgroups 分为以下三个部分：
+
+* cgroup 本身
+
+* hierarchy 
+* subsystem
+
+
+
+## 5. 参考
+
+[cgroups(7) — Linux manual page](https://man7.org/linux/man-pages/man7/cgroups.7.html)
+
+[Control groups series by Neil Brown](https://lwn.net/Articles/604609/)
+
+[美团技术团队---Linux资源管理之cgroups简介](https://tech.meituan.com/2015/03/31/cgroups.html)
+
+[Red Hat---资源管理指南](https://access.redhat.com/documentation/zh-cn/red_hat_enterprise_linux/7/html/resource_management_guide/chap-introduction_to_control_groups)
+
+[Linux Cgroup系列（01）：Cgroup概述](https://segmentfault.com/a/1190000006917884)
