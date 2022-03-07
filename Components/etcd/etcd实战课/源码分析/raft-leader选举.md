@@ -2,10 +2,6 @@
 
 
 
-> https://mp.weixin.qq.com/s?__biz=Mzg3NTU3OTgxOA==&mid=2247494951&idx=1&sn=b6193f082416ebda21046afce0be0be1&chksm=cf3dfde2f84a74f403ec88949b28bc03c7f3bfcd28697007a2b11f064b4caf0624005ec46b8a&scene=21#wechat_redirect
-
-
-
 > 以下分析记录 etcd v3.5.1
 >
 > 为了便于阅读，省略了无关代码，只保留主干部分。

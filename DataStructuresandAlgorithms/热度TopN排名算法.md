@@ -6,19 +6,13 @@
 
 大致有如下这些算法：
 
-* 0）Delicious
-* 1）Hacker News
-  * http://www.ruanyifeng.com/blog/2012/02/ranking_algorithm_hacker_news.html
-* 2）Reddit
-  * http://www.ruanyifeng.com/blog/2012/03/ranking_algorithm_reddit.html
-* 3）Stack Overflow
-  * http://www.ruanyifeng.com/blog/2012/03/ranking_algorithm_stack_overflow.html
-* 4）牛顿冷却定律
-  * http://www.ruanyifeng.com/blog/2012/03/ranking_algorithm_newton_s_law_of_cooling.html
-* 5）威尔逊区间
-  * http://www.ruanyifeng.com/blog/2012/03/ranking_algorithm_wilson_score_interval.html
-* 6）贝叶斯平均
-  * http://www.ruanyifeng.com/blog/2012/03/ranking_algorithm_bayesian_average.html
+* 0）[Delicious](http://www.ruanyifeng.com/blog/2012/02/ranking_algorithm_hacker_news.html)
+* 1）[Hacker News](http://www.ruanyifeng.com/blog/2012/02/ranking_algorithm_hacker_news.html)
+* 2）[Reddit](http://www.ruanyifeng.com/blog/2012/03/ranking_algorithm_reddit.html)
+* 3）[Stack Overflow](http://www.ruanyifeng.com/blog/2012/03/ranking_algorithm_stack_overflow.html)
+* 4）[牛顿冷却定律](http://www.ruanyifeng.com/blog/2012/03/ranking_algorithm_newton_s_law_of_cooling.html)
+* 5）[威尔逊区间](http://www.ruanyifeng.com/blog/2012/03/ranking_algorithm_wilson_score_interval.html)
+* 6）[贝叶斯平均](http://www.ruanyifeng.com/blog/2012/03/ranking_algorithm_bayesian_average.html)
 
 
 

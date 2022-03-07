@@ -46,7 +46,7 @@ $ ip link add veth0 type veth peer name veth1
 $ ip link show
 ```
 
-此时两个 veth 都在默认 net namespace中，为了测试，先将其中一个切换到 netns1
+此时两个 veth 都在默认 net namespace 中，为了测试，先将其中一个切换到 netns1
 
 ```sh
 $ ip link set veth1 netns netns1
