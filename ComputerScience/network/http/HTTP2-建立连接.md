@@ -2,6 +2,10 @@
 
 > [HTTP/1.1-rfc7230](https://datatracker.ietf.org/doc/html/rfc7230)
 >
+> [HTTP/2-rfc7540](https://httpwg.org/specs/rfc7540.html)
+>
+> [HTTP/2-rfc7540-zh-CN](https://github.com/abbshr/rfc7540-translation-zh_cn)
+>
 > [深入理解 Web 协议 (三)：HTTP 2](https://segmentfault.com/a/1190000039262103)
 
 
