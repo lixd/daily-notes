@@ -147,7 +147,7 @@ func worker(ch) {
 }
 ```
 
-main goroutine 发送 task 到 铲
+main goroutine 发送 task 到 chan
 
 worker goroutine 从 chan 中接收 task
 
@@ -171,9 +171,37 @@ worker goroutine 从 chan 中接收 task
 
 
 
-完美匹配 Go 哲学。整个过程中没有任何共享内存，数据都是通过 copy 进行传递。
+整个过程中没有任何共享内存，数据都是通过 copy 进行传递,这遵循了 Go 并发设计中很核心的一个理念：
 
 > Do not communicate by sharing memory; instead, share memory by communicating.
+
+
+
+上述的拷贝指的是：
+
+```go
+// typedmemmove copies a value of type t to dst from src.
+// Must be nosplit, see #16026.
+//go:nosplit
+func typedmemmove(typ *_type, dst, src unsafe.Pointer) {
+    if typ.kind&kindNoPointers == 0 {
+        bulkBarrierPreWrite(uintptr(dst), uintptr(src), typ.size)
+    }
+    // There's a race here: if some other goroutine can write to
+    // src, it may change some pointer in src after we've
+    // performed the write barrier but before we perform the
+    // memory copy. This safe because the write performed by that
+    // other goroutine must also be accompanied by a write
+    // barrier, so at worst we've unnecessarily greyed the old
+    // pointer that was in src.
+    memmove(dst, src, typ.size)
+    if writeBarrier.cgo {
+        cgoCheckMemmove(typ, dst, src, 0, typ.size)
+    }
+}
+```
+
+
 
 
 
