@@ -1,5 +1,11 @@
 # sync map
 
+> [Go sync.Map 包教包会](https://juejin.cn/post/6969204844552781855)
+>
+> [你不得不知道的sync.Map源码分析](https://segmentfault.com/a/1190000015242373)
+>
+> [看过这篇剖析，你还不懂 Go sync.Map 吗？](https://zhuanlan.zhihu.com/p/365144986)
+
 
 
 ### 问题1
@@ -103,6 +109,12 @@ func (m *Map) Range(f func(key, value interface{}) bool)
 这里要重点关注`readOnly.amended`、`Map.misses`和`entry.p`的数值状态, 拓扑图中,多处用于走势判断.
 接下来详细列出结构体的代码和注释, 方便阅读理解拓扑图.
 
+
+
+
+
+
+
 ### 主要结构和注释
 
 
@@ -140,6 +152,18 @@ type entry struct {
 }
 ```
 
+1、本质上，sync.Map 就是由两个 map 组成，一个存储只读数据，一个存读写数据。
+
+> 下文将会以 read map(即readOnly.m) 和 dirty map(即dirty) 两个名称进行阐述。
+
+2、expunged 是占位符/哨兵值，初始化的时候随机赋值（就是一个地址值），用于标明 read map 中的 value 是否被删除。但是，删除的时候只是先将 value 置为 nil，再后续转为 expunged 值。
+
+> 这也就是为什么sync.Map删除效率这么快
+
+
+
+
+
 ### 方法源码分析
 
 
@@ -154,7 +178,7 @@ func (m *Map) Load(key interface{}) (value interface{}, ok bool) {
     if !ok && read.amended {
         // 为dirty map 加锁
         m.mu.Lock()
-        // 第二次检测元素是否存在，主要防止在加锁的过程中,dirty map转换成read map,从而导致读取不到数据
+        // 第二次检测元素是否存在，主要防止在加锁的过程中,dirty map转换成read map,从而导致本来能读到数据的情况下也去调用了m.missLocked()
         read, _ = m.read.Load().(readOnly)
         e, ok = read.m[key]
         if !ok && read.amended {
@@ -484,4 +508,65 @@ func Len(sm sync.Map) int {
 
 
 
-原文:`https://segmentfault.com/a/1190000015242373`
+
+
+
+
+## 3. 测试
+
+### 压测
+
+压测代码见 [这里](https://github.com/bigwhite/experiments/tree/master/go19-examples/benchmark-for-map)
+
+```shell
+# 写入
+BenchmarkBuiltinMapStoreParalell-4               6753177               196.1 ns/op
+BenchmarkSyncMapStoreParalell-4                  3809122               351.8 ns/op
+BenchmarkBuiltinRwMapStoreParalell-4             8106212               199.9 ns/op
+# 查询
+BenchmarkBuiltinMapLookupParalell-4              8332371               155.6 ns/op
+BenchmarkBuiltinRwMapLookupParalell-4           18317394                66.74 ns/op
+BenchmarkSyncMapLookupParalell-4                34709386                39.02 ns/op
+# 删除
+BenchmarkBuiltinMapDeleteParalell-4              7093183               170.5 ns/op
+BenchmarkBuiltinRwMapDeleteParalell-4            7816269               167.1 ns/op
+BenchmarkSyncMapDeleteParalell-4                31467519                42.68 ns/op
+```
+
+BuiltinMap = Mutex + map
+BuiltinRwMap = RWMutex + map
+SyncMap = sync.Map
+
+结论：
+
+读和删两方面上，sync.Map 的性能更好。
+写这方面上，sync.Map 的效率只有其他两项的一半。
+综上，在读多写少的场景下，使用 sync.Map 类型明显更好。
+
+
+
+*对于写多读少的场景，怎么办呢？*
+
+> 毕竟锁+map效率也不高。
+
+分段锁技术：将 map 拆解为多个子 map，并由多个锁控制并发，从而降低锁粒度，以提高效率。
+
+
+
+
+
+### 结果分析
+
+1、采用读写分离的方式，降低锁时间，提升读性能
+ sync.Map 中并非单纯的 map，而是有两个 map ，其中的 read map 可以认为就是一个缓存层，存储了“老”数据，可以进行无锁+原子操作。而对于新写入的元素存放于 dirty map 中，并且在一定的时机下，将 dirty 中的全量数据转入到 read map 中。所以在写入少的情景下，大部分的执行，数据都在 read map 中，结合 amended 属性查找效率高。
+
+但是写入多的场景下，会导致 dirty map 中总有新数据，查找新数据会先后在 read map 和 dirty map 中查找，并且后者需要加锁，效率就很低。同时 dirty map 也会不断触发 promoted 为 read map，整体性能很差。
+
+2、写入性能差
+ 写入一定要会经过 read map，所以无论如何都比别人多一层操作；后续还要查数据情况和状态，性能开销相较更大。
+
+另外，在新增 key 的时候，常常会伴随全量数据的复制（从read到dirty），若 map 的数据量大，效率很低。
+
+3、删除速度快
+ 因为只是标记删除，在 promoted 的时候才真正地从 read map 中清除已删除的元素，相当于是延迟删除。
+

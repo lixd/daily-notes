@@ -1,6 +1,6 @@
 
 
-### 直接安装
+## 直接安装
 
 ```sh
 $ sudo apt-get update
@@ -31,7 +31,7 @@ host    all             all             10.1.123.0/24            md5
 
 
 
-### docker-compsoe
+## docker-compsoe
 
 `docker-compose.yaml`
 
