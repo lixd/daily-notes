@@ -213,6 +213,8 @@ certbot certonly --manual \
 
 
 
+
+
 * --manual 手动模式
 * -d 指定域名
   * 建议同时生成主域名和二级域名泛解析的证书
