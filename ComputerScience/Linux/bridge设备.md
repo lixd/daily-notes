@@ -1,6 +1,24 @@
 # Linux bridge 设备
 
-Bridge 虚拟设备是用来桥接的网络设备，它相当于现实世界中的交换机，可以连接不同的网络设备，当请求到达 Bridge 设备时，可以通过报文中的 Mac 地址进行广播或转发。
+> [Linux虚拟网络设备之bridge(桥)](https://segmentfault.com/a/1190000009491002)
+>
+> [linux bridge实践](https://zhuanlan.zhihu.com/p/339070912)
+
+
+
+## 1. 什么是bridge？
+
+首先，bridge是一个**虚拟网络设备**，所以具有网络设备的特征，可以配置IP、MAC地址等；其次，bridge是一个**虚拟交换机**，和物理交换机有类似的功能。
+
+> 可以简单理解成交换机。
+
+对于普通的网络设备来说，只有两端，从一端进来的数据会从另一端出去，如物理网卡从外面网络中收到的数据会转发给内核协议栈，而从协议栈过来的数据会转发到外面的物理网络中。
+
+而bridge不同，bridge有多个端口，数据可以从任何端口进来，进来之后从哪个口出去和物理交换机的原理差不多，要看mac地址。
+
+
+
+## 2. 相关命令
 
 例如，我们可以创建一个 Bridge 设备来连接 Namespace 中的网络设备和宿主机上的网络。
 
@@ -17,7 +35,3 @@ $ sudo brctl addbr br0
 $ sudo brctl addif br0 eth0
 $ sudo brctl addif br0 veth0
 ```
-
-
-
-[linux bridge实践](

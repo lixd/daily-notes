@@ -243,8 +243,6 @@ BenchmarkStringAdd-6                4620            237020 ns/op         1496941
 
  Sprintf 和直接相加 因为每次都生成一个新字符串，所以有大量的内存分配，而 strings.Builder 和 bytes.Buffer 都有缓存,省去了内存分配的开销，所以效率比较高。
 
-> 不过如果字符串比较少的时候推荐直接相加，毕竟 new 一个 strings.Builder 对象也是有消耗的。
-
 结论：**字符串少推荐直接相加，多则使用 strings.Builder。**
 
 
