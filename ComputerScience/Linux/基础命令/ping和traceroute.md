@@ -110,11 +110,11 @@ traceroute 每次将送出的 datagram 的 TTL 加 1 来发现另一个路由器
 
 当 datagram 到达目的地后，该主机并不会送回 ICMP time exceeded 消息，因为它已是目的地了，***那么 traceroute 如何得知目的地到达了呢？***
 
-Traceroute 在送出 UDP datagrams 的时候，它所选择送达的 port number 是一个一般应用程序都不会用的号码（30000 以上），所以当此 UDP datagram 到达目的地后该主机会送回一个「ICMP port unreachable」的消息，而当traceroute 收到这个消息时，便知道目的地已经到达了。所以 traceroute 在Server 端也是没有所谓的 Daemon 程式。
+Traceroute 在送出 UDP datagrams 的时候，它所选择送达的 port number 在33434~33534之间，这个区间的端口号对UDP来说是无效的端口号。因此目的地址收到了这个UDP数据包，会返回**ICMP UDP Port Unreachable（ICMP type 3）**的信息，所以当此 UDP datagram 到达目的地后该主机会送回一个「ICMP port unreachable」的消息，而当traceroute 收到这个消息时，便知道目的地已经到达了。所以 traceroute 在Server 端也是没有所谓的 Daemon 程式。
 
 Traceroute 提取发 ICMP TTL 到期消息设备的 IP 地址并作域名解析。每次 ，Traceroute 都打印出一系列数据,包括所经过的路由设备的域名及 IP地址,三个包每次来回所花时间。
 
-
+一个UDP端口，端口号在。这么一个别致的返回信息，traceroute在收到了它之后，就知道网络路径探测该结束了。
 
 ### 参数
 
@@ -202,3 +202,32 @@ traceroute to www.baidu.com (103.235.46.39), 30 hops max, 60 byte packets
 > 因为有时候每次走的路由是不同的，所以也会出现每行3个IP的情况。
 
 另外输出中有一些是星号，因为有些节点把 UDP 数据包屏蔽了，所以没有返回ICMP。
+
+
+
+
+
+### 三种traceroute
+
+*UDPtraceroute*
+
+- 探测包就是 UDP
+- 目的设备返回的就是 ICMP UDP Port Unreachable（ICMP type 3）
+
+
+
+*ICMP traceroute*
+
+与UDP traceroute的区别就在于：
+
+- 探测包就是ICMP echo request
+- 目的设备返回的就是ICMP echo reply
+
+
+
+*TCP traceroute*
+
+与UDP traceroute的区别在于：
+
+- 探测方式是与tcp 80（默认）端口建立连接
+- 目的设备的返回时连接成功，或者80端口关闭
