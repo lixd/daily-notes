@@ -14,11 +14,11 @@
 
 #### 2. 重定向标准输出和标准错误
 
-使用方法：`nohup command > filename 2<&1 &`
+使用方法：`nohup command > filename 2>&1 &`
 
 这里的1，2是文件描述符，0表示stdin标准输入，1表示stdout标准输出，2表示stderr标准错误， 还有一个/dev/null 表示空设备文件。
 
-nohup 默认会把输出输出到nohup.out文件中，如果想重定向输出到别的文件，那么需要在nohup command后加入 > filename, 2<&1,表示把标准错误重定向到标准输出中。
+nohup 默认会把输出输出到nohup.out文件中，如果想重定向输出到别的文件，那么需要在nohup command后加入 > filename, 2>&1,表示把标准错误重定向到标准输出中。
 
 
 
