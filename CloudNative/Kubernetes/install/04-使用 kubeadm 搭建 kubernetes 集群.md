@@ -75,7 +75,7 @@ W1117 12:50:51.960255    6705 configset.go:348] WARNING: kubeadm cannot validate
 [addons] Applied essential addon: kube-proxy
 # 出现这个就说明安装成功了
 Your Kubernetes control-plane has initialized successfully!
-# 需要集群的话 还需要执行下面的命令
+# 执行下面的命令配置kubectl
 To start using your cluster, you need to run the following as a regular user:
 
   mkdir -p $HOME/.kube

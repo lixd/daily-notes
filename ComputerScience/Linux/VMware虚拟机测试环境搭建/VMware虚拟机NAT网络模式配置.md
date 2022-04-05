@@ -1,5 +1,11 @@
 # VMware虚拟机NAT网络模式配置
 
+> [vmware 虚拟机三种网络模式 桥接 NAT 仅主机区别 是什么意思](https://blog.csdn.net/zkuncn/article/details/78452098)
+>
+> [桥接、NAT、Host-only上网方式的区别](https://cloud.tencent.com/developer/article/1463782)
+
+
+
 ## 1. 概述
 
 装了好几次虚拟了，网络设置每次都要弄很久，也不知道怎么回事。莫名其妙就能用或者不能用了。这次好好记录一下。

@@ -20,19 +20,25 @@ Docker有多种网络模型。对于单机上运行的多个容器，可以使�
 
 ### veth pair
 
+> 对 Veth pairs 不了解的可以参考一下这篇文章： [veth-pair 笔记](https://github.com/lixd/daily-notes/blob/master/ComputerScience/Linux/veth%E8%AE%BE%E5%A4%87%E5%AF%B9.md)
+
 `Veth`是成对出现的两张虚拟网卡，从一端发送的数据包，总会在另一端接收到。利用`Veth`的特性，我们可以将一端的虚拟网卡"放入"容器内，另一端接入虚拟交换机。这样，接入同一个虚拟交换机的容器之间就实现了网络互通。
 
 
 
 ### bridge
 
-交换机是工作在数据链路层的网络设备，它转发的是二层网络包。最简单的转发策略是将到达交换机输入端口的报文，广播到所有的输出端口。当然更好的策略是在转发过程中进行学习，记录交换机端口和MAC地址的映射关系，这样在下次转发时就能够根据报文中的MAC地址，发送到对应的输出端口。
+> 对 Linux Bridge 不了解的可以参考一下这篇文章：[Linux bridge 设备笔记](https://github.com/lixd/daily-notes/blob/master/ComputerScience/Linux/bridge%E8%AE%BE%E5%A4%87.md)
 
 我们可以认为`Linux bridge`就是虚拟交换机，连接在同一个`bridge`上的容器组成局域网，不同的`bridge`之间网络是隔离的。 `docker network create [NETWORK NAME]`实际上就是创建出虚拟交换机。
+
+交换机是工作在数据链路层的网络设备，它转发的是二层网络包。最简单的转发策略是将到达交换机输入端口的报文，广播到所有的输出端口。当然更好的策略是在转发过程中进行学习，记录交换机端口和MAC地址的映射关系，这样在下次转发时就能够根据报文中的MAC地址，发送到对应的输出端口。
 
 
 
 ### NAT
+
+> 对 iptables 不了解的可以参考这篇文章：[iptables 笔记](https://github.com/lixd/daily-notes/blob/master/ComputerScience/Linux/iptables.md)
 
 NAT（Network Address Translation），是指网络地址转换。
 
@@ -82,8 +88,6 @@ ns1
 
 
 #### 创建Veth pairs
-
-> 如果对 Veth pairs 不了解可以参考一下这篇文章： [veth-pair](https://github.com/lixd/daily-notes/blob/master/ComputerScience/Linux/veth%E8%AE%BE%E5%A4%87%E5%AF%B9.md)
 
 ```shell
 $ sudo ip link add veth0 type veth peer name veth1
@@ -152,8 +156,6 @@ $ sudo ip netns exec ns2 ip addr
 
 
 #### 创建bridge
-
-> 如果对 Linux Bridge 不了解可以参考一下这篇文章：[Linux bridge 设备](https://github.com/lixd/daily-notes/blob/master/ComputerScience/Linux/bridge%E8%AE%BE%E5%A4%87.md)
 
 一般使用`brctl`进行管理，不是自带的工具，需要先安装一下：
 
@@ -417,15 +419,22 @@ $ sudo ip link  del veth3
 
 ## 4. 小结
 
-本文我们在介绍了`veth`、`Linux bridge`、`iptables`等概念后，亲自动手模拟出了 [docker bridge网络模型](https://docs.docker.com/network/bridge/)，并测试了几种场景的网络互通。实际上`docker network` 就是使用了上述技术，帮我们创建和维护网络。通过动手实验，相信你对docker bridge网络理解的更加深入。
+本文主要通过 Linux 提供的各种虚拟设备以及 iptables 模拟出了 [docker bridge网络模型](https://docs.docker.com/network/bridge/)，并测试了几种场景的网络互通。实际上`docker network` 就是使用了`veth`、`Linux bridge`、`iptables`等技术，帮我们创建和维护网络。
 
+具体分析一下：
 
+* 首先 docker 就是一个进程，主要利用 Linux Namespace 进行隔离。
+* 为了跨 Namespace 通信，就用到了 Veth pair。
+* 然后过个容器都使用 Veth pair 联通的话，不好管理，所以加入了 Linux Bridge，所有 veth 都直接和 bridge 连接，这样就好管理多了。
+* 然后容器和外部网络要进行通信，于是又要用到 iptables 的 NAT 规则进行地址转换。
 
 
 
 ## 5. 参考
 
-[veth-pair](https://github.com/lixd/daily-notes/blob/master/ComputerScience/Linux/veth%E8%AE%BE%E5%A4%87%E5%AF%B9.md)
+[iptables 笔记](https://github.com/lixd/daily-notes/blob/master/ComputerScience/Linux/iptables.md)
+
+[veth-pair 笔记](https://github.com/lixd/daily-notes/blob/master/ComputerScience/Linux/veth%E8%AE%BE%E5%A4%87%E5%AF%B9.md)
 
 [Docker bridge networks](https://docs.docker.com/network/bridge/)
 
