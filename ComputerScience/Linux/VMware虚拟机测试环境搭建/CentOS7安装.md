@@ -310,7 +310,7 @@ $ vim /etc/containerd/config.toml
   [plugins."io.containerd.grpc.v1.cri".registry.mirrors]
   # 添加下面两个配置
     [plugins."io.containerd.grpc.v1.cri".registry.mirrors."docker.io"]
-      endpoint = ["https://7bezldxe.mirror.aliyuncs.com"]
+      endpoint = ["https://ekxinbbh.mirror.aliyuncs.com"]
     [plugins."io.containerd.grpc.v1.cri".registry.mirrors."k8s.gcr.io"]
       endpoint = ["https://gcr.k8s.li"]
 ```
@@ -345,11 +345,5 @@ crictl version
 
 ```shell
 sudo swapoff -a
-```
-
-避免开机启动交换空间
-
-```shell
-vi /etc/fstab
-注释掉有swap的行
+sed -ri 's/.*swap.*/#&/' /etc/fstab
 ```

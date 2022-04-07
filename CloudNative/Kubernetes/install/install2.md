@@ -6,9 +6,13 @@
 
 
 
-**1、硬件环境**
+## 1. 环境
 
-3台虚机 2c2g,20g。(nat模式，可访问外网)
+### 硬件环境
+
+3台虚机 2c4g,20g。(nat模式，可访问外网)
+
+> 测试发现最低配置要求的 2G 内存不够用，部署 calico 之后直接炸了。
 
 |    角色    |   主机名   |      ip       |
 | :--------: | :--------: | :-----------: |
@@ -26,13 +30,9 @@
 
 
 
-## 1. 环境准备
+### 环境调整
 
-首先需要3台Linux主机，至少两核CPU以及2G内存。
-
-> 一般是安装好一台之后，克隆出另外两台。
-
-
+对所有节点做以下检测。
 
 **确保每个节点上主机名、 MAC 地址和 product_uuid 的唯一性 **
 
@@ -57,7 +57,7 @@ sed -ri 's/.*swap.*/#&/' /etc/fstab
 
 
 
-关闭防火墙
+**关闭防火墙**
 
 ```shell
 systemctl stop firewalld && systemctl disable  firewalld
@@ -65,6 +65,14 @@ systemctl stop NetworkManager && systemctl disable  NetworkManager
 ```
 
 
+
+**禁用SELinux**
+
+```bash
+# 将 SELinux 设置为 permissive 模式（相当于将其禁用）， 这是允许容器访问主机文件系统所必需的
+sudo setenforce 0
+sudo sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
+```
 
 
 
@@ -86,7 +94,9 @@ sudo sysctl --system
 
 
 
-### 配置dns解析
+**配置dns解析**
+
+> 这里需要根据自己环境的节点hostname和ip来调整
 
 ```bash
 cat >> /etc/hosts << EOF
@@ -98,17 +108,13 @@ EOF
 
 
 
-
+## 2. 安装
 
 ### 安装 kubeadm、kubelet 和 kubectl
 
-```shell
-# 将 SELinux 设置为 permissive 模式（相当于将其禁用）， 这是允许容器访问主机文件系统所必需的
-sudo setenforce 0
-sudo sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
-```
+**配置 yum 源**
 
-然后配置 yum 源：
+官方源如下：
 
 ```bash
 cat <<EOF | sudo tee /etc/yum.repos.d/kubernetes.repo
@@ -193,12 +199,12 @@ sudo systemctl enable --now kubelet
 
 
 
-### 使用 kubeadm 创建集群
+### 初始化主节点
 
-
+首先修改 kubeadm 配置文件
 
 ```bash
-# 导出配置文件 这里暂时放到 /usr/local/k8s目录下
+# 导出配置文件
 kubeadm config print init-defaults --kubeconfig ClusterConfiguration > kubeadm.yml
 ```
 
@@ -349,7 +355,7 @@ k8s-master   NotReady   control-plane,master   2m1s   v1.23.5
 
 
 
-## Node节点
+### Node节点加入集群
 
 将 node节点加入到集群中很简单，只需要在 node 节点上安装 kubeadm，kubectl，kubelet 三个工具，然后使用 `kubeadm join` 命令加入即可。
 
@@ -398,15 +404,13 @@ k8s-node2    NotReady   <none>                 6s     v1.23.5
 
 
 
-## 踩坑
-
-1）containerd 没有配置镜像导致无法拉取 mainfest 文件，然后无法启动容器。
-
-后续配置上即行了。
+此时由于没有安装网络插件，所有节点都还处于 NotReady 状态。
 
 
 
-2）kubelet 报错找不到节点
+### 踩坑
+
+1）kubelet 报错找不到节点
 
 ```shell
 Failed while requesting a signed certificate from the master: cannot create certificate signing request: Unauthorized
@@ -427,28 +431,340 @@ Failed while requesting a signed certificate from the master: cannot create cert
 
 
 
-## [Calico](https://projectcalico.docs.tigera.io/getting-started/kubernetes/quickstart)
+## 3. 安装[Calico](https://projectcalico.docs.tigera.io/getting-started/kubernetes/quickstart)
 
 > 当前版本为 3.22
 
-第一步
+具体参考：[self-managed-onprem](https://projectcalico.docs.tigera.io/getting-started/kubernetes/self-managed-onprem/onpremises)
 
 ```bash
-kubectl create -f https://projectcalico.docs.tigera.io/manifests/tigera-operator.yaml
-```
-
-第二步
-
-```bash
-kubectl create -f https://projectcalico.docs.tigera.io/manifests/custom-resources.yaml
-```
-
-
-
-[self-managed-onprem](https://projectcalico.docs.tigera.io/getting-started/kubernetes/self-managed-onprem/onpremises)
-
-```bash
+# 第一步获取官方给的 yaml 文件
 curl https://projectcalico.docs.tigera.io/manifests/calico.yaml -O
+# 第二步直接 apply
 kubectl apply -f calico.yaml
 ```
 
+
+
+如果不错意外的话等一会 calico 就安装好了，可以通过以下命令查看：
+
+```bash
+$ kubectl get pods -n kube-system
+NAME                                       READY   STATUS    RESTARTS      AGE
+calico-kube-controllers-56fcbf9d6b-h2nlf   1/1     Running   0             25m
+calico-node-92rz4                          1/1     Running   1 (15m ago)   25m
+calico-node-hwbk9                          1/1     Running   0             25m
+coredns-6d8c4cb4d-9nfwq                    1/1     Running   1 (15m ago)   33m
+coredns-6d8c4cb4d-nx6v6                    1/1     Running   1 (15m ago)   33m
+```
+
+calico 开头的以及 coredns 都跑起来就算完成。
+
+
+
+
+
+### 踩坑
+
+1）镜像拉取特别慢，不知道是不是网络原因，pod 一直启动不起来，手动拉取镜像只会才跑起来的。
+
+```bash
+$ cat calico.yaml |grep docker.io|awk {'print $2'}
+docker.io/calico/cni:v3.22.1
+docker.io/calico/cni:v3.22.1
+docker.io/calico/pod2daemon-flexvol:v3.22.1
+docker.io/calico/node:v3.22.1
+docker.io/calico/kube-controllers:v3.22.1
+$ crictl pull docker.io/calico/cni:v3.22.1
+$ crictl pull docker.io/calico/pod2daemon-flexvol:v3.22.1
+$ crictl pull docker.io/calico/node:v3.22.1
+$ crictl pull docker.io/calico/kube-controllers:v3.22.1
+```
+
+
+
+2）calico-controller 报错
+
+```bash
+Get "https://10.96.0.1:443/apis/crd.projectcalico.org/v1/clusterinformations/default": context deadline exceeded
+```
+
+一般是 calico 无法识别网卡导致的，calico 默认识别的是 eth0，如果节点上的网卡是其他名字就识别不了，导致一直无法启动。
+
+需要修改一下 calico.yaml,指定自己的网卡名字，具体如下：
+
+首先打开 calico.yaml
+
+然后直接搜索 CLUSTER_TYPE，找到下面这段
+
+```yaml
+- name: CLUSTER_TYPE
+   value: "k8s,bgp"
+```
+
+然后添加一个和 CLUSTER_TYPE 同级的 IP_AUTODETECTION_METHOD 字段，具体如下：
+
+```yaml
+# value 就是指定你的网卡名字，我这里网卡是ens33，然后直接配置的ens.*
+- name: IP_AUTODETECTION_METHOD  
+  value: "interface=ens.*"
+```
+
+
+
+
+
+到此整个集群就算是跑起来了。
+
+```bash
+[root@k8s-master ~]# kubectl get pods -n kube-system
+NAME                                       READY   STATUS    RESTARTS        AGE
+calico-kube-controllers-56fcbf9d6b-h2nlf   1/1     Running   0               12m
+calico-node-92rz4                          1/1     Running   1 (3m14s ago)   12m
+calico-node-hwbk9                          1/1     Running   0               12m
+coredns-6d8c4cb4d-9nfwq                    1/1     Running   1 (3m14s ago)   20m
+coredns-6d8c4cb4d-nx6v6                    1/1     Running   1 (3m14s ago)   20m
+etcd-k8s-master                            1/1     Running   1 (3m14s ago)   20m
+kube-apiserver-k8s-master                  1/1     Running   1 (3m14s ago)   20m
+kube-controller-manager-k8s-master         1/1     Running   3 (3m14s ago)   20m
+kube-proxy-r579m                           1/1     Running   0               19m
+kube-proxy-rgtpl                           1/1     Running   1 (3m14s ago)   20m
+kube-scheduler-k8s-master                  1/1     Running   3 (3m14s ago)   20m
+```
+
+
+
+## 4. 检查集群状态
+
+检查各组件运行状态
+
+```bash
+$ kubectl get cs
+Warning: v1 ComponentStatus is deprecated in v1.19+
+NAME                 STATUS    MESSAGE                         ERROR
+controller-manager   Healthy   ok                              
+scheduler            Healthy   ok                              
+etcd-0               Healthy   {"health":"true","reason":""} 
+```
+
+
+
+查看集群信息
+
+```bash
+$ kubectl cluster-info
+Kubernetes control plane is running at https://192.168.2.122:6443
+CoreDNS is running at https://192.168.2.122:6443/api/v1/namespaces/kube-system/services/kube-dns:dns/proxy
+
+To further debug and diagnose cluster problems, use 'kubectl cluster-info dump'.
+```
+
+查看节点状态
+
+```bash
+$ kubectl get nodes
+NAME         STATUS   ROLES                  AGE   VERSION
+k8s-master   Ready    control-plane,master   44m   v1.23.5
+k8s-node1    Ready    <none>                 43m   v1.23.5
+```
+
+
+
+
+
+## 5. 运行第一个容器实例
+
+### 1. 启动
+
+`nginx-deployment.yaml`
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: nginx-deployment
+  labels:
+    app: nginx
+spec:
+  # 创建2个nginx容器
+  replicas: 2
+  selector:
+    matchLabels:
+      app: nginx
+  template:
+    metadata:
+      labels:
+        app: nginx
+    spec:
+      containers:
+      - name: nginx
+        image: nginx:1.18.0
+        ports:
+        - containerPort: 80
+```
+
+创建实例
+
+```shell
+$ kubectl apply -f nginx-deployment.yaml
+
+root@kubernetes-master:/usr/local/docker/nginx# kubectl apply -f nginx-deployment.yaml
+deployment.apps/nginx-deployment created
+```
+
+
+
+
+
+### 2. 查看全部 Pods 的状态
+
+```shell
+$ kubectl get pods
+
+# 输出如下，需要等待一小段时间，STATUS 为 Running 即为运行成功
+root@docker:/usr/local/k8s/conf# kubectl get pods
+NAME                                READY   STATUS              RESTARTS   AGE
+nginx-deployment-66b6c48dd5-j6mnj   0/1     ContainerCreating   0          8s
+nginx-deployment-66b6c48dd5-nq497   0/1     ContainerCreating   0          8s
+```
+
+
+
+### 3. 查看已部署的服务
+
+```shell
+$ kubectl get deployment
+
+#输出如下
+root@docker:/usr/local/k8s/conf# kubectl get deployment
+NAME               READY   UP-TO-DATE   AVAILABLE   AGE
+nginx-deployment   2/2     2            2           27s
+```
+
+
+
+### 4. 映射服务，让用户可以访问
+
+```shell
+$ kubectl expose deployment nginx-deployment --port=80 --type=LoadBalancer
+$ kubectl expose deployment hello-world --type=LoadBalancer --name=my-service
+# 输出如下
+root@docker:/usr/local/k8s/conf#  kubectl expose deployment nginx-deployment --port=80 --type=LoadBalancer
+service/nginx-deployment exposed
+```
+
+也可以通过 配置文件方式创建
+
+```yaml
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: nginx-svc
+  labels:
+    name: nginx-svc
+spec:
+  type: LoadBalancer      
+  ports:
+  - port: 80         
+    targetPort: 80  
+    protocol: TCP
+  selector:
+    app: nginx         
+```
+
+
+
+
+
+### 5. 查看已发布的服务
+
+```shell
+$ kubectl get services
+
+#输出如下
+oot@docker:/usr/local/k8s/conf# kubectl get services
+NAME               TYPE           CLUSTER-IP     EXTERNAL-IP   PORT(S)        AGE
+kubernetes         ClusterIP      10.96.0.1      <none>        443/TCP        14m
+# 由此可见，Nginx 服务已成功发布并将 80 端口映射为 31644
+nginx-deployment   LoadBalancer   10.96.93.238   <pending>     80:31644/TCP   27s
+
+```
+
+
+
+### 6. 查看服务详情
+
+```shell
+#nginx-deployment 为服务名称
+$ kubectl describe service nginx-deployment
+
+#输出如下
+root@docker:/usr/local/k8s/conf# kubectl describe service nginx-deployment
+Name:                     nginx-deployment
+Namespace:                default
+Labels:                   app=nginx
+Annotations:              <none>
+Selector:                 app=nginx
+Type:                     LoadBalancer
+IP:                       10.96.93.238
+Port:                     <unset>  80/TCP
+TargetPort:               80/TCP
+NodePort:                 <unset>  31644/TCP
+Endpoints:                192.168.129.65:80,192.168.22.66:80
+Session Affinity:         None
+External Traffic Policy:  Cluster
+Events:                   <none>
+```
+
+### 7. 验证
+
+通过浏览器访问 Master 服务器
+
+```shell
+# 端口号为第五步中的端口号
+http://192.168.2.110:31644/
+```
+
+此时 Kubernetes 会以负载均衡的方式访问部署的 Nginx 服务，能够正常看到 Nginx 的欢迎页即表示成功。容器实际部署在其它 Node 节点上，通过访问 Node 节点的 IP:Port 也是可以的。
+
+
+
+### 8. 删除 deployment
+
+```shell
+$ kubectl delete deployment nginx-deployment
+
+#输出如下
+root@kubernetes-master:/usr/local/docker/nginx# kubectl delete deployment nginx-deployment
+deployment.apps "nginx-deployment" deleted
+```
+
+### 9. 删除 services
+
+deployment 中移除了 但是 services 中还存在，所以也需要一并删除。
+
+```shell
+$ kubectl delete service nginx-svc
+
+#输出如下
+root@kubernetes-master:/usr/local/docker/nginx# kubectl delete service nginx-deployment
+service "nginx-deployment" deleted
+```
+
+
+
+
+
+## 5. 其他
+
+### crictl
+
+安装 containerd 后执行 crictl 命令一直报 endpoint 错误，可以在/etc/crictl.yaml文件中配置对应的 endpoint
+
+```bash
+$ cat /etc/crictl.yaml 
+runtime-endpoint: unix:///run/containerd/containerd.sock
+```
+
+后续执行就正常了。
