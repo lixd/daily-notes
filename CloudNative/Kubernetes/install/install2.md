@@ -475,10 +475,13 @@ docker.io/calico/cni:v3.22.1
 docker.io/calico/pod2daemon-flexvol:v3.22.1
 docker.io/calico/node:v3.22.1
 docker.io/calico/kube-controllers:v3.22.1
-$ crictl pull docker.io/calico/cni:v3.22.1
-$ crictl pull docker.io/calico/pod2daemon-flexvol:v3.22.1
-$ crictl pull docker.io/calico/node:v3.22.1
-$ crictl pull docker.io/calico/kube-controllers:v3.22.1
+
+# 每个节点都执行一下手动拉取
+for i in `cat calico.yaml |grep docker.io|awk {'print $2'}`;do crictl pull $i;done
+crictl pull docker.io/calico/cni:v3.22.1
+crictl pull docker.io/calico/pod2daemon-flexvol:v3.22.1
+crictl pull docker.io/calico/node:v3.22.1
+crictl pull docker.io/calico/kube-controllers:v3.22.1
 ```
 
 
@@ -758,13 +761,3 @@ service "nginx-deployment" deleted
 
 ## 5. 其他
 
-### crictl
-
-安装 containerd 后执行 crictl 命令一直报 endpoint 错误，可以在/etc/crictl.yaml文件中配置对应的 endpoint
-
-```bash
-$ cat /etc/crictl.yaml 
-runtime-endpoint: unix:///run/containerd/containerd.sock
-```
-
-后续执行就正常了。
