@@ -1,5 +1,38 @@
 # CMD 和 ENTRYPOINT的区别
 
+CMD 和 ENTRYPOINT 的区别：
+
+* CMD：参数可以被 docker run 时指定的参数覆盖掉，如果容器比较灵活，希望用户自定义参数则推荐使用 CMD
+* ENTRYPOINT：不会被覆盖，如果功能比较单一，只是运行唯一的一个程序，那么推荐使用 ENTRYPOINT
+
+一般使用 ENTRYPOINT 指定具体命令，然后使用 CMD 指定默认参数，用户也可以在 docker run 时自定义参数以覆盖默认参数。
+
+
+
+## 0. shell模式和exec模式
+
+CMD 和 ENTRYPOINT 都有 shell 和 exec 两种写法。
+
+* shell 写法：使用 bin/sh -c 来解释命令，因此容器中的 1 号进程是 sh
+  * 比如：CMD executable  param1 param2
+* exec 写法：直接执行命令，1 号进程就是我们的程序
+  * 比如：CMD ["/bin/ping","localhost"] 
+
+下表列出了如果把Shell表示法和Exec表示法混合, 最终得到的命令行, 可以看到如果有Shell表示法存在, 很难得到正确的效果:
+
+| Dockerfile                                              | Command                                          |
+| ------------------------------------------------------- | ------------------------------------------------ |
+| ENTRYPOINT /bin/ping -c 3<br/>CMD localhost             | /bin/sh -c '/bin/ping -c 3' /bin/sh -c localhost |
+| ENTRYPOINT ["/bin/ping","-c","3"]<br/>CMD localhost     | /bin/ping -c 3 /bin/sh -c localhost              |
+| ENTRYPOINT /bin/ping -c 3<br/>CMD ["localhost"]"        | /bin/sh -c '/bin/ping -c 3' localhost            |
+| ENTRYPOINT ["/bin/ping","-c","3"]<br/>CMD ["localhost"] | /bin/ping -c 3 localhost                         |
+
+从上面看出, 只有ENTRYPOINT和CMD都用Exec表示法, 才能得到预期的效果
+
+
+
+
+
 ## 1. 概述
 
 **CMD 和 ENTRYPOINT完整命令格式为：[ ENTRYPOINT CMD ]**，CMD 为ENTRYPOINT 的参数。 

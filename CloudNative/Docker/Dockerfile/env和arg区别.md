@@ -57,3 +57,8 @@ ENV(环境变量) 和 ARG(构建参数) 比较类似，但是实际上 ENV 会�
 
 > 可以理解为 ENV 是指定的镜像中的ENV，而 ARG 指定的是 Dockerfile 中的 ARG。
 
+作用及生效时机：
+
+- arg 是在 build 的时候存在的, 可以在 Dockerfile 中当做变量来使用
+- env 是容器构建好之后的环境变量, 不能在 Dockerfile 中当参数使用
+
