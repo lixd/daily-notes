@@ -12,7 +12,7 @@
 
 3台虚机 2c4g,20g。(nat模式，可访问外网)
 
-> 测试发现最低配置要求的 2G 内存不够用，部署 calico 之后直接炸了。
+> 测试发现最低配置要求的 2G 内存不够用，部署 calico 之后直接炸了，建议分配 4g。
 
 |    角色    |   主机名   |      ip       |
 | :--------: | :--------: | :-----------: |
@@ -22,11 +22,11 @@
 
 **2、软件环境**
 
-|    软件    |               版本               |
-| :--------: | :------------------------------: |
-|  操作系统  | centos7.9(其他centos7.x版本也行) |
-| containerd |             v1.5.11              |
-| kubernetes |             v1.23.5              |
+|    软件    |           版本            |
+| :--------: | :-----------------------: |
+|  操作系统  | centos7.9(其他版本未测试) |
+| containerd |          v1.5.11          |
+| kubernetes |          v1.23.5          |
 
 
 
@@ -76,7 +76,7 @@ sudo sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
 
 
 
-**[允许 iptables 检查桥接流量](https://kubernetes.io/zh/docs/setup/production-environment/tools/kubeadm/install-kubeadm/#%E5%85%81%E8%AE%B8-iptables-%E6%A3%80%E6%9F%A5%E6%A1%A5%E6%8E%A5%E6%B5%81%E9%87%8F)**
+**允许 iptables 检查桥接流量**
 
 确保 `br_netfilter` 模块被加载。
 
@@ -756,8 +756,4 @@ service "nginx-deployment" deleted
 ```
 
 
-
-
-
-## 5. 其他
 
