@@ -68,8 +68,9 @@ systemctl stop NetworkManager && systemctl disable  NetworkManager
 
 **禁用SELinux**
 
+将 SELinux 设置为 permissive 模式（相当于将其禁用）， 这是允许容器访问主机文件系统所必需的
+
 ```bash
-# 将 SELinux 设置为 permissive 模式（相当于将其禁用）， 这是允许容器访问主机文件系统所必需的
 sudo setenforce 0
 sudo sed -i 's/^SELINUX=enforcing$/SELINUX=permissive/' /etc/selinux/config
 ```
@@ -99,12 +100,25 @@ sudo sysctl --system
 > 这里需要根据自己环境的节点hostname和ip来调整
 
 ```bash
+# hostnamectl set-hostname xxx 修改 hostname
 cat >> /etc/hosts << EOF
 192.168.2.122 k8s-master
 192.168.2.123 k8s-node1
 192.168.2.124 k8s-node2
 EOF
 ```
+
+
+
+```bash
+cat >> /etc/hosts << EOF
+192.168.10.170 k8s-master
+192.168.10.96 k8s-node1
+192.168.10.51 k8s-node2
+EOF
+```
+
+
 
 
 
@@ -201,10 +215,9 @@ sudo systemctl enable --now kubelet
 
 ### 初始化主节点
 
-首先修改 kubeadm 配置文件
+首先导出 kubeadm 配置文件并修改
 
 ```bash
-# 导出配置文件
 kubeadm config print init-defaults --kubeconfig ClusterConfiguration > kubeadm.yml
 ```
 
@@ -219,6 +232,12 @@ kubeadm config print init-defaults --kubeconfig ClusterConfiguration > kubeadm.y
 * **networking.podSubnet**：新增子网信息，固定为 192.168.0.0/16，主要方便后续安装 calico
 
 具体如下：
+
+```bash
+vim kubeadm.yml
+```
+
+
 
 ```bash
 apiVersion: kubeadm.k8s.io/v1beta3
@@ -297,6 +316,31 @@ kubeadm config images pull --config kubeadm.yml
 [config/images] Pulled registry.aliyuncs.com/google_containers/etcd:3.5.1-0
 [config/images] Pulled registry.aliyuncs.com/google_containers/coredns:v1.8.6
 ```
+
+
+
+有时候发现一直拉不下来，也没有报错，就一直搁这阻塞着，可以通过以下命令测试
+
+```bash
+# syntax: ctr --debug images pull {image}
+ctr --debug images pull registry.aliyuncs.com/google_containers/kube-apiserver:v1.23.5
+
+# 或者 crictl --debug pull {image}
+crictl --debug pull registry.aliyuncs.com/google_containers/kube-controller-manager:v1.23.5
+```
+
+发现直接用 ctr images pull 可以拉下来，crictl 就不行。
+
+```bash
+for i in `kubeadm config images list --config kubeadm.yml`;do crictl pull $i;done
+
+
+for i in `kubeadm config images list --config kubeadm.yml`;do ctr --debug images pull $i;done
+
+for i in `kubeadm config images list --config kubeadm.yml`;do ctr  images pull $i;done
+```
+
+
 
 
 

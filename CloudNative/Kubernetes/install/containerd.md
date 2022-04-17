@@ -1,6 +1,6 @@
 # containerd
 
-## [containerd](https://kubernetes.io/zh/docs/setup/production-environment/container-runtimes/#containerd)
+## 安装 [containerd](https://kubernetes.io/zh/docs/setup/production-environment/container-runtimes/#containerd)
 
 
 
@@ -35,15 +35,19 @@ sudo sysctl --system
 ```shell
 sudo yum install -y yum-utils
 
-# 这里可以替换成阿里的源 
-# yum-config-manager --add-repo http://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
+
 sudo yum-config-manager \
     --add-repo \
     https://download.docker.com/linux/centos/docker-ce.repo
-
+# 这里可以替换成阿里的源 
+yum-config-manager --add-repo http://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
    
 yum install containerd -y
 ```
+
+
+
+## 修改配置
 
 配置 containerd：
 
@@ -62,6 +66,7 @@ containerd config default | sudo tee /etc/containerd/config.toml
 结合 `runc` 使用 `systemd` cgroup 驱动，在 `/etc/containerd/config.toml` 中设置
 
 ```toml
+vim /etc/containerd/config.toml
 # 把配置文件中的 SystemdCgroup 修改为 true
 [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc]
   ...
@@ -88,8 +93,6 @@ containerd config default | sudo tee /etc/containerd/config.toml
 > 镜像来源：[ registry-mirrors](https://github.com/muzi502/registry-mirrors)
 
 ```bash
-$ vim /etc/containerd/config.toml
-
 [plugins."io.containerd.grpc.v1.cri".registry]
   [plugins."io.containerd.grpc.v1.cri".registry.mirrors]
   # 添加下面两个配置
@@ -112,19 +115,24 @@ systemctl enable containerd --now
 
 ## 验证
 
-启动完成后就可以使用 containerd 的本地 CLI 工具 `ctr` 和 `crictl` 了，比如查看版本：
+启动完成后就可以使用 containerd 的本地 CLI 工具 `ctr` 和了，比如查看版本：
 
 ```
 ctr version
-crictl version
 ```
 
 
 
-## ctr 和 crictl
+
+
+
+
+## crictl 和 ctr
 
 * `ctr` 是 containerd 的一个客户端工具。
 * `crictl` 是 CRI 兼容的容器运行时命令行接口，可以使用它来检查和调试 k8s 节点上的容器运行时和应用程序。
+  * 安装 k8s 时会顺带被安装上
+
 
 `ctr -v` 输出的是 containerd 的版本，`crictl -v` 输出的是当前 k8s 的版本，从结果显而易见你可以认为 crictl 是用于 k8s 的。
 
