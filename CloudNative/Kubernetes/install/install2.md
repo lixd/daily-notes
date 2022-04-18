@@ -28,7 +28,13 @@
 | containerd |          v1.5.11          |
 | kubernetes |          v1.23.5          |
 
+**Linux Kernel 版本需要 4.x 以上**。
 
+**Linux Kernel 版本需要 4.x 以上**。
+
+**Linux Kernel 版本需要 4.x 以上**。
+
+具体哪个版本忘了，之前装 calico 的时候遇到了内核版本过低的问题，建议更新一下。
 
 ### 环境调整
 
@@ -112,9 +118,8 @@ EOF
 
 ```bash
 cat >> /etc/hosts << EOF
-192.168.10.170 k8s-master
-192.168.10.96 k8s-node1
-192.168.10.51 k8s-node2
+192.168.10.6 k8s-master
+192.168.10.208 k8s-node1
 EOF
 ```
 
@@ -526,6 +531,9 @@ crictl pull docker.io/calico/cni:v3.22.1
 crictl pull docker.io/calico/pod2daemon-flexvol:v3.22.1
 crictl pull docker.io/calico/node:v3.22.1
 crictl pull docker.io/calico/kube-controllers:v3.22.1
+
+
+for i in `cat calico.yaml |grep docker.io|awk {'print $2'}`;do ctr images pull $i;done
 ```
 
 
@@ -556,6 +564,24 @@ Get "https://10.96.0.1:443/apis/crd.projectcalico.org/v1/clusterinformations/def
 - name: IP_AUTODETECTION_METHOD  
   value: "interface=ens.*"
 ```
+
+
+
+4）calico 无法启动
+
+```bash
+client.go 272: Error getting cluster information config ClusterInformation="default" error=Get "https://10.96.0.1:443/apis/crd.projectcalico.org/v1/clusterinformations/default": context deadline exceeded
+```
+
+解决方案
+
+查看日志发现报错了，提示内核版本过低，需要4.x版本才行。
+
+> 更新内核版本后就行了。
+
+
+
+
 
 
 

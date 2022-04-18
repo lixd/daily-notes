@@ -67,6 +67,7 @@ containerd config default | sudo tee /etc/containerd/config.toml
 
 ```toml
 vim /etc/containerd/config.toml
+
 # 把配置文件中的 SystemdCgroup 修改为 true
 [plugins."io.containerd.grpc.v1.cri".containerd.runtimes.runc]
   ...
