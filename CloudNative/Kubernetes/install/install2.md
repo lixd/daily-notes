@@ -538,6 +538,8 @@ Get "https://10.96.0.1:443/apis/crd.projectcalico.org/v1/clusterinformations/def
 
 一般是 calico 无法识别网卡导致的，calico 默认识别的是 eth0，如果节点上的网卡是其他名字就识别不了，导致一直无法启动。
 
+
+
 需要修改一下 calico.yaml,指定自己的网卡名字，具体如下：
 
 首先打开 calico.yaml
@@ -558,6 +560,22 @@ Get "https://10.96.0.1:443/apis/crd.projectcalico.org/v1/clusterinformations/def
 ```
 
 
+
+3）探针检测未通过
+
+Calico-node 报错
+
+```bash
+Readiness probe failed: calico/node is not ready: BIRD is not ready: Error querying BIRD: unable to connect to BIRDv4 socket: dial unix /var/run/calico/bird.ctl: connect: connection refused
+```
+
+Calico controller 报错
+
+```bash
+Readiness probe failed: Failed to read status file /status/status.json: unexpected end of JSON input
+```
+
+都是探针检测没通过，暂时没有解决方案。
 
 
 

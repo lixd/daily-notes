@@ -75,8 +75,7 @@ Docker 要求 CentOS 系统的内核版本高于 `3.10`。
 8、启动并加入开机启动
 
 ```shell
-[root@localhost ~]#  systemctl start docker
-[root@localhost ~]#  systemctl enable docker
+[root@localhost ~]#  systemctl enable docker --now
 ```
 
 9、验证安装是否成功(有client和service两部分表示docker安装启动都成功了

@@ -10,8 +10,6 @@
 
 
 
-
-
 ## 1. 概述
 
 在 kubernetes 开发早期 , 随着越来越多的资源被加进系统, 越来越多的代码不得不被重写。 这个时候代码生成使得代码的维护更加容易 , 在早起是用 [Gengo library](https://github.com/kubernetes/gengo) 之后在 gengo 的基础上, kubernetes 发展出了[k8s.io/code-generator](https://github.com/kubernetes/code-generator) 它是一个代码生成器的集合。

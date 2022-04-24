@@ -1,5 +1,13 @@
 # minikube
 
+
+
+需要先 [安装 kubectl](https://kubernetes.io/docs/tasks/tools/#kubectl)
+
+> 实际就是下载二进制文件配置环境变量
+
+
+
 > [官方文档](https://minikube.sigs.k8s.io/docs/start/)
 >
 > [阿里云团队文档](https://github.com/AliyunContainerService/minikube/wiki)
@@ -39,9 +47,11 @@ minikube start --image-mirror-country=cn
 
 
 
-k8s 安装好后，再安装一下 kubuctl 就算是完成了。
+启动管理面板，会在浏览器打开管理页面。
 
-[Install and Set Up kubectl on Linux](https://kubernetes.io/docs/tasks/tools/install-kubectl-linux/)
+```bash
+minukube dashboard
+```
 
 
 
