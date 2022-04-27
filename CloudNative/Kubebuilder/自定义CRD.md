@@ -345,7 +345,7 @@ $ go get -u k8s.io/code-generator
 通过脚本生成相关代码
 
 ```bash
-/home/lixd/go/pkg/mod/k8s.io/code-generator@v0.23.5/generate-groups.sh all
+/home/lixd/go/pkg/mod/k8s.io/code-generator@v0.23.5/generate-groups.sh
 ```
 
 该脚本需要 4 个参数，参数含义以及参数具体顺序如下：
