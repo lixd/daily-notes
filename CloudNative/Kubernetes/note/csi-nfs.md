@@ -130,25 +130,33 @@ vi /etc/fstab		#编辑文件#
 
 
 
-```bash
-# 语法：mount -t <nfs-type> -o <options>  <host> : </remote/export>  </local/directory>
-mount -t nfs -o timeo=60 172.20.150.199:/tmp/nfs/data /tmp/nfs/mnt
-```
+### mountOptions
+
+[nfs man page](https://linux.die.net/man/5/nfs)
 
 [nfs 常用挂载选项](https://web.mit.edu/rhel-doc/5/RHEL-5-manual/Deployment_Guide-en-US/s1-nfs-client-config-options.html)
 
 [NFS挂载参数详解及使用建议](https://blog.csdn.net/qq_43355223/article/details/122682180)
 
+[解决NFS client配置rszie和wsize不生效](https://blog.51cto.com/lixin15/1768956)
+
+
+
 ```bash
-man nfs
+# 语法：mount -t <nfs-type> -o <options>  <host> : </remote/export>  </local/directory>
+mount -t nfs -o timeo=60 172.20.150.199:/tmp/nfs/data /tmp/nfs/mnt
 ```
 
 
 
+更多信息参考`man nfs`
+
+mount options 好像会冲突，比如默认是 hard 模式，这时候 timeo 就不会生效。
+
 
 
 ```bash
-mount -t nfs -o timeo=601 172.20.150.199:/tmp/nfs/data /tmp/nfs/mnt
+mount -t nfs -o soft,timeo=120 172.20.150.199:/tmp/nfs/data /tmp/nfs/mnt
 ```
 
 测试发现并不是所有 mount options 都会生效
@@ -157,12 +165,22 @@ mount -t nfs -o timeo=601 172.20.150.199:/tmp/nfs/data /tmp/nfs/mnt
 
 
 
+**可能是版本问题，挂载时指定 vers=4.0 之后其他的选项就能生效了..**
+
 ```bash
-# 生效的参数
-nfsvers
+mount -t nfs -o nfsvers=4.0,timeo=60,retrans=3 172.20.150.199:/tmp/nfs/data /tmp/nfs/mnt
+```
 
-# 不生效的
 
+
+```bash
+mount -t nfs4 -o sec=r 172.20.150.199:/tmp/nfs/data /tmp/nfs/mnt
+```
+
+
+
+```bash
+mount -t nfs4 -o "timeo=60,retrans=3" 172.20.150.199:/tmp/nfs/data /tmp/nfs/mnt
 ```
 
 
@@ -170,13 +188,17 @@ nfsvers
 
 
 ```bash
-umount  /tmp/nfs/mnt
+# mount
+mount -t nfs -o versretry=120 172.20.150.199:/tmp/nfs/data /tmp/nfs/mnt
+# 查看挂载参数生效没
 cat /proc/mounts | grep nfs
+# 另一种查看方式
+nfsstat -m 
+# 卸载继续重试
+umount  /tmp/nfs/mnt
 ```
 
 
-
-[nfs man page](https://linux.die.net/man/5/nfs)
 
 ## 2. CSI
 
@@ -335,3 +357,15 @@ spec:
       storage: 1Mi
 ```
 
+
+
+
+
+## 3. 原理
+
+[kubernetes/k8s CSI 分析 - 容器存储接口分析](https://xie.infoq.cn/article/5cd26c1b24c5665820411bb5a)
+
+至此 kubelet 为 Pod 挂载的原理和流程也一目了然，其实很简单的逻辑，大致可以氛围
+
+- **Attach 阶段**：kubelet 使用 systemd-run 单独起一个临时的 systemd scope 来运行后端存储的客户端比如（ nfs 、gluster、ceph），将这些存储挂载到 `/var/lib/kubelet/pods/<Pod的ID>/volumes/kubernetes.io~<Volume类型>/<Volume名字>`
+- **Mount 阶段**：容器启动的时候通过 bind mount 的方式将 `/var/lib/kubelet/pods/<Pod的ID>/volumes/kubernetes.io~<Volume类型>/<Volume名字>` 这个目录挂载到容器内。这一步相当于使用 `docker run -v /var/lib/kubelet/pods/<Pod的ID>/volumes/kubernetes.io~<Volume类型>/<Volume名字>:/<容器内的目标目录> 我的镜像` 启动一个容器。

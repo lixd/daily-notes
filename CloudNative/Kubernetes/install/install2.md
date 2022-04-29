@@ -118,8 +118,7 @@ EOF
 
 ```bash
 cat >> /etc/hosts << EOF
-192.168.10.6 k8s-master
-192.168.10.208 k8s-node1
+192.168.10.247 kc
 EOF
 ```
 
