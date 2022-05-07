@@ -1,5 +1,7 @@
 # docker
 
+
+
 ## 1. Docker
 
 可以通过脚本一键安装，脚本下载命令如下：
@@ -67,7 +69,7 @@ Docker 要求 CentOS 系统的内核版本高于 `3.10`。
 
 ```shell
 # (这样写默认安装最新版本)
-[root@localhost ~]#  yum install docker-ce 
+[root@localhost ~]#  yum install -y docker-ce 
 # (指定安装版本) 
 [root@localhost ~]#  yum install  docker-ce-<VERSION_STRING> 
 ```
