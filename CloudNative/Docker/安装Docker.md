@@ -289,9 +289,9 @@ vi /etc/docker/daemon.json
 在命令行执行 `docker info`，如果从结果中看到了如下内容，说明配置成功。
 
 ```bash
-$ docker info
+$ docker info|grep 'Registry Mirrors' -A 1
 Registry Mirrors:
- https://registry.docker-cn.com/
+   https://ekxinbbh.mirror.aliyuncs.com/
 ```
 
 ## 3. Docker Compose
