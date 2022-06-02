@@ -165,7 +165,7 @@ spec:
 
 [kubernetes/k8s CSI 分析 - 容器存储接口分析](https://xie.infoq.cn/article/5cd26c1b24c5665820411bb5a)
 
-至此 kubelet 为 Pod 挂载的原理和流程也一目了然，其实很简单的逻辑，大致可以氛围
+至此 kubelet 为 Pod 挂载的原理和流程也一目了然，其实很简单的逻辑，大致可以分为
 
 - **Attach 阶段**：kubelet 使用 systemd-run 单独起一个临时的 systemd scope 来运行后端存储的客户端比如（ nfs 、gluster、ceph），将这些存储挂载到 `/var/lib/kubelet/pods/<Pod的ID>/volumes/kubernetes.io~<Volume类型>/<Volume名字>`
 - **Mount 阶段**：容器启动的时候通过 bind mount 的方式将 `/var/lib/kubelet/pods/<Pod的ID>/volumes/kubernetes.io~<Volume类型>/<Volume名字>` 这个目录挂载到容器内。这一步相当于使用 `docker run -v /var/lib/kubelet/pods/<Pod的ID>/volumes/kubernetes.io~<Volume类型>/<Volume名字>:/<容器内的目标目录> 我的镜像` 启动一个容器。

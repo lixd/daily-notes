@@ -53,9 +53,7 @@ Docker 要求 CentOS 系统的内核版本高于 `3.10`。
 5、设置yum源
 
 ```bash
-[root@localhost ~]#  yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
-
-#这里可能会因为网络问题出错 可以替换成阿里的源
+#这里可能会因为网络问题出错 直接替换成阿里的源
 [root@localhost ~]# yum-config-manager --add-repo http://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
 ```
 
