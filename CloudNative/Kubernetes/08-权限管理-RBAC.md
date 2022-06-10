@@ -41,8 +41,6 @@ Namespace 是 Kubernetes 项目里的一个逻辑管理单位。不同 Namespace
 
 然后，这个 Role 对象的 `rules` 字段，就是它所定义的权限规则。在上面的例子里，这条规则的含义就是：允许“被作用者”，对 mynamespace 下面的 Pod 对象，进行 GET、WATCH 和 LIST 操作。
 
-
-
 ### 2. RoleBinding 
 
 通过 RoleBinding  将某个 Role 绑定到具体的 Subject 上，这样就实现了给 Subject 指定权限。
@@ -218,6 +216,34 @@ PolicyRule:
   *.*        []                 []              [*]
              [*]                []              [*]
 ```
+
+
+
+### 7. 对资源的引用
+
+**多数资源可以用其名称的字符串来表达，也就是Endpoint中的URL相对路径**，例如pods。然而，某些k8s API包含**子资源（subresource）**，如 Pod 的日志（logs）。pod 日志的Endpoint 是
+
+```bash
+GET/api/v1/namespaces/{namespace}/pods/{pod_name}/log
+```
+
+在这里，`pods` 对应名字空间作用域的 Pod 资源，而 `log` 是 `pods` 的子资源。 在 RBAC 角色表达子资源时，使用斜线（`/`）来分隔资源和子资源。 要允许某主体读取 `pods` 同时访问这些 Pod 的 `log` 子资源，你可以这么写：
+
+```yaml
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  namespace: default
+  name: pod-and-pod-logs-reader
+rules:
+- apiGroups: [""]
+  resources: ["pods", "pods/log"]
+  verbs: ["get", "list"]
+```
+
+ 资源还可以通过名称（ResourceName） 进行引用（这里指的是资源实例的名字）。在指定ResourceName后，使用get、delete、update、patch动作的请求，就会被限制这个资源实例的范围内。
+
+注意` resources: ["pods", "pods/log"]`
 
 
 
