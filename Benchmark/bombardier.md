@@ -22,3 +22,4 @@ bombardier -c 125 -n 10000000 http://localhost:8080
 # -n 总次数
 ```
 
+bombardier -c 10 -n 1000 https://blog.lixueduan.com/posts/template/

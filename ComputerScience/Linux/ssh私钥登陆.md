@@ -65,7 +65,7 @@ ssh-copy-id -i ~/.ssh/id_rsa root@$ip
 然后就可以使用私钥进行登陆了。
 
 ```bash
-ssh -i ～/.ssh/id_rsa_test 172.20.100.200
+ssh -i ~/.ssh/id_rsa_test 172.20.100.200
 ```
 
 
