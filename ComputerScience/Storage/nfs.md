@@ -44,6 +44,13 @@ NFS 默认使用`/etc/exports`作为配置文件，如果没有则手动创建�
 
 可同时授权多个主机及权限，使用空格分隔，详细参数查询命令`man exports`。
 
+需要手动创建对应目录
+
+```bash
+mkdir /doc
+mkdir -p /tmp/nfs/data
+```
+
 参数解释：
 
 - **共享目录**：需要用NFS共享出去的目录、
@@ -75,6 +82,17 @@ NFS 默认使用`/etc/exports`作为配置文件，如果没有则手动创建�
 
 #### 服务端
 
+nfs 使用 systemd 管理，相关命令如下
+
+```bash
+systemctl enable nfs-server.service --now
+systemctl start nfs-server.service
+systemctl stop nfs-server.service
+systemctl restart nfs-server.service
+```
+
+
+
 立即生效配置
 
 ```bash
@@ -85,17 +103,6 @@ exportfs -r
 
 ```bash
 exportfs -v
-```
-
-
-
-nfs 使用 systemd 管理，相关命令如下
-
-```bash
-systemctl enable nfs-server.service
-systemctl start nfs-server.service
-systemctl stop nfs-server.service
-systemctl restart nfs-server.service
 ```
 
 
