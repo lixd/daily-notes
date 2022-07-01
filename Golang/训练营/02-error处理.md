@@ -438,7 +438,7 @@ Process finished with the exit code 1
 
 * 在你的应用代码中，使用 errors.New 或者 errors.Errorf 返回错误。
   * errors.New 或者  errors.Errorf  都会保存堆栈信息
-* 如果调用其他保内的函数，通常简单的直接返回
+* 如果调用其他包内的函数，通常简单的直接返回
 * 如果和其他库进行协作，考虑使用 errors.Wrap 或者 errors.Wrapf 保存堆栈信息。同样适用于和标准库协作的时候。
 * 直接返回错误，而不是每个错误产生的地方到处打日志
 * 在程序的顶部或者是工作的 goroutine 顶部（请求入口），使用 `%+v` 把堆栈详情记录。
