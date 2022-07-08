@@ -1,5 +1,21 @@
 # docker
 
+centos 一键安装脚本
+
+```bash
+yum remove -y docker  docker-common docker-selinux docker-engine
+yum install -y yum-utils device-mapper-persistent-data lvm2
+yum-config-manager --add-repo http://mirrors.aliyun.com/docker-ce/linux/centos/docker-ce.repo
+yum install -y docker-ce
+mkdir -p /etc/docker
+echo '{
+  "registry-mirrors": [
+    "https://ekxinbbh.mirror.aliyuncs.com"
+  ]
+}' > /etc/docker/daemon.json
+systemctl enable docker --now
+```
+
 
 
 ## 1. Docker
@@ -11,7 +27,7 @@
 curl -fsSL get.docker.com -o get-docker.sh
 
 # 下载后执行该脚本即可
-sh get-docker.sh
+sudo sh get-docker.sh
 ```
 
 脚本需要 sudo 权限。
@@ -41,7 +57,7 @@ Docker 要求 CentOS 系统的内核版本高于 `3.10`。
 3、卸载旧版本(如果安装过旧版本的话)
 
 ```bash
-[root@localhost ~]# yum remove docker  docker-common docker-selinux docker-engine
+[root@localhost ~]# yum remove -y docker  docker-common docker-selinux docker-engine
 ```
 
 4、安装需要的软件包， yum-util 提供yum-config-manager功能，另外两个是devicemapper驱动依赖的
@@ -271,6 +287,16 @@ vi /etc/docker/daemon.json
 ```
 
 > 注意，一定要保证该文件符合 json 规范，否则 Docker 将不能启动。
+
+
+
+```bash
+mkdir -p /etc/docker &&  echo '{
+  "registry-mirrors": [
+    "https://ekxinbbh.mirror.aliyuncs.com"
+  ]
+}' > /etc/docker/daemon.json
+```
 
 
 
