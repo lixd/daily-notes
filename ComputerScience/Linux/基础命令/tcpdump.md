@@ -6,14 +6,14 @@
 
 
 
-
+常见用法
 
 ```shell
 $ tcpdump tcp -i eth0 -s 0 host lixueduan.com port 80
 ```
 
-* tcp 指定只匹配 tcp 协议
 * -i 指定网卡
+* tcp 指定只匹配 tcp 协议
 * host 指定主机名
 * port 指定端口
 
