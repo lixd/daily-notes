@@ -241,9 +241,27 @@ rules:
   verbs: ["get", "list"]
 ```
 
- 资源还可以通过名称（ResourceName） 进行引用（这里指的是资源实例的名字）。在指定ResourceName后，使用get、delete、update、patch动作的请求，就会被限制这个资源实例的范围内。
+> 注意` resources: ["pods", "pods/log"]`
 
-注意` resources: ["pods", "pods/log"]`
+资源还可以通过名称（ResourceName） 进行引用（这里指的是资源实例的名字）。在指定ResourceName后，使用get、delete、update、patch动作的请求，就会被限制这个资源实例的范围内。
+
+下面的例子中限制可以 `get` 和 `update` 一个名为 `my-configmap` 的 [ConfigMap](https://kubernetes.io/zh-cn/docs/tasks/configure-pod-container/configure-pod-configmap/)：
+
+```yaml
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: default
+  name: configmap-updater
+rules:
+- apiGroups: [""]
+  # 在 HTTP 层面，用来访问 ConfigMap 资源的名称为 "configmaps"
+  resources: ["configmaps"]
+  resourceNames: ["my-configmap"]
+  verbs: ["update", "get"]
+```
+
+
 
 
 
