@@ -40,19 +40,23 @@ The key's randomart image is:
 [root@caas ~]# cat ~/.ssh/id_rsa_test.pub
 ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDFjXNTTg+11ywRtFh4xp7I7gke323uEUN2+aH51xVy/N19srlFYe5i/FzAzbPRV3Uw4acxXL5R3oPxKDqIX3tnDU0CXArkVgyYfRyBwfOiyTfMNJDxYooWvX6IfExbBLGF8Wj0Co9GF3jgmECUkFSNejVdHXuGdSb6KiSowwwL15DEUNQyWYT99mXS1YHhmCDvQMhviJ4pnNDfC9hy1+M4sADKS1OxKLClOTsmWiiOCSleIheATxJKSKdQ6sje8vxLdbWcGAvxge/WCdBqI58dAaeR7IE6JTVp8CiGOTqdIoLxwfDwcBNYsqykpH7Gv7S1GwbbXA+Rj1iU99sSqoQz root@caas
 
-# 将公钥信息添加到远程主机的 ~/.ssh/authorized_keys文件（没有则创建）
-vi ~/.ssh/authorized_keys
 ```
 
 
 
-如果当前主机也是 linux 的话就比较简单了
+将公钥信息添加到远程主机的 ~/.ssh/authorized_keys文件（没有则创建）
+
+```bash
+vi ~/.ssh/authorized_keys
+```
+
+如果当前主机也是 linux 的话就比较简单了,可以使用以下命令直接添加
 
 ```bash
 ssh-copy-id -i ~/.ssh/id_rsa root@$ip
 ```
 
-直接进行配置，都不需要手动复制了。
+
 
 ## 3. 使用私钥进行登陆
 
