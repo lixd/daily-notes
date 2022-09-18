@@ -171,14 +171,14 @@ $ sudo apt-get remove docker docker-engine docker.io containerd runc
 
 1) 更新 apt 包索引。
 
-```shell
-$ sudo apt-get update
+```bash
+sudo apt-get update
 ```
 
 2) 安装依赖包，用于通过HTTPS来获取仓库:
 
-```sh
-$ sudo apt-get install \
+```bash
+sudo apt-get install -y\
     apt-transport-https \
     ca-certificates \
     curl \
@@ -188,15 +188,15 @@ $ sudo apt-get install \
 
 3) 添加 Docker 的官方 GPG 密钥：
 
-```sh
-$ curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+```bash
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
 ```
 
 9DC8 5822 9FC7 DD38 854A E2D8 8D81 803C 0EBF CD88 通过搜索指纹的后8个字符，验证您现在是否拥有带有指纹的密钥。
 
-```sh
-$ sudo apt-key fingerprint 0EBFCD88
-   
+```bash
+sudo apt-key fingerprint 0EBFCD88
+sudo apt-key fingerprin F273FCD8
 pub   rsa4096 2017-02-22 [SCEA]
       9DC8 5822 9FC7 DD38 854A  E2D8 8D81 803C 0EBF CD88
 uid           [ unknown] Docker Release (CE deb) <docker@docker.com>
@@ -207,18 +207,17 @@ sub   rsa4096 2017-02-22 [S]
 
 4) 设置软件源信息
 
-```sh
-$ sudo add-apt-repository \
+```bash
+sudo add-apt-repository \
    "deb [arch=amd64] https://download.docker.com/linux/ubuntu \
   $(lsb_release -cs) \
   stable"
-  
 ```
 
 如果安装慢的话可以换国内的源,下面是中国科技大学的：
 
-```sh
-$ sudo add-apt-repository "deb [arch=amd64] https://mirrors.ustc.edu.cn/docker-ce/linux/ubuntu \
+```bash
+sudo add-apt-repository "deb [arch=amd64] https://mirrors.ustc.edu.cn/docker-ce/linux/ubuntu \
 $(lsb_release -cs) stable"
 ```
 
@@ -226,15 +225,15 @@ $(lsb_release -cs) stable"
 
 5) 更新并安装 Docker CE
 
-```sh
-$ sudo apt-get -y update
+```bash
+sudo apt-get -y update
 # 默认会安装最新版本
-$ sudo apt-get -y install docker-ce
+sudo apt-get -y install docker-ce
 ```
 
 6) 测试 Docker 是否安装成功，输入以下指令，打印出版本信息则安装成功:
 
-```sh
+```bash
 docker version
 ```
 
