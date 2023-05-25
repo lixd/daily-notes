@@ -419,3 +419,82 @@ iptables -t nat -A PREROUTING -i ens33 -d 192.168.200.10 -p tcp --dport 2345 -j 
 
 经过一个SNAT和DNAT就完成了一次数据交换。
 
+
+
+
+
+## 6. FAQ
+
+### 避免重复添加规则
+
+iptables 添加规则时没有做重复校验，因此会出现同一条规则添加多次的情况，为了避免重复添加，我们需要在添加之前使用 ` iptables -C `进行校验。
+
+> 如果时旧版本 iptables 没有 -C 参数的话可以使用` iptables-save | grep -- "-A INPUT -p tcp -m tcp --dport 8080 -j ACCEPT"`
+
+```bash
+$ iptables -C INPUT -p tcp --dport 8080 --jump ACCEPT
+# 如果不存在的话会报错，提示信息如下，并且 exitcode 为 1
+iptables: Bad rule (does a matching rule exist in that chain?).
+$ echo $?
+1
+$ iptables -A INPUT -p tcp --dport 8080 --jump ACCEPT
+$ iptables -C INPUT -p tcp --dport 8080 --jump ACCEPT
+# 如果脚本存在的话 exitcode 为 0
+$ echo $?
+0
+```
+
+因此可以根据 exitcode 来做判断，脚本如下：
+
+```bash
+# 最后 iptables 丢弃 53 端口的请求，保证外部无法访问本机 coredns
+# 添加规则之前先判断是否存在，避免重复添加
+if  iptables -C INPUT -p tcp --dport 53 -j DROP
+then # 进入 then 表示退出码为 0，说明规则已经存在了，不在重复添加
+    echo "tcp规则已经存在"
+else # else 则表示退出码不为 0，规则不存在,则添加
+     echo "tcp规则不存在，添加"
+    iptables -I INPUT -p tcp --dport 53 -j DROP
+fi
+
+if  iptables -C INPUT -p udp --dport 53 -j DROP
+then # 进入 then 表示退出码为 0，说明规则已经存在了，不在重复添加
+    echo "udp规则已经存在"
+else # else 则表示退出码不为 0，规则不存在,则添加
+    echo "udp规则不存在，添加"
+    iptables -I INPUT -p udp --dport 53 -j DROP
+fi
+```
+
+同样的，删除规则之后也可以判断一下是否删除干净
+
+```bash
+# 删除 iptables 规则，允许外部访问本机 coredns
+# 因为 iptables 规则可以重复添加多次，因此 使用 while 循环，保证删除干净
+rule_tcp=1
+while [ "${rule_tcp}" == 1 ]
+do
+  if  iptables -C INPUT -p tcp --dport 53 -j DROP
+  then # 进入 then 表示退出码为 0，说明规则已经存在了，需要移除
+      echo "tcp规则存在"
+      iptables -D INPUT -p tcp --dport 53 -j DROP
+  else # else 则表示退出码不为 0，规则不存在,不需要移除
+      echo "tcp规则已移除"
+      rule_tcp=0
+  fi
+done
+
+rule_udp=1
+while [ "${rule_udp}" == 1 ]
+do
+  if  iptables -C INPUT -p udp --dport 53 -j DROP
+  then # 进入 then 表示退出码为 0，说明规则已经存在了，需要移除
+      echo "tcp规则存在"
+      iptables -D INPUT -p udp --dport 53 -j DROP
+  else # else 则表示退出码不为 0，规则不存在,不需要移除
+      echo "udp规则已移除"
+      rule_udp=0
+  fi
+done
+```
+

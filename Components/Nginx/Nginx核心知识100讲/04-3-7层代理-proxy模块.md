@@ -2,7 +2,7 @@
 
 ### http 反向代理流程
 
-![](D:/Home/17x/Projects/daily-notes/Components/Nginx/Nginx核心知识100讲/assets/http反向代理流程.png)
+![](assets/http反向代理流程.png)
 
 
 
@@ -17,7 +17,7 @@
 **2）请求上游服务**
 
 * 先生成http头部及包体后才会去连接上游服务
-  * 因为上游服务可能并发能力若，要尽量减少对上游服务的影响，等Nginx生成好http头及包体后，再连接上游服务，连接建立后就可以直接发送数据了，而不是先建立连接然后才开始生成http头及包体数据。
+  * 因为上游服务可能并发能力弱，要尽量减少对上游服务的影响，等Nginx生成好http头及包体后，再连接上游服务，连接建立后就可以直接发送数据了，而不是先建立连接然后才开始生成http头及包体数据。
 * proxy_request_buffering：是否先读取完整请求包体
   * on：是，先把客户端的请求读完只会再去连接上游服务，这样可以避免因为客户端很慢从而导致和上游服务的连接一直不能释放的问题
   * off：关闭，边连接上游服务边接收客户端请求，这样上游服务能更加及时的收到数据。如果上游服务压力不大则可以关闭。
@@ -832,7 +832,7 @@ proxy_intercept_errors 为 on 时，则会进入 error_page 逻辑，由于配�
 
 ### SSL 连接
 
-![](D:/Home/17x/Projects/daily-notes/Components/Nginx/Nginx核心知识100讲/assets/nginx双向认证.png)
+![](assets/nginx双向认证.png)
 
 上图说明了 Nginx 的4种证书相关操作。
 

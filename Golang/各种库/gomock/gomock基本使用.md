@@ -1,5 +1,18 @@
 # gomock包基本使用
 
+## 0.常用方式
+
+一般会将 mockgen 命令用 go:generate 方式调用
+
+```go
+//go:generate mockgen --build_flags=--mod=mod -package mock -destination  mock.go sigs.kubeclipper.io/openshift_origin/cpcs-scheduler/internal/pkg/adaptor/metrics Metrics
+```
+
+- **-package=mock**：将生成的mock代码放置到**mock**包中。
+- **-destination=mock.go**：将自动生成的mock代码存储到文件**mock_doer.go**中。
+- **sigs.kubeclipper.io/openshift_origin/cpcs-scheduler/internal/pkg/adaptor/metrics**：为这个包生成mock代码。
+- **Metrics**：为这个接口生成mock代码。这个参数是个必填参数，我们需要显式地指定要生成mock代码的接口。如果需要指定多个接口，可以将接口通过逗号连接起来，比如：**Metrics1,Metrics2**。
+
 
 
 ## 1. 概述 

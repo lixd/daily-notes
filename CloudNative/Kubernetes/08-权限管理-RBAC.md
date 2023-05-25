@@ -419,6 +419,8 @@ ca.crt	namespace  token
 **如果一个 Pod 没有声明 serviceAccountName，Kubernetes 会自动在它的 Namespace 下创建一个名叫 default 的默认 ServiceAccount，然后分配给这个 Pod**。这个默认 ServiceAccount 并没有关联任何 Role。也就是说，此时它有访问 APIServer 的绝大多数权限。
 
 > 所以，在生产环境中，我强烈建议你为所有 Namespace 下的默认 ServiceAccount，绑定一个只读权限的 Role。
+>
+> 注：k8s 的新版本中默认 serviceAccount 是没有任何权限的，所以不用担心权限问题。
 
 
 

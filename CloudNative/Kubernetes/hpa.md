@@ -1,5 +1,7 @@
 # Horizontal Pod Autoscaler
 
+**HPA 需要集群中先安装 metrics-server。**
+
 ## 1. 概述
 
 HPA：Pod 水平自动伸缩
@@ -33,7 +35,7 @@ spec:
     spec:
       containers:
       - name: php-apache
-        image: k8s.gcr.io/hpa-example
+        image: deis/hpa-example
         ports:
         - containerPort: 80
         resources:
@@ -96,6 +98,123 @@ Pod 水平自动扩缩器的实现是一个控制回路，由控制器管理器�
 从 v1.12 开始，算法调整后，扩容操作时的延迟就不必设置了。
 
 - `--horizontal-pod-autoscaler-downscale-stabilization`: `kube-controller-manager` 的这个参数表示缩容冷却时间。 即自从上次缩容执行结束后，多久可以再次执行缩容，默认时间是 5 分钟(`5m0s`)。
+
+
+
+## 3. Demo
+
+### deploy
+
+创建一个 deploy 和 svc
+
+```yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: php-apache
+spec:
+  selector:
+    matchLabels:
+      run: php-apache
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        run: php-apache
+    spec:
+      containers:
+      - name: php-apache
+        image: deis/hpa-example
+        ports:
+        - containerPort: 80
+        resources:
+          limits:
+            cpu: 500m
+          requests:
+            cpu: 200m
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: php-apache
+  labels:
+    run: php-apache
+spec:
+  ports:
+  - port: 80
+  selector:
+    run: php-apache
+```
+
+
+
+### hpa
+
+创建 hpa
+
+```yaml
+# hpa.yaml
+apiVersion: autoscaling/v2		# v2版本
+kind: HorizontalPodAutoscaler
+metadata:
+  name: php-apache
+spec:
+  maxReplicas: 10
+  minReplicas: 1							# 1-10个pod范围内扩容与裁剪
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: php-apache
+  metrics:
+  - resource:
+      name: cpu
+      target:
+        averageUtilization: 50 # 50% cpu 利用率
+        type: Utilization
+    type: Resource
+```
+
+通过 scaleTargetRef 字段关联到前面创建的 deploy。
+
+
+
+### 测试
+
+在新终端里执行以下命令访问接口，给到 deploy 一定压力
+
+```shell
+kubectl run -i --tty load-generator --rm --image=busybox:1.28 --restart=Never -- /bin/sh -c "while sleep 0.01; do wget -q -O- http://php-apache; done"
+```
+
+然后 watch php-apache，查看状态变化
+
+```shell
+# 准备好后按 Ctrl+C 结束观察
+kubectl get hpa php-apache --watch
+```
+
+一分钟时间左右之后，通过以下命令，我们可以看到 CPU 负载升高了,然后，更多的副本被创建：
+
+```bash
+[root@lixd-tmp-2 ~]# kubectl get hpa php-apache --watch
+NAME         REFERENCE               TARGETS   MINPODS   MAXPODS   REPLICAS   AGE
+php-apache   Deployment/php-apache   0%/50%    1         10        1          2m25s
+php-apache   Deployment/php-apache   51%/50%   1         10        1          3m1s
+php-apache   Deployment/php-apache   250%/50%   1         10        1          3m16s
+php-apache   Deployment/php-apache   248%/50%   1         10        4          3m31s
+php-apache   Deployment/php-apache   131%/50%   1         10        5          3m46s
+php-apache   Deployment/php-apache   106%/50%   1         10        7          4m16s
+```
+
+停止掉负载后，压力下来，然后副本数又会缩回去
+
+```bash
+php-apache   Deployment/php-apache   105%/50%   1         10        7          14m
+php-apache   Deployment/php-apache   68%/50%    1         10        7          14m
+php-apache   Deployment/php-apache   0%/50%     1         10        7          14m
+php-apache   Deployment/php-apache   0%/50%     1         10        7          19m
+php-apache   Deployment/php-apache   0%/50%     1         10        1          19m
+```
 
 
 

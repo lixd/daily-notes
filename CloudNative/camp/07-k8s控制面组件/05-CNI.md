@@ -1,6 +1,6 @@
 # CNI
 
-[k8s 网络流转](https://dramasamy.medium.com/life-of-a-packet-in-kubernetes-part-2-a07f5bf0ff14)
+[k8s 网络包流转分析](https://dramasamy.medium.com/life-of-a-packet-in-kubernetes-part-1-f9bc0909e051)
 
 
 

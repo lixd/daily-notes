@@ -15,7 +15,7 @@ CentOS
 依赖
 
 ```sh
-yum install flex byacc  libpcap ncurses ncurses-devel libpcap-devel
+yum install -y gcc-c++ flex byacc  libpcap ncurses ncurses-devel libpcap-devel
 ```
 
 下载源码编译安装
