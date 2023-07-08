@@ -203,24 +203,28 @@ limitations under the License.
 创建项目文件夹 i-controller，以及 crd 相关的三层目录：
 
 ```shell
-mkdir -p pkg/apis/crd
+mkdir -p pkg/apis/crd/example
 ```
 
-code-generator 对目录结构有要求，必须是`pkg/apis/{group}/v1`这样的目录结构才行，
+**code-generator 对目录结构有要求，必须是`pkg/apis/{group}/v1`这样的目录结构才行，**
 
-在新建的 lixd 目录下创建文件 register.go，内容如下：
+**code-generator 对目录结构有要求，必须是`pkg/apis/{group}/v1`这样的目录结构才行，**
+
+**code-generator 对目录结构有要求，必须是`pkg/apis/{group}/v1`这样的目录结构才行，**
+
+在 crd 目录下创建文件 register.go，内容如下：
 
 ```go
 package crd
 
 const (
-        GroupName = "bolingcavalry.k8s.io"
+        GroupName = "example.k8s.io"
         Version   = "v1"
 )
 
 ```
 
-在 bolingcavalry 目录下创建名为**v1**的文件夹；
+在 example 目录下创建名为**v1**的文件夹；
 
 在 v1 文件夹下创建文件 doc.go，内容如下：
 
@@ -374,7 +378,7 @@ $ go get -u k8s.io/code-generator
 通过脚本生成相关代码
 
 ```bash
-/home/lixd/go/pkg/mod/k8s.io/code-generator@v0.23.5/generate-groups.sh all
+$GOPATH/pkg/mod/k8s.io/code-generator@v0.27.3/generate-groups.sh all
 ```
 
 该脚本需要 4 个参数，参数含义以及参数具体顺序如下：
@@ -394,7 +398,22 @@ $ go get -u k8s.io/code-generator
 这里是直接把脚本复制到项目根目录下的 hack 目录来了：
 
 ```bash
-./hack/generate-groups.sh all i-controller/pkg/client i-controller/pkg/apis lixd:v1 
+cp $GOPATH/pkg/mod/k8s.io/code-generator@v0.24.3/generate-groups.sh ./hack
+chmod +x hack/generate-groups.sh
+```
+
+具体生成命令如下：
+
+```bash
+./hack/generate-groups.sh all github.com/lixd96/generator/pkg/client github.com/lixd96/generator/pkg/apis core:v1  --go-header-file ./hack/boilerplate.go.txt
+
+./hack/generate-groups.sh all github.com/lixd96/generator/pkg/client github.com/lixd96/generator/pkg/apis scaling:v1  --go-header-file ./hack/boilerplate.go.txt
+
+
+
+./hack/generate-groups.sh all github.com/lixd96/generator/pkg/client github.com/lixd96/generator/pkg1/apis scaling:v1  --go-header-file ./hack/boilerplate.go.txt
+
+mv $GOPATH/src/github.com/lixd96/generator/ .
 ```
 
 参数解释：
@@ -484,6 +503,8 @@ apis 里面多了一个 zz_generated.deepcopy.go，就是 DeepCopy 代码文件�
 然后多了一个 client 目录，里面包含了 clientset、informers、listers 相关的代码。
 
 后续就可以开始写 controller 相关逻辑了。
+
+> Kubebuilder 中不推荐生成 clientset，统一使用的是 runtime.client 
 
 
 

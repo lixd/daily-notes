@@ -1,157 +1,289 @@
-# gomock包基本使用
+# gomock 包基本使用
 
-## 0.常用方式
+## 1. 什么是 gomock
 
-一般会将 mockgen 命令用 go:generate 方式调用
+[gomock](https://github.com/golang/mock) 是官方提供的 mock 框架，同时还提供了 mockgen 工具用来辅助生成测试代码。
+
+官方描述如下：
+
+> GoMock is a mocking framework for the Go programming language. It integrates well with Go’s built-in testing package, but can be used in other contexts too.
+
+
+
+## 2. 为什么需要 gomock
+
+gomock 主要为了解决测试时遇到的依赖问题。当待测试的函数/对象的依赖关系很复杂，并且有些依赖不能直接创建，例如**数据库连接**、**文件I/O**等。这种场景就非常适合使用 mock/stub 测试。
+
+简单来说，就是**用 mock 对象模拟依赖项的行为，以屏蔽待测试方法对外部的依赖**。
+
+
+
+假设我们需要对下面这个 QueryUser 方法做测试：
 
 ```go
-//go:generate mockgen --build_flags=--mod=mod -package mock -destination  mock.go sigs.kubeclipper.io/openshift_origin/cpcs-scheduler/internal/pkg/adaptor/metrics Metrics
+type IUser interface {
+	Get(id string) (User, error)
+}
+type User struct {
+	Username string
+	Password string
+}
+
+var ErrEmptyID = errors.New("id is empty")
+
+func QueryUser(db IUser, id string) (User, error) {
+	if id == "" {
+		return User{}, ErrEmptyID
+	}
+	return db.Get(id)
+}
 ```
 
-- **-package=mock**：将生成的mock代码放置到**mock**包中。
-- **-destination=mock.go**：将自动生成的mock代码存储到文件**mock_doer.go**中。
-- **sigs.kubeclipper.io/openshift_origin/cpcs-scheduler/internal/pkg/adaptor/metrics**：为这个包生成mock代码。
-- **Metrics**：为这个接口生成mock代码。这个参数是个必填参数，我们需要显式地指定要生成mock代码的接口。如果需要指定多个接口，可以将接口通过逗号连接起来，比如：**Metrics1,Metrics2**。
+在不使用 gomock 的时候，我们需要真的启动一个数据库，并往数据库里写入一些测试数据才能开始测试。
+
+这种测试方式缺点比较明显：
+
+* 1）**需要准备一个复杂的外部环境**：正常情况下需要启动一个数据库，然后写入测试数据，才能测试，因此整个流程比较复杂
+  * 如果不管依赖 db 一个组件，还依赖其他 mq、cache 之类的组件，那么整个流程就更加复杂了
+* 2）**测试结果会被外部环境干扰**：而且数据库查询失败也会导致 QueryUser 返回错误，因此不好区分到底是 QueryUser 的逻辑有问题，还是数据库的查询有问题。
+  * 失败可能是数据库连不上，或者说数据库报错了，也有可能是 QueryUser 逻辑有问题，返回的错误
+  * 查询不到用户可能是我们方法写的有问题（比如 id 传错了），也可能是数据库里真的没有这个用户
+
+**因此测试的时候我们希望尽量不依赖外部环境，同时也不要被依赖的方法干扰到测试结果。**
+
+而 gomock 正是为了解决这些问题而生。
 
 
 
-## 1. 概述 
+## 3. 基本使用
 
-Gomock 是 Go 语言的一个 mock 框架，官方的那种。
+以前面的 QueryUser 方法为例。
 
-在实际项目中，需要进行单元测试的时候。却往往发现有一大堆依赖项。这时候就是 [Gomock](https://github.com/golang/mock) 大显身手的时候了
+具体使用大致分为两个步骤：
 
+* 1）**生成 mock 代码**：通过 mockgen 工具根据接口（go 里的 interface）生成 mock 代码
+* 2）**注入具体逻辑**：然后由于 mock 工具是不知道我们的具体逻辑的，因此需要在使用的时候通过指定具体的**请求参数**以及**该参数对应的响应**来注入具体的逻辑。
 
+### 安装
 
-## 2. 安装
+首先使用以下命令安装 gomock 库以及 mockgen 工具
 
 ```sh
-$ go get -u github.com/golang/mock/gomock
-$ go install github.com/golang/mock/mockgen
+go get -u github.com/golang/mock/gomock
+go install github.com/golang/mock/mockgen
 ```
 
-第一步：我们将安装 gomock 第三方库和 mock 代码的生成工具 mockgen。而后者可以大大的节省我们的工作量。只需要了解其使用方式就可以
+检查是否安装成功
 
-第二步：输入 `mockgen` 验证代码生成工具是否安装正确。若无法正常响应，请检查 `bin` 目录下是否包含该二进制文件
-
-## 3. 用法
-
-在 `mockgen` 命令中，支持两种生成模式：
-
-1. source：从源文件生成 mock 接口（通过 -source 启用）
-
-```
-mockgen -source=foo.go [other options]
+```bash
+$ mockgen -version
+1.6.0
 ```
 
-1. reflect：通过使用反射程序来生成 mock 接口。它通过传递两个非标志参数来启用：导入路径和逗号分隔的接口列表
 
+
+### 生成 mock 代码
+
+首先使用 mockgen 工具生成 mock 代码
+
+命令如下：
+
+```bash
+# 语法： mockgen [-flag] path interface
+mockgen -source=user.go -destination=mock_user.go -package mock i-go/test/mock IUser
 ```
-mockgen database/sql/driver Conn,Driver
-```
 
-从本质上来讲，两种方式生成的 mock 代码并没有什么区别。因此选择合适的就可以了
+* -source：源文件名字
+* -destination：生成的 mock 文件名，可以指定路径，默认在当前目录
+  *  `-destination=mockdest/mock_user.go` ：会在当前目录下在创建一个 mockdest 目录
+  *  `-destination=../mockdest/mock_user.go` ：会在当前目录同级在创建一个 mockdest 目录
+* -package：生成的 mock 文件中的 go package
+* i-go/test/mock：mock 命令的工作目录，源文件指定的时 user.go ，那么完整就是 i-go/test/mock/user.go 
+* IUser：要生成 mock 代码的接口名，可以指定多个以逗号分隔
+  * 比如：`Iuser,IOrder` 
 
-## 4. 具体使用
-
-### 1.步骤
-
-* 想清楚整体逻辑
-
-* 定义想要（模拟）依赖项的 interface（接口）
-
-* 使用 `mockgen` 命令对所需 mock 的 interface 生成 mock 文件
-
-* 编写单元测试的逻辑，在测试中使用 mock
-
-* 进行单元测试的验证
-
-
-
-### 2. 具体代码
-
-必须要以接口形式的方法才能生存mock文件。
-
-比如这里想测一下login。
+**当然了在 go 里推荐使用 `go:generate` 方式**，以注释形式直接把 mock 命令写到对应接口这里，go 会把 `//go:generate` 后根据内容作为命令执行
 
 ```go
-package person
-
-type IUserControl interface {
-	Login(username, password string) error
+//go:generate mockgen -package mock -destination mock_user.go i-go/test/mock IUser
+type IUser interface {
+	Get(id string) (User, error)
 }
-
 ```
 
+需要执行的直接在项目根目录执行
 
+```bash 
+go generate ./...
+```
+
+即可触发所有的 generate，这样就不需要手动为每个接口执行生成了。
+
+生成的代码如下：
 
 ```go
-package person
+// Code generated by MockGen. DO NOT EDIT.
+// Source: user.go
 
-type userControl struct {
-	IUC IUserControl
-}
-
-func NewUserControl(p IUserControl) *userControl {
-	return &userControl{IUC: p}
-}
-
-func (uc *userControl) Login(username, password string) error {
-	return uc.IUC.Login(username, password)
-}
-
-```
-
-生成mock文件
-
-```sh
-$ >mockgen -source=i_user_control.go -destination=./user_control_mock.go -package=person
-```
-
-> -source 源文件
->
-> -destination 设置 mock 文件输出的地方，若不设置则打印到标准输出中
->
-> -package 设置 mock 文件的包名，若不设置则为 `mock_` 前缀加上文件名
-
-测试用例
-
-```go
-package person
+// Package mock is a generated GoMock package.
+package mock
 
 import (
-	"github.com/golang/mock/gomock"
-	"testing"
+	reflect "reflect"
+
+	gomock "github.com/golang/mock/gomock"
 )
 
-func TestUserControl_Login(t *testing.T) {
-	ctl := gomock.NewController(t)
-	defer ctl.Finish()
-	var (
-		username = "admin"
-		password = "root"
-	)
+// MockIUser is a mock of IUser interface.
+type MockIUser struct {
+	ctrl     *gomock.Controller
+	recorder *MockIUserMockRecorder
+}
 
-	mockUC := NewMockIUserControl(ctl)
-	gomock.InOrder(
-		mockUC.EXPECT().Login(username,password).Return(nil),
-	)
-	control := NewUserControl(mockUC)
-	err := control.Login(username, password)
-	if err != nil {
-		t.Errorf("user.GetUserInfo err: %v", err)
-	}
+// MockIUserMockRecorder is the mock recorder for MockIUser.
+type MockIUserMockRecorder struct {
+	mock *MockIUser
+}
+
+// NewMockIUser creates a new mock instance.
+func NewMockIUser(ctrl *gomock.Controller) *MockIUser {
+	mock := &MockIUser{ctrl: ctrl}
+	mock.recorder = &MockIUserMockRecorder{mock}
+	return mock
+}
+
+// EXPECT returns an object that allows the caller to indicate expected use.
+func (m *MockIUser) EXPECT() *MockIUserMockRecorder {
+	return m.recorder
+}
+
+// Get mocks base method.
+func (m *MockIUser) Get(id string) (User, error) {
+	m.ctrl.T.Helper()
+	ret := m.ctrl.Call(m, "Get", id)
+	ret0, _ := ret[0].(User)
+	ret1, _ := ret[1].(error)
+	return ret0, ret1
+}
+
+// Get indicates an expected call of Get.
+func (mr *MockIUserMockRecorder) Get(id interface{}) *gomock.Call {
+	mr.mock.ctrl.T.Helper()
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Get", reflect.TypeOf((*MockIUser)(nil).Get), id)
 }
 
 ```
 
-gomock.NewController：返回 `gomock.Controller`，它代表 mock 生态系统中的顶级控件。定义了 mock 对象的范围、生命周期和期待值。另外它在多个 goroutine 中是安全的
+首先是有一个 MockIUser 的结构体实现了 IUser 接口。
 
-mock.NewMockMale：创建一个新的 mock 实例
+比较重要的是`EXPECT()`方法，该方法返回一个允许调用者设置**期望**和**返回值**的对象，也就是我们前面提到的注入具体逻辑的步骤。
 
-gomock.InOrder：声明给定的调用应按顺序进行（是对 gomock.After 的二次封装）
 
-mockMale.EXPECT().Get(id).Return(nil)：这里有三个步骤，`EXPECT()`返回一个允许调用者设置**期望**和**返回值**的对象。`Get(id)` 是设置入参并调用 mock 实例中的方法。`Return(nil)` 是设置先前调用的方法出参。简单来说，就是设置入参并调用，最后设置返回值
+
+### 注入具体逻辑
+
+生成好 mock 代码后，只需要写 test 方法的是使用`EXPECT`方法往 mock 代码里注入具体逻辑就好了。
+
+测试用例如下：
+
+```go
+func TestQueryUser(t *testing.T) {
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+	mockDB := NewMockIUser(mockCtrl)
+
+	t.Run("empty id", func(t *testing.T) {
+		mockDB.EXPECT().Get("").Return(User{}, ErrEmptyID).Times(0)
+		user, err := QueryUser(mockDB, "")
+		require.Equal(t, err, ErrEmptyID)
+		require.Empty(t, user)
+	})
+
+	t.Run("normal id", func(t *testing.T) {
+		targetUser := User{
+			Username: "tom",
+			Password: "pwd",
+		}
+		mockDB.EXPECT().Get("tom").Return(targetUser, nil).Times(1)
+		user, err := QueryUser(mockDB, "tom")
+		require.NoError(t, err)
+		require.Equal(t, user, user)
+	})
+}
+```
+
+首先是 NewController 这个是固定写法，创建一个 ctrl 对象，它代表 mock 生态系统中的顶级控件。定义了 mock 对象的范围、生命周期和期待值。另外它在多个 goroutine 中是安全的。
+
+进行 mock 用例的期望值断言，一般会使用 `defer` 延迟执行，以防止我们忘记这一操作，该方法会检测 mock 代码是否有按照预期情况执行的，没有的话会直接报错。
+
+```go
+	mockCtrl := gomock.NewController(t)
+	defer mockCtrl.Finish()
+```
+
+然后就是创建实现了 IUser 接口的 Mock 实例
+
+```go
+mockDB := NewMockIUser(mockCtrl)
+```
+
+最后终于到了注入具体逻辑的方法了
+
+```go
+mockDB.EXPECT().Get("").Return(User{}, ErrEmptyID).Times(0)
+```
+
+通过 EXPECT 方法指定请求参数及其对应的返回值，这里就是当调用 Get 方法传递的 id 为空时，会返回一个 ErrEmptyID 的 err，最后的 Times(0) 表示这种情况下 Get 方法会被调用 0 次，因为如果真的为空直接就返回错误了。
+
+**核心逻辑就在这里，指定入参和返回值，然后后续调用的时候来测试是否真的安装这个逻辑运行。**
+
+> 这里直接指定了 Get 方法的入参和返回值，就不需要真的去连接数据库了，起到了 mock  的效果。
+
+后续则是测试逻辑
+
+```go
+		user, err := QueryUser(mockDB, "")
+		require.Equal(t, err, ErrEmptyID)
+		require.Empty(t, user)
+```
+
+调用 QueryUser 并传递一个空的 ID，最后肯定会得到一个  ErrEmptyID 错误，且返回的 User 是空对象。
+
+对多种情况都做了覆盖，正常 id 的情况测试用例如下：
+
+```go
+	t.Run("normal id", func(t *testing.T) {
+		targetUser := User{
+			Username: "tom",
+			Password: "pwd",
+		}
+		mockDB.EXPECT().Get("tom").Return(targetUser, nil).Times(1)
+		user, err := QueryUser(mockDB, "tom")
+		require.NoError(t, err)
+		require.Equal(t, user, user)
+	})
+```
+
+指定输入 id 为 tom 的时候返回 targetUser 这个用户，然后调用 QueryUser 参数传入 tom，判断最终返回的 user 是不是和 targetUser 一致。
+
+最后测试一下用户真的不存在的情况
+
+```go
+	t.Run("not exist user", func(t *testing.T) {
+		mockDB.EXPECT().Get("not_exist").Return(User{}, ErrUserNotFond).Times(1)
+		user, err := QueryUser(mockDB, "not_exist")
+		require.Equal(t, err, ErrUserNotFond)
+		require.Empty(t, user)
+	})
+```
+
+使用 EXPECT 方法指定 db.Get 传入 not_exist 这个 id 的时候返回 ErrUserNotFond 错误。
+
+然后用 not_exist 作为参数去调用 QueryUser，理论上也会返回 ErrUserNotFond 错误。
+
+
+
+> 核心逻辑就在这里，指定入参和返回值，然后后续调用的时候来测试是否真的安装这个逻辑运行。
 
 NewUser(mockMale)：创建 User 实例，值得注意的是，在这里**注入了 mock 对象**，因此实际在随后的 `user.GetUserInfo(id)` 调用（入参：id 为 1）中。它调用的是我们事先模拟好的 mock 方法
 
@@ -159,7 +291,9 @@ ctl.Finish()：进行 mock 用例的期望值断言，一般会使用 `defer` �
 
 
 
-### 3. 测试
+### 测试
+
+最后则是用 go test 命令执行测试
 
 ```go
 go test
@@ -174,60 +308,155 @@ go tool cover -html=cover.out
 
 
 
+执行 go  test 看一下，因为分支逻辑比较少，所以达到了 100% 覆盖率。
 
-
-## 5. 更多
-
-### 1. 常用 mock 方法
-
-调用方法
-
-- Call.Do()：声明在匹配时要运行的操作
-- Call.DoAndReturn()：声明在匹配调用时要运行的操作，并且模拟返回该函数的返回值
-- Call.MaxTimes()：设置最大的调用次数为 n 次
-- Call.MinTimes()：设置最小的调用次数为 n 次
-- Call.AnyTimes()：允许调用次数为 0 次或更多次
-- Call.Times()：设置调用次数为 n 次
-
-参数匹配
-
-- gomock.Any()：匹配任意值
-- gomock.Eq()：通过反射匹配到指定的类型值，而不需要手动设置
-- gomock.Nil()：返回 nil
-
-### 2. 生成多个 mock 文件
-
-官方提供了批量生成方法
-
-```sh
-go generate [-run regexp] [-n] [-v] [-x] [build flags] [file.go... | packages]
+```bash ❯ go test -cover
+❯ go test -cover
+PASS
+        i-go/test/mock  coverage: 100.0% of statements
+ok      i-go/test/mock  0.305s
 ```
 
-只需要简答修改interface文件即可
+
+
+## 4. 更多
+
+### 匹配参数
+
+调用`m.EXPECT()`时可以指定参数满足的条件，将原方法的参数替换为对应的`Matcher`
+
+- `gomock.Eq(x)`： 通过反射匹配到指定的类型值，而不需要手动设置
+- `gomock.Not(x)` 不等于x
+- `gomock.Any()`  匹配任何值
+- `gomock.Nil()` 值是nil
+- `gomock.Len(i)` 长度为i
+
+
+
+### 返回值
+
+`m.EXPECT()`返回的是*gomock.Call类型的值，可使用以下方法指定被调用时的行为：
+
+* `Call.Return()`：模拟返回该函数的返回值
+* `Call.Do()`：声明在匹配时要运行的操作
+* `Call.DoAndReturn()`：声明在匹配调用时要运行的操作，并且模拟返回该函数的返回值
+
+注意：这些方法的返回值仍然是 *Call 类型，因此可以链式调用。
+
+> 如果没有指定任何返回值则返回零值
+
+
+
+### 调用次数
+
+可以通过 Times 相关方法来指定方法被调用的次数。
+
+>  如前面 demo 里参数为空的时候直接返回错误了，都不会调用到 mock 的方法，因此指定了 Times(0)，如果在测试的时候发现 mock 有被调用到则说明逻辑有问题。
+
+`*Call`的以下方法用于断言方法的调用次数
+
+- `Times(n)` 被调用n次
+- `MinTimes(n)` 至少被调用n次
+- `MaxTimes(n)` 至多被调用n次
+- `AnyTimes()` 可以被调用任意次（包括0次）
+
+
+
+### 调用顺序
+
+一个对象的调用顺序通常是很重要的，调用顺序不符合预期往往代表程序是有问题的。GoMock提供了一种确保某个调用必需发生在另外一个调用之后的机制，那就是**.After**方法，以下为示例，其指定**callFirst**方法必需在**callA**或者**callB**之前被调用。
 
 ```go
-package person
+callFirst := mockDoer.EXPECT().DoSomething(1, "first this")
+callA := mockDoer.EXPECT().DoSomething(2, "then this").After(callFirst)
+callB := mockDoer.EXPECT().DoSomething(2, "or this").After(callFirst)
+```
 
-//go:generate mockgen -destination=./user_control_mock.go -package=person . IUserControl
+GoMock还提供了另外一个更便捷的方法来指定不同调用之间的先后顺序，那就是**gomock.InOrder**。它使用起来不如**.After**灵活，但是可以使得较长的一串调用顺序看起来更清晰。
 
-type IUserControl interface {
-	Login(username, password string) error
-}
-
+```go
+gomock.InOrder(
+    mockDoer.EXPECT().DoSomething(1, "first this"),
+    mockDoer.EXPECT().DoSomething(2, "then this"),
+    mockDoer.EXPECT().DoSomething(3, "then this"),
+    mockDoer.EXPECT().DoSomething(4, "finally this"),
+)
 ```
 
 
 
-我们关注到 `go:generate` 这条语句，可分为以下部分：
-
-1. 声明 `//go:generate` （注意不要留空格）
-2. 使用 `mockgen` 命令
-3. 定义 `-destination`
-4. 定义 `-package`
-5. 定义 `source`，此处为 person 的包路径 当前路径所以填的`.`
-6. 定义 `interfaces`，此处为 `IUserControl`
+更多详细用法见[官方文档](https://pkg.go.dev/github.com/golang/mock/gomock?utm_source=godoc#pkg-index)
 
 
 
-原文`https://eddycjy.gitbook.io/golang/di-1-ke-za-tan/gomock`
+## 5. 如何编写可 mock 的代码
 
+写可测试的代码与写好测试用例是同等重要的，如何写可 mock 的代码呢？
+
+- mock 作用的是接口，因此**将依赖抽象为接口**，而不是直接依赖具体的类。
+- 不直接依赖的实例，而是使用依赖注入降低耦合性。
+
+> 在软件工程中，依赖注入的意思为，给予调用方它所需要的事物。 “依赖”是指可被方法调用的事物。依赖注入形式下，调用方不再直接指使用“依赖”，取而代之是“注入” 。“注入”是指将“依赖”传递给调用方的过程。在“注入”之后，调用方才会调用该“依赖”。传递依赖给调用方，而不是让让调用方直接获得依赖，这个是该设计的根本需求。
+> – [依赖注入 - Wikipedia](https://zh.wikipedia.org/zh-cn/依赖注入)
+
+
+
+前面的 QueryUser 方法依赖的时参数里的 IUser 入参，具体实例由调用者提供，因此可以很方便的 mock。
+
+```go
+func QueryUser(db IUser, id string) (User, error) {
+	if id == "" {
+		return User{}, ErrEmptyID
+	}
+	return db.Get(id)
+}
+```
+
+如果我们这样写呢：
+
+```go
+func QueryUser(id string) (User, error) {
+	if id == "" {
+		return User{}, ErrEmptyID
+	}
+  db:= NewDB()
+	return db.Get(id)
+}
+```
+
+这种情况下用的是 QueryUser 内部的依赖，则无法进行 mock 了。
+
+
+
+## 6. 小结
+
+本文主要记录了 gomock 的基本使用流程。
+
+注意：**gomock 主要作用是对依赖的接口进行 mock 便于测试，而不是对接口的实现进行测试。**
+
+大致流程：
+
+* 1）生成 mock 代码：使用 mockgen 为你想要 mock 的接口生成一个 mock。
+* 2）注入具体逻辑：调用 EXPECT() 为你的 mock 对象设置各种期望和返回值。
+
+批量生成：
+
+* 使用 go generate 调用 mockgen 实现批量生成
+
+编写可 mock 的代码：
+
+* 将依赖抽象为接口，使用依赖注入降低耦合性
+
+
+
+## 7. 参考
+
+[gomock 仓库](https://github.com/golang/mock)
+
+[gomock 官方文档](https://pkg.go.dev/github.com/golang/mock/gomock?utm_source=godoc#pkg-index)
+
+[go generate 用法](https://go.dev/blog/generate)
+
+[gomock 简明教程](https://geektutu.com/post/quick-gomock.html)
+
+[使用 Gomock 进行单元测试](https://eddycjy.gitbook.io/golang/di-1-ke-za-tan/gomock)
