@@ -1,5 +1,27 @@
 # Linux iostat
 
+## 0.常见用法
+
+查看 I/O
+
+```sh
+iostat -dx 1
+```
+
+查看CPU
+
+```sh
+iostat -c 1
+```
+
+Linux 手册
+
+```sh
+man iostat
+```
+
+
+
 ## 1. 概述
 
 ```sh
@@ -76,26 +98,3 @@ vda               0.00     3.00    0.00   23.00     0.00    96.00     8.35     0
 * **r_await+w_await**，就是响应时间。
 
 根据这些指标基本就能分析出是否存在磁盘I/O问题。
-
-
-
-## 3. 常见用法
-
-查看I/O
-
-```sh
-iostat -dx 1
-```
-
-查看CPU
-
-```sh
-iostat -c 1
-```
-
-Linux 手册
-
-```sh
-man iostat
-```
-

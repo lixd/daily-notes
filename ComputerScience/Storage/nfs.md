@@ -33,6 +33,12 @@ yum install nfs-utils rpcbind
 
 NFS 默认使用`/etc/exports`作为配置文件，如果没有则手动创建该文件。
 
+```bash 
+vi /etc/exports
+```
+
+
+
 内容如下：
 
 ```bash
@@ -76,9 +82,33 @@ mkdir -p /tmp/nfs/data
 
 
 
+### 启动
+
+```bash
+systemctl enable nfs-server.service --now
+```
+
+立即生效配置
+
+```bash
+exportfs -r
+```
+
+查看共享目录信息
+
+```bash
+exportfs -v
+```
+
+检测是否启动成功
+
+```bash
+showmount -e 127.0.0.1
+```
 
 
-### 相关命令
+
+### 相关命令汇总
 
 #### 服务端
 
@@ -157,8 +187,6 @@ mount -t nfs -o timeo=60 172.20.150.199:/tmp/nfs/data /tmp/nfs/mnt
 更多信息参考`man nfs`
 
 mount options 好像会冲突，比如默认是 hard 模式，这时候 timeo 就不会生效。
-
-
 
 ```bash
 mount -t nfs -o soft,timeo=120 172.20.150.199:/tmp/nfs/data /tmp/nfs/mnt
