@@ -74,16 +74,17 @@ k8s 安装好后，再安装一下 kubuctl 就算是完成了。
 下载 Istio，可以去 [Istio release page](https://github.com/istio/istio/releases) 手动下载并解压，或者通过官方提供的脚本自动下载解压：
 
 ```shell
-$ curl -L https://istio.io/downloadIstio | sh -
+curl -L https://istio.io/downloadIstio | sh -
 ```
 
-> 国内网络问题，脚本根本下载不动，只能手动下载。
 
 
+国内网络问题，脚本根本下载不动，只能手动下载。
 
 ```shell
-$ wget https://github.com/istio/istio/releases/download/1.12.1/istio-1.12.1-linux-amd64.tar.gz
-$ tar -zxvf istio-1.12.1-linux-amd64.tar.gz
+version=1.20.0
+wget https://github.com/istio/istio/releases/download/${version}/istio-${version}-linux-amd64.tar.gz
+tar -zxvf istio-${version}-linux-amd64.tar.gz
 # 进入istio
  lixd  ~/istio $ istio-1.12.1
  lixd  ~/istio/istio-1.12.1 $ l
@@ -100,7 +101,7 @@ drwxr-xr-x  3 lixd lixd 4.0K Dec  8 04:04 tools
 配置以下环境变量，便于使用。
 
 ```shell
-$ export PATH=$PWD/bin:$PATH
+export PATH=$PWD/bin:$PATH
 ```
 
 

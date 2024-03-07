@@ -10,6 +10,10 @@
 
 
 
+先走完上述两个文档,然后本文后续 Demo 才能正常运行。
+
+
+
 ## 2. 配置请求路由
 
 Istio 中主要通过更新 Virtual Service 配置进行流量切换。
@@ -36,20 +40,20 @@ spec:
         subset: v1
 ```
 
-把所有服务全部指定为访问 v1 subset。
+把 productpage 服务切换到访问 v1 版本。
 
 
 
-通过 kubectl apply 应用该规则，使其生效。
+通过 kubectl apply 应用该规则，把所有服务全部指定为访问 v1 版本，使其生效。
 
 ```shell
-$ kubectl apply -f samples/bookinfo/networking/virtual-service-all-v1.yaml
+kubectl apply -f samples/bookinfo/networking/virtual-service-all-v1.yaml
 ```
 
 apply 后再次查看，确保规则生效了
 
 ```shell
-$ kubectl get virtualservice reviews -o yaml
+kubectl get virtualservice reviews -o yaml
 ```
 
 
@@ -67,7 +71,7 @@ kiali dashbord 中看到的 graph 也全是 v1 版本。
 同上，Istio 已经准备好了 对应的配置，直接应用即可
 
 ```shell
-$ kubectl apply -f samples/bookinfo/networking/virtual-service-reviews-test-v2.yaml
+kubectl apply -f samples/bookinfo/networking/virtual-service-reviews-test-v2.yaml
 ```
 
 这个虚拟服务具体配置如下：
@@ -112,13 +116,13 @@ spec:
 
 手动在 virtualservice中配置故障注入，以测试在故障情况下服务是否能正常运行。
 
+### 模拟延迟
+
 ```shell
-
-$ kubectl apply -f samples/bookinfo/networking/virtual-service-ratings-test-delay.yaml
-
+kubectl apply -f samples/bookinfo/networking/virtual-service-ratings-test-delay.yaml
 ```
 
-
+完整 VirtualService 内容如下：
 
 ```yaml
 apiVersion: networking.istio.io/v1alpha3
@@ -151,8 +155,14 @@ spec:
 
 
 
+### 模拟错误
+
+也可以模拟错误，创建下面这个 VirtualService，对 jason 用户的访问 100% 概率返回 http code 500。
+
+> 为了便于测试直接给的 100% 概率
+
 ```shell
-$ kubectl apply -f samples/bookinfo/networking/virtual-service-ratings-test-abort.yaml
+kubectl apply -f samples/bookinfo/networking/virtual-service-ratings-test-abort.yaml
 ```
 
 ```yaml
@@ -195,9 +205,18 @@ spec:
 
 ## 4. 流量转移
 
-通过不同的路由规则，可以让不同请求走不同的服务版本。
+通过不同的路由规则，可以让不同请求走不同的服务版本，这种基于权重的路由在发布新版本是就非常有用。
 
-而基于权重的路由在发布新版本是就非常有用,就像这样：
+首先将 10% 流量切换到 v2 版本，剩下 90% 流量依旧走 v1 版本，不同版本区别如下：
+
+* v1：review 只有分数
+* v2：review 带星星评级
+
+```bash
+kubectl apply -f samples/bookinfo/networking/virtual-service-reviews-90-10.yaml
+```
+
+对应的 VirtualService 就像这样：
 
 ```yaml
 apiVersion: networking.istio.io/v1alpha3
@@ -209,20 +228,32 @@ spec:
     - reviews
   http:
   - route:
-    # 配置v1和v3版本个50%流量
+    # 配置v1和v2版本流量比例
     - destination:
         host: reviews
         subset: v1
-      weight: 50
+      weight: 90
     - destination:
         host: reviews
         subset: v3
-      weight: 50
+      weight: 10
 ```
 
-更新后如果新版本有问题则可以把流量全切换v1版本。若正常则可以全部切换到v3版本。
 
 
+更新后如果新版本有问题则可以把流量回退到 v1 版本，若没问题则继续放大切换到 v2 版本的比例，直至全部流量切换到 v2 版本。
+
+```bash
+kubectl apply -f samples/bookinfo/networking/virtual-service-reviews-80-20.yaml
+```
+
+
+
+VirtualService 创建后，访问首页，多次刷新，偶尔能刷到 v2 版本,随着比例增加刷到新版本概率也逐渐增加。
+
+
+
+### 和 k8s 流量管理的区别
 
 注意，**流量迁移和使用容器编排平台的部署功能来进行版本迁移完全不同**：
 
@@ -230,7 +261,7 @@ spec:
 
 * 使用 Istio，两个版本的 `reviews` 服务可以独立地进行扩容和缩容，而不会影响这两个服务版本之间的流量分发。
 
-k8s 中的金丝雀发布是控制Pod数实现的，比如将 10％ 的流量发送到金丝雀版本（v2），v1 和 v2 的副本可以分别设置为 9 和 1。
+k8s 中的金丝雀发布是控制 Pod 数实现的，比如将 10％ 的流量发送到金丝雀版本（v2），v1 和 v2 的副本可以分别设置为 9 和 1。
 
 > k8s service 是均匀转发到各个Pod，即最终比例和各个版本的Pod数比例一致。
 
@@ -307,8 +338,7 @@ Prometheus + Grafana 作为指标监控+可视化。
 Istio 安装时默认会允许 sidecar 转发全部请求外部服务的流量，通过以下命令查看：
 
 ```shell
-$ kubectl get istiooperator installed-state -n istio-system -o jsonpath='{.spec.meshConfig.outboundTrafficPolicy.mode}'
-
+kubectl get istiooperator installed-state -n istio-system -o jsonpath='{.spec.meshConfig.outboundTrafficPolicy.mode}'
 ```
 
 如果输出是`ALLOW_ANY`或没有任何输出（默认为`ALLOW_ANY`）说明当前sidecar会转发全部访问外部的请求。
@@ -316,13 +346,13 @@ $ kubectl get istiooperator installed-state -n istio-system -o jsonpath='{.spec.
 > 如果不是ALLOW_ANY 则用下面的命令更改
 >
 > ```shell
-> $ istioctl install <flags-you-used-to-install-Istio> --set meshConfig.outboundTrafficPolicy.mode=ALLOW_ANY
+> istioctl install <flags-you-used-to-install-Istio> --set meshConfig.outboundTrafficPolicy.mode=ALLOW_ANY
 > ```
 
 从 `SOURCE_POD` 向外部 HTTPS 服务发出两个请求，确保能够得到状态码为 `200` 的响应：
 
 ```shell
-$ kubectl exec "$SOURCE_POD" -c sleep -- curl -sSI https://www.baidu.com | grep  "HTTP/"; kubectl exec "$SOURCE_POD" -c sleep -- curl -sI https://www.sina.com | grep "HTTP/"
+kubectl exec "$SOURCE_POD" -c sleep -- curl -sSI https://www.baidu.com | grep  "HTTP/"; kubectl exec "$SOURCE_POD" -c sleep -- curl -sI https://www.sina.com | grep "HTTP/"
 ```
 
 正常应该收到两个 200 ok。
@@ -405,5 +435,4 @@ spec:
 默认安装了 Kiali 作为 Web 可视化界面。
 
 > [可视化网格](https://istio.io/latest/zh/docs/tasks/observability/kiali/)
-
 

@@ -412,7 +412,7 @@ spec:
 
 ![](assets/gw-vr-config.png)
 
-可以看到，早 Virtual Service 中通过 gateways 字段来指定网关，即接收该网关的流量。然后通过该 虚拟服务中的规则进行流量控制
+可以看到，在 Virtual Service 中通过 gateways 字段来指定网关，即接收该网关的流量。然后通过该 虚拟服务中的规则进行流量控制
 
 例如：
 
